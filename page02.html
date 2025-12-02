@@ -15,15 +15,36 @@
             padding: 0;
             width: 100%;
             height: 100%;
+            /* スマホのアドレスバー対策 */
+            height: 100dvh; 
             overflow: hidden;
-            background-color: #f7f6f3; /* ほんのり生成り色（和紙っぽさ） */
-            color: #0a0a0a; /* 真っ黒より少しだけ柔らかい黒 */
-            
-            /* フォント設定：しっぽり明朝を優先 */
-            font-family: 'Shippori Mincho', "Yu Mincho", "Hiragino Mincho ProN", serif;
-            
-            cursor: crosshair; /* 探索するカーソル */
+            background-color: #f7f6f3; 
+            color: #0a0a0a; 
+            font-family: 'Shippori Mincho', "Yu Mincho", serif;
+            cursor: crosshair; 
             transition: background-color 1s ease;
+            user-select: none;
+            /* スマホでの長押しメニューなどを無効化 */
+            -webkit-touch-callout: none;
+            /* スクロール等の動作をCSSレベルで禁止 */
+            touch-action: none; 
+        }
+
+        /* 戻るボタン */
+        .back-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            text-decoration: none;
+            color: #ccc;
+            font-size: 12px;
+            z-index: 9999;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.2em;
+            padding: 10px;
+            /* 背景をつけて読みやすく */
+            background: rgba(247, 246, 243, 0.8);
+            border-radius: 4px;
         }
 
         #container {
@@ -32,14 +53,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 40px;
+            padding: 20px; /* スマホ用に余白を少し減らす */
             box-sizing: border-box;
         }
 
         #text-block {
-            writing-mode: vertical-rl; /* 縦書き */
+            writing-mode: vertical-rl; 
             text-orientation: upright;
-            font-size: 20px; /* フォントの美しさが分かるサイズ */
+            font-size: 20px; 
             height: 80%;
             max-width: 90%;
             
@@ -47,15 +68,13 @@
             line-height: 0.1; 
             letter-spacing: -1em;
             
-            /* ヌルッとした動き（インクの粘度を表現） */
+            /* ヌルッとした動き */
             transition: line-height 0.5s cubic-bezier(0.19, 1, 0.22, 1),
                         letter-spacing 0.5s cubic-bezier(0.19, 1, 0.22, 1),
                         opacity 1s, color 1s;
 
-            /* ★重要：文字が重なった部分を濃くする（インク溜まり） */
             mix-blend-mode: multiply; 
-            
-            opacity: 0; /* 最初は隠す */
+            opacity: 0; 
         }
 
         /* 説明書きレイヤー */
@@ -78,12 +97,15 @@
             font-size: 13px;
             letter-spacing: 0.25em;
             color: #666;
-            background: rgba(247, 246, 243, 0.9); /* 背景色に合わせる */
+            background: rgba(247, 246, 243, 0.9); 
             padding: 30px 50px;
             border: 1px solid rgba(0,0,0,0.05);
             text-align: center;
             line-height: 2.2;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            /* スマホで幅広になりすぎないように */
+            width: 70%;
+            box-sizing: border-box;
         }
         
         .hint-arrow {
@@ -98,7 +120,7 @@
             50% { opacity: 1; transform: translate(15px, 15px); }
         }
 
-        /* 状態表示（デバッグ用兼演出） */
+        /* 状態表示 */
         #status {
             position: absolute;
             bottom: 20px;
@@ -110,18 +132,32 @@
             opacity: 0.6;
         }
 
-        /* ▼ 読める状態（スイートスポット）に入った時の変化 ▼ */
+        /* 読める状態（スイートスポット） */
         body.readable {
-            background-color: #fff; /* 背景が純白に */
+            background-color: #fff; 
         }
         body.readable #text-block {
-            mix-blend-mode: normal; /* 重なり解除 */
-            color: #000; /* くっきり黒 */
+            mix-blend-mode: normal; 
+            color: #000; 
+        }
+
+        /* ▼ スマホ対応（メディアクエリ） ▼ */
+        @media (max-width: 768px) {
+            #text-block {
+                font-size: 16px; /* 文字サイズを少し小さく */
+                height: 85%; /* 高さを確保 */
+            }
+            #instruction-layer p {
+                padding: 20px 30px;
+                font-size: 12px;
+            }
         }
 
     </style>
 </head>
 <body>
+
+    <a href="index.html" class="back-link">目次へ戻る</a>
 
     <div id="instruction-layer">
         <p>言葉は凝縮されています。<br>余白を探り当て、<br>意味をほどいてください。</p>
@@ -160,27 +196,20 @@
         const status = document.getElementById('status');
         const body = document.body;
 
-        // ▼ 設定パラメータ ▼
-        // 最小値（左上）：完全に潰れて「黒い塊」になる数値
+        // 設定パラメータ
         const MIN_LETTER_SPACING = -0.9; 
         const MIN_LINE_HEIGHT = 0.0; 
         
-        // 最大値（右下）：バラバラになりすぎる数値
         const MAX_LETTER_SPACING = 2.0;
         const MAX_LINE_HEIGHT = 4.5;
 
-        // 読める範囲（スイートスポット）
         const READABLE_RANGE = {
-            lsMin: 0.00, lsMax: 0.40, // 文字間
-            lhMin: 1.60, lhMax: 2.40  // 行間
+            lsMin: 0.00, lsMax: 0.40, 
+            lhMin: 1.60, lhMax: 2.40  
         };
 
-        // 初期化処理
         window.onload = () => {
-            // 強制的に左上（凝縮状態）からスタート
             updateSpace(0, 0);
-            
-            // ロード完了後、少し間を置いて「黒い塊」をフワッと出現させる
             setTimeout(() => {
                 textBlock.style.opacity = 1;
             }, 600);
@@ -190,7 +219,6 @@
             const ratioX = x / window.innerWidth;
             const ratioY = y / window.innerHeight;
 
-            // 案内文の透明度制御（動かせば消える）
             const moveDistance = ratioX + ratioY;
             if (moveDistance > 0.15) {
                 instruction.style.opacity = Math.max(0, 1 - (moveDistance - 0.15) * 2);
@@ -198,17 +226,12 @@
                 instruction.style.opacity = 1;
             }
 
-            // 数値計算
-            // X軸(左右) = 行間 (Line Height)
             const lineHeight = MIN_LINE_HEIGHT + (MAX_LINE_HEIGHT - MIN_LINE_HEIGHT) * ratioX;
-            // Y軸(上下) = 文字間 (Letter Spacing)
             const letterSpacing = MIN_LETTER_SPACING + (MAX_LETTER_SPACING - MIN_LETTER_SPACING) * ratioY;
 
-            // スタイル適用
             textBlock.style.letterSpacing = `${letterSpacing}em`;
             textBlock.style.lineHeight = lineHeight;
 
-            // 状態判定
             body.className = '';
             const isReadable = 
                 letterSpacing >= READABLE_RANGE.lsMin && 
@@ -219,11 +242,9 @@
             if (isReadable) {
                 body.classList.add('readable');
                 status.textContent = "Readable Zone";
-                status.style.color = "#d14"; // 鮮やかな赤
+                status.style.color = "#d14"; 
             } else {
-                // 読めない時は色を薄くして目立たなくする
                 status.style.color = "#ddd";
-                
                 if (ratioX < 0.1 && ratioY < 0.1) {
                     status.textContent = "Compressed Mass";
                 } else {
@@ -232,12 +253,21 @@
             }
         }
 
-        // イベントリスナー
+        // PC: マウス移動
         window.addEventListener('mousemove', (e) => updateSpace(e.clientX, e.clientY));
         
-        // スマホ対応
+        // スマホ: タッチ移動
         window.addEventListener('touchmove', (e) => {
-            e.preventDefault();
+            // スクロールなどのデフォルト動作を無効化
+            if(e.cancelable) e.preventDefault(); 
+            
+            const t = e.touches[0];
+            updateSpace(t.clientX, t.clientY);
+        }, { passive: false });
+
+        // スマホ: タッチ開始時も反応させる（タップだけでも動くように）
+        window.addEventListener('touchstart', (e) => {
+            // if(e.cancelable) e.preventDefault(); // リンクなどは押せるようにここは制御しない
             const t = e.touches[0];
             updateSpace(t.clientX, t.clientY);
         }, { passive: false });
