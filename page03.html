@@ -14,14 +14,36 @@
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%;
+            /* スマホのアドレスバー対策 */
+            height: 100dvh; 
             overflow: hidden;
             background-color: #fff;
             font-family: 'Shippori Mincho', serif;
             cursor: default;
             user-select: none;
+            /* スマホでの長押しメニューなどを無効化 */
+            -webkit-touch-callout: none;
+            /* スクロール等の動作をCSSレベルで禁止 */
+            touch-action: none; 
         }
 
+        /* 戻るボタン */
+        .back-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            text-decoration: none;
+            color: #aaa;
+            font-size: 12px;
+            z-index: 9999;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.2em;
+            padding: 10px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 4px;
+        }
+
+        /* タイトル画面（オーバーレイ） */
         #intro-overlay {
             position: fixed;
             top: 0;
@@ -54,6 +76,7 @@
             color: #888;
             margin-bottom: 50px;
             letter-spacing: 0.15em;
+            width: 80%; /* スマホで幅広になりすぎないように */
         }
 
         #start-btn {
@@ -67,14 +90,17 @@
             cursor: pointer;
             transition: all 0.4s;
             border-radius: 2px;
+            /* スマホでタップしやすく */
+            min-width: 120px; 
+            min-height: 44px;
         }
 
-        #start-btn:hover {
+        #start-btn:active {
             background: #f0f0f0;
-            border-color: #aaa;
             color: #111;
         }
 
+        /* コンテンツレイヤー */
         #content-layer {
             position: absolute;
             top: 0;
@@ -87,13 +113,15 @@
             z-index: 0;
             
             color: #000;
-            font-size: 20px;
+            /* 画面幅に応じて文字サイズを調整（最小16px〜最大22px） */
+            font-size: clamp(16px, 4vw, 22px);
             line-height: 2.2;
             letter-spacing: 0.15em;
             writing-mode: vertical-rl;
             text-orientation: upright;
         }
 
+        /* 霧のキャンバス */
         #fog-canvas {
             position: absolute;
             top: 0;
@@ -101,7 +129,9 @@
             width: 100%;
             height: 100%;
             z-index: 10;
-            cursor: crosshair;
+            /* カーソル指定（PC用） */
+            cursor: crosshair; 
+            /* タッチアクション無効化（JS制御のため） */
             touch-action: none;
             opacity: 0;
             transition: opacity 1.5s;
@@ -111,148 +141,7 @@
 </head>
 <body>
 
+    <a href="index.html" class="back-link">目次へ戻る</a>
+
     <div id="intro-overlay">
         <h1>揮発する記憶</h1>
-        
-        <div class="instruction-text">
-            記憶は揮発性を帯びています。<br>
-            <br>
-            白い霧を指で拭うことで、<br>
-            一時的にその形を留めることができます。<br>
-            <br>
-            手を止めれば、<br>
-            即座に白へと還ります。
-        </div>
-
-        <button id="start-btn">記憶に触れる</button>
-    </div>
-
-
-    <div id="content-layer">
-        <div id="text-inner">
-            人は忘却に抗えない。<br>
-            <br>
-            この言葉もまた、<br>
-            あなたが手を離した瞬間に<br>
-            白い静寂の向こう側へと<br>
-            消え失せるだろう。<br>
-            <br>
-            ただ、今この瞬間だけ、<br>
-            その意味を焼き付ける。<br>
-        </div>
-    </div>
-
-    <canvas id="fog-canvas"></canvas>
-
-    <script>
-        const canvas = document.getElementById('fog-canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const introOverlay = document.getElementById('intro-overlay');
-        const startBtn = document.getElementById('start-btn');
-
-        // ▼▼▼ 調整箇所 ▼▼▼
-        // 白く戻るスピード（数値を大きくすると速く消えます）
-        // 前回の 0.035 から 0.07 に上げました
-        const RECOVERY_SPEED = 0.1; 
-        
-        const SCRATCH_RADIUS = 60;   
-
-        let isDrawing = false;
-        let lastPoint = null;
-        let isGameStarted = false;
-
-        function init() {
-            resize();
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        startBtn.addEventListener('click', () => {
-            introOverlay.style.opacity = 0;
-            setTimeout(() => {
-                introOverlay.style.display = 'none';
-            }, 1500);
-
-            canvas.style.opacity = 1;
-            isGameStarted = true;
-            loop();
-        });
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function loop() {
-            if (!isGameStarted) return;
-            requestAnimationFrame(loop);
-
-            // 霧を重ねる処理
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = `rgba(255, 255, 255, ${RECOVERY_SPEED})`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function startDraw(e) {
-            if (!isGameStarted) return;
-            isDrawing = true;
-            const { x, y } = getPos(e);
-            lastPoint = { x, y };
-            scratch(x, y);
-        }
-
-        function moveDraw(e) {
-            if (!isDrawing) return;
-            e.preventDefault();
-            const { x, y } = getPos(e);
-            scratch(x, y);
-        }
-
-        function endDraw() {
-            isDrawing = false;
-            lastPoint = null;
-        }
-
-        function scratch(x, y) {
-            ctx.globalCompositeOperation = 'destination-out'; 
-            ctx.beginPath();
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#000';
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.lineWidth = SCRATCH_RADIUS;
-            
-            if (lastPoint) {
-                ctx.moveTo(lastPoint.x, lastPoint.y);
-                ctx.lineTo(x, y);
-            } else {
-                ctx.arc(x, y, SCRATCH_RADIUS / 2, 0, Math.PI * 2);
-            }
-            ctx.stroke();
-            
-            ctx.shadowBlur = 0;
-            lastPoint = { x, y };
-        }
-
-        function getPos(e) {
-            if (e.touches) {
-                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            }
-            return { x: e.clientX, y: e.clientY };
-        }
-
-        window.addEventListener('mousedown', startDraw);
-        window.addEventListener('mousemove', moveDraw);
-        window.addEventListener('mouseup', endDraw);
-        window.addEventListener('touchstart', startDraw, { passive: false });
-        window.addEventListener('touchmove', moveDraw, { passive: false });
-        window.addEventListener('touchend', endDraw);
-        window.addEventListener('resize', resize);
-
-        init();
-
-    </script>
-</body>
-</html>
