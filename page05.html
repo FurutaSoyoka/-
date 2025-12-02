@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>降り注ぐ言葉</title>
+    <title>Raining Words - Mobile Ready</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,46 +15,55 @@
             padding: 0;
             width: 100%;
             height: 100%;
+            /* スマホのアドレスバー対策（100dvh） */
+            height: 100dvh; 
             overflow: hidden;
             background-color: #1a2a3a;
             color: #fff;
             font-family: 'Shippori Mincho', serif;
             user-select: none;
+            /* スマホでの長押しメニューなどを禁止 */
+            -webkit-touch-callout: none;
+            touch-action: none;
             cursor: ew-resize;
             transition: background-color 2s ease;
         }
 
-        /* 完了時の背景（和紙のような生成り色） */
         body.finished {
             background-color: #f7f6f2; 
             cursor: default;
         }
 
+        /* 落ちてくる文字 */
         .rain-char {
             position: absolute;
-            font-size: 24px;
+            font-size: 24px; /* スマホでも見やすいサイズ */
             color: rgba(255, 255, 255, 0.9);
             pointer-events: none;
             will-change: top;
             text-shadow: 0 0 8px rgba(255,255,255,0.6);
         }
 
+        /* プレイヤーの器 */
         #catcher {
             position: absolute;
-            bottom: 50px;
+            bottom: 80px; /* 指で隠れないよう少し上に配置 */
             left: 50%;
             transform: translateX(-50%);
-            width: 140px;
+            /* スマホ用に少し幅広にする */
+            width: 160px;
+            max-width: 30vw; /* 画面幅の30%を上限 */
             height: 60px;
             border-bottom: 3px solid #fff;
             border-left: 3px solid #fff;
             border-right: 3px solid #fff;
-            border-radius: 0 0 15px 15px;
+            border-radius: 0 0 20px 20px;
             background: rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 10;
+            box-shadow: 0 0 25px rgba(255,255,255,0.1);
             transition: opacity 1s;
         }
 
@@ -63,7 +72,7 @@
             bottom: 20px;
             width: 100%;
             text-align: center;
-            font-size: 16px;
+            font-size: 18px;
             color: #fff;
             text-shadow: 0 0 10px rgba(255,255,255,0.8);
             white-space: nowrap;
@@ -72,11 +81,11 @@
         #archive {
             position: absolute;
             top: 40px;
-            left: 40px;
-            right: 40px;
-            bottom: 150px;
+            left: 20px;
+            right: 20px;
+            bottom: 160px;
             font-size: 14px;
-            line-height: 2.0;
+            line-height: 1.8;
             color: rgba(255,255,255,0.2);
             writing-mode: vertical-rl;
             text-orientation: upright;
@@ -98,17 +107,18 @@
 
         #guide {
             position: absolute;
-            top: 50%;
+            top: 45%;
             width: 100%;
             text-align: center;
             color: rgba(255,255,255,0.6);
-            font-size: 13px;
+            font-size: 14px;
             pointer-events: none;
             letter-spacing: 0.2em;
             transition: opacity 0.5s;
+            line-height: 2;
         }
 
-        /* ▼▼▼ 結果表示デザイン ▼▼▼ */
+        /* ▼▼▼ 結果表示デザイン（スマホ対応） ▼▼▼ */
         #result-layer {
             position: fixed;
             top: 0;
@@ -125,23 +135,23 @@
             transition: opacity 2s ease 0.5s;
         }
 
-        /* 結果コンテナ（紙のようなエリア） */
         #result-container {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            max-height: 70vh;
-            max-width: 80vw;
+            max-height: 75vh; /* 画面内に収まる高さ */
+            max-width: 90vw;
             display: flex;
-            flex-wrap: wrap; /* 長すぎたら折り返す */
+            flex-wrap: wrap; 
             align-content: center;
-            gap: 1em;
+            gap: 0.8em; /* 行間調整 */
         }
 
-        /* 一文字ずつのアニメーション用 */
+        /* 文字サイズを画面幅に合わせて可変にする */
         .res-char {
-            font-size: 32px;
+            /* 最小18px, 画面幅の5%, 最大32px */
+            font-size: clamp(18px, 5vw, 32px);
             color: #222;
-            opacity: 0; /* 最初は隠す */
+            opacity: 0;
             animation: popIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
 
@@ -150,44 +160,42 @@
             100% { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        /* 落款とスコア */
         #footer-info {
-            margin-top: 60px; /* 縦書きなので左側にマージン */
+            margin-top: 40px; 
             display: flex;
-            flex-direction: column; /* 縦書きの中での並び */
+            flex-direction: column; 
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             opacity: 0;
             animation: fadeInSimple 1s ease forwards;
         }
 
         #end-mark {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border: 3px solid #d93a3a;
             color: #d93a3a;
-            border-radius: 8px;
+            border-radius: 6px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
             writing-mode: horizontal-tb;
             transform: rotate(-5deg);
         }
 
         #score {
-            font-size: 12px;
+            font-size: 11px;
             color: #888;
             letter-spacing: 0.1em;
-            writing-mode: horizontal-tb; /* スコアは横書きで見やすく */
+            writing-mode: horizontal-tb;
         }
 
         @keyframes fadeInSimple {
             to { opacity: 1; }
         }
 
-        /* 完了時の表示制御 */
         body.finished #result-layer {
             opacity: 1;
             pointer-events: auto;
@@ -202,7 +210,7 @@
 <body>
 
     <div id="archive"></div>
-    <div id="guide">左右に動かして<br>言葉を受け止める</div>
+    <div id="guide">画面をなぞって<br>言葉を受け止める</div>
 
     <div id="catcher">
         <div id="caught-text"></div>
@@ -241,15 +249,24 @@
         let frameCount = 0;
 
         function init() {
+            // マウス操作
             window.addEventListener('mousemove', (e) => {
                 updateCatcherPos(e.clientX);
                 if (!gameActive && !isFinished) startGame();
             });
             
+            // スマホ（タッチ）操作
             window.addEventListener('touchmove', (e) => {
-                e.preventDefault();
+                // スマホのスクロールを完全に無効化
+                e.preventDefault(); 
                 updateCatcherPos(e.touches[0].clientX);
                 if (!gameActive && !isFinished) startGame();
+            }, { passive: false });
+
+            // タッチ開始時にもスタート判定を入れる（タップだけで反応するように）
+            window.addEventListener('touchstart', (e) => {
+                if (!gameActive && !isFinished) startGame();
+                updateCatcherPos(e.touches[0].clientX);
             }, { passive: false });
 
             updateCatcherPos(window.innerWidth / 2);
@@ -280,6 +297,7 @@
             el.textContent = char;
             el.classList.add('rain-char');
             
+            // 画面の端すぎるとキャッチしにくいのでマージンをとる
             const x = Math.random() * (window.innerWidth - 60) + 30;
             const y = -40;
             const speed = FALL_SPEED_BASE + Math.random() * 2;
@@ -361,17 +379,14 @@
             isFinished = true;
             document.body.classList.add('finished');
 
-            // 集めた文字を一文字ずつ生成してアニメーション
             collectedChars.forEach((char, i) => {
                 const span = document.createElement('div');
                 span.textContent = char;
                 span.classList.add('res-char');
-                // 一文字ずつ遅れて表示させる（余韻）
-                span.style.animationDelay = `${i * 0.1 + 1.0}s`; // 1秒後から開始
+                span.style.animationDelay = `${i * 0.1 + 1.0}s`;
                 resultContainer.appendChild(span);
             });
 
-            // 最後にハンコとスコアを表示
             const totalDelay = collectedChars.length * 0.1 + 2.0;
             footerInfo.style.display = 'flex';
             footerInfo.style.animationDelay = `${totalDelay}s`;
