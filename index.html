@@ -19,49 +19,36 @@
             background-color: #fcfcfc;
             color: #111;
             font-family: 'Shippori Mincho', serif;
-            
-            /* ▼ 縦書き設定 ▼ */
             writing-mode: vertical-rl;
             text-orientation: upright;
-            
-            /* ▼ 横スクロール設定 ▼ */
             overflow-x: auto; 
             overflow-y: hidden;
-            
-            /* スクロールを滑らかに＆スナップさせる */
             scroll-behavior: smooth;
-            scroll-snap-type: x mandatory; /* 横方向に強制スナップ */
+            scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
-            
             user-select: none;
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent; 
         }
 
-        /* 全体を包むラッパー（Flexボックス） */
         #wrapper {
             height: 100%;
             display: flex;
-            /* 縦書きモードでの「column」は、右から左への横並びになります */
             flex-direction: column; 
-            align-items: center; /* 上下中央揃え */
-            padding: 60px 0; /* 上下の余白 */
+            align-items: center;
+            padding: 60px 0;
             box-sizing: border-box;
         }
 
-        /* タイトルエリア（スクロールしても右端に固定） */
+        /* タイトルエリア */
         header {
-            /* 縦書きなので right: 0 が「上端（開始位置）」に相当 */
             position: sticky; 
-            right: 0; /* 右端に固定 */
-            top: 0;   /* 縦位置はずれないように */
+            right: 0; 
+            top: 0;
             z-index: 10;
-            background-color: #fcfcfc; /* 背景色がないと文字が透けるので */
-            padding: 0 40px 0 60px; /* 余白調整 */
-            
-            /* スナップの開始点 */
+            background-color: #fcfcfc;
+            padding: 0 40px 0 60px;
             scroll-snap-align: start; 
-            
             display: flex;
             align-items: center;
             height: 100%;
@@ -73,9 +60,12 @@
             border-left: 1px solid #ddd;
             padding-left: 40px;
             font-weight: 600;
-            height: 80%;
+            height: 80%; /* 線の長さ */
+            
+            /* ▼▼▼ ここを変更しました ▼▼▼ */
             display: flex;
-            align-items: flex-start;
+            align-items: flex-start; /* 横方向：右寄せ */
+            justify-content: center; /* 縦方向：中央揃え */
         }
 
         .subtitle {
@@ -85,37 +75,28 @@
             letter-spacing: 0.2em;
         }
 
-        /* メニューリスト（ここも横並び） */
         #menu-list {
             display: flex;
-            flex-direction: column; /* 右から左へ並ぶ */
-            gap: 80px; /* 作品ごとの間隔を広めに */
-            padding-right: 60px; /* タイトルとの距離 */
-            padding-left: 100px; /* 最後の余白 */
+            flex-direction: column;
+            gap: 80px;
+            padding-right: 60px;
+            padding-left: 100px;
         }
 
-        /* 作品リンク */
         .project-link {
             display: block;
             text-decoration: none;
             color: #333;
             transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-            
-            /* スナップのポイント（画面の中央に来るように） */
             scroll-snap-align: center;
-            
-            /* ぼかし設定 */
             opacity: 0.4;
             filter: blur(4px);
             transform: scale(0.95);
             cursor: pointer;
-            
-            /* 幅の確保（つぶれないように） */
             flex-shrink: 0; 
-            min-height: 300px; /* 縦書きなのでこれが「幅」に見える */
+            min-height: 300px;
         }
 
-        /* アクティブ時 */
         .project-link:hover,
         .project-link.is-active {
             opacity: 1;
@@ -132,7 +113,7 @@
         }
 
         .project-title {
-            font-size: 28px; /* 少し大きく */
+            font-size: 28px;
             font-weight: 400;
             letter-spacing: 0.2em;
             margin-bottom: 20px;
@@ -146,43 +127,35 @@
             height: 180px; 
         }
 
-        /* ▼ スマホ対応 ▼ */
         @media (max-width: 768px) {
             #wrapper {
                 padding: 20px 0;
             }
-
             header {
                 padding: 0 20px 0 30px;
             }
-
             h1 {
                 font-size: 22px;
                 padding-left: 15px;
                 height: 70%;
             }
-
             .subtitle {
                 font-size: 10px;
             }
-
             #menu-list {
-                gap: 40px; /* 間隔を詰める */
+                gap: 40px;
                 padding-right: 30px;
                 padding-left: 60px;
             }
-
             .project-link {
-                scroll-snap-align: center; /* 画面中央にピタッと止める */
+                scroll-snap-align: center;
                 opacity: 0.5;
                 filter: blur(3px);
                 min-height: 240px;
             }
-
             .project-title {
                 font-size: 20px;
             }
-
             .project-desc {
                 font-size: 11px;
                 line-height: 1.8;
@@ -259,13 +232,12 @@
     </div>
 
     <script>
-        // 2回タップの実装
         const links = document.querySelectorAll('.project-link');
 
         links.forEach(link => {
             link.addEventListener('click', function(e) {
                 if (this.classList.contains('is-active')) {
-                    return; // 移動
+                    return; 
                 }
                 e.preventDefault();
                 links.forEach(l => l.classList.remove('is-active'));
