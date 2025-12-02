@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>堆積する筋書き</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+
+    <style>
+        /* ▼▼▼ 変更点1：スクロール設定 ▼▼▼ */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            /* 高さを固定せず、コンテンツに合わせて伸びるようにする */
+            min-height: 100%; 
+            height: auto; 
+            
+            background-color: #f2f2f2;
+            font-family: 'Shippori Mincho', serif;
+            user-select: none;
+            
+            /* 縦スクロールは許可、横スクロールは禁止 */
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+
+        /* ▼▼▼ 変更点2：背骨を画面に固定(fixed) ▼▼▼ */
+        /* これでスクロールしても常に画面中央にガイドが表示されます */
+        #spine {
+            position: fixed; 
+            top: 5%;
+            bottom: 5%;
+            left: 50%;
+            width: 1px;
+            background: #ccc;
+            transform: translateX(-50%);
+            z-index: 0;
+            transition: all 0.3s;
+        }
+        
+        #spine::after {
+            content: '檸檬の断片をここに編む';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            font-size: 11px;
+            color: #bbb;
+            letter-spacing: 0.3em;
+            white-space: nowrap;
+        }
+
+        /* 断片ブロック */
+        .chapter-block {
+            position: absolute;
+            width: 240px;
+            height: auto;
+            min-height: 100px;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-radius: 2px;
+            cursor: grab;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            transition: box-shadow 0.3s, transform 0.3s; 
+            /* transitionからtop/leftを外しました（ドラッグ追従性向上のためJS制御） */
+            
+            /* スマホでドラッグしやすくする */
+            touch-action: none; 
+        }
+
+        .chapter-block:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+            z-index: 100;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        /* ナンバリング */
+        .chapter-number {
+            font-size: 11px;
+            color: #d9a62e; 
+            margin-bottom: 10px;
+            opacity: 0; 
+            transform: translateY(8px);
+            transition: all 0.5s 0.1s;
+            letter-spacing: 0.1em;
+            font-weight: bold;
+        }
+
+        /* リード文 */
+        .fragment-text {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #333;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.5s;
+        }
+
+        /* 本文 */
+        .full-text {
+            height: 0;
+            overflow: hidden;
+            opacity: 0;
+            font-size: 13px;
+            line-height: 2.1;
+            color: #555;
+            text-align: justify;
+            margin-top: 0;
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* 接続済み（Snapped） */
+        .chapter-block.snapped {
+            cursor: default;
+            box-shadow: none;
+            background: transparent;
+            border-left: 3px solid #d9a62e; 
+            border-radius: 0;
+            padding: 15px 25px;
+            width: 280px;
+        }
+        
+        .chapter-block.snapped .chapter-number {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .chapter-block.snapped .fragment-text {
+            font-size: 17px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            width: 100%;
+            text-align: left;
+            color: #000;
+        }
+
+        .chapter-block.snapped .full-text {
+            height: auto;
+            opacity: 1;
+            margin-top: 5px;
+        }
+        
+        /* コンテナの高さ確保用（フッター的余白） */
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%; /* 初期高さ */
+            padding-bottom: 200px; /* 下に余白を持たせてスクロールしやすくする */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="spine"></div>
+    <div id="container"></div>
+
+    <script>
+        const stories = [
+            {
+                number: "第一の断片：憂鬱",
+                fragment: "えたいの知れない不吉な塊が、私の心を始終圧えつけていた。",
+                full: "焦燥と言おうか、嫌悪と言おうか……。私は当所もなく街を歩き回った。何故だかその頃私は見すぼらしくて美しいものに強く引き付けられたのだ。"
+            },
+            {
+                number: "第二の断片：果実",
+                fragment: "その果物屋で、私は珍しいことに檸檬を見つけた。",
+                full: "檸檬の黄色い色は、私の憂鬱な心に一点の鮮やかな色彩を投げかけた。その冷たさと、鼻を撲つような香気。私は幸福だった。"
+            },
+            {
+                number: "第三の断片：圧迫",
+                fragment: "私はいつものように丸善に入ったが、そこはもう以前の私を惹きつける場所ではなかった。",
+                full: "香水瓶も、キセルも、何もかもが私を圧迫した。私は憂鬱になり、そこから逃げ出したい衝動に駆られた。"
+            },
+            {
+                number: "終章の断片：爆弾",
+                fragment: "私は画本の棚の前に立ち、檸檬を一つ、その上に置いた。",
+                full: "それは黄金色に輝く爆弾のようだった。私はそれを残したまま、何食わぬ顔をして外へ出た。あの丸善が木端微塵に粉砕される様を想像しながら。"
+            }
+        ];
+
+        const container = document.getElementById('container');
+        const spine = document.getElementById('spine');
+        
+        let currentStackHeight = 100; 
+
+        function init() {
+            const shuffled = [...stories].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach((story) => {
+                createBlock(story);
+            });
+            
+            // 画面の高さを超えても大丈夫なように、初期コンテナの高さをセット
+            container.style.height = window.innerHeight + 'px';
+        }
+
+        function createBlock(data) {
+            const el = document.createElement('div');
+            el.classList.add('chapter-block');
+            
+            el.innerHTML = `
+                <div class="chapter-number">${data.number}</div>
+                <div class="fragment-text">${data.fragment}</div>
+                <div class="full-text">${data.full}</div>
+            `;
+
+            // ランダム配置 (画面上部の見える範囲に出現させる)
+            // スクロールしないと見えない位置に出ると困るので、window.innerHeightの範囲内に収める
+            const randomX = Math.random() < 0.5 
+                ? (Math.random() * 20 + 2) + '%' 
+                : (Math.random() * 20 + 60) + '%';
+            
+            // 上の方（10%〜70%）に出現させる
+            const randomY = (Math.random() * 60 + 10) + '%'; 
+            
+            el.style.left = randomX;
+            el.style.top = randomY;
+            
+            addDragEvents(el);
+            container.appendChild(el);
+        }
+
+        function addDragEvents(el) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            const start = (e) => {
+                if (el.classList.contains('snapped')) return;
+
+                isDragging = true;
+                el.style.zIndex = 100;
+                
+                // タッチ座標の取得（ページスクロール量も考慮する必要があるが、fixed配置ではないのでclientYでOK）
+                // ただしposition:absoluteなので、親要素基準。
+                
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                
+                startX = clientX;
+                startY = clientY;
+                
+                // 現在のCSS上の位置を取得（px変換）
+                // offsetLeft/Topを使うと親要素基準の正確な値が取れる
+                initialLeft = el.offsetLeft;
+                initialTop = el.offsetTop;
+                
+                el.style.transition = 'none';
+            };
+
+            const move = (e) => {
+                if (!isDragging) return;
+                
+                // ★重要：ブロックをドラッグしている間は、画面スクロールを防ぐ
+                e.preventDefault(); 
+
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                el.style.left = (initialLeft + dx) + 'px';
+                el.style.top = (initialTop + dy) + 'px';
+                
+                // 吸着ガイド（視覚的にはfixedのspineを見る）
+                const rect = el.getBoundingClientRect();
+                const centerX = window.innerWidth / 2;
+                
+                if (Math.abs((rect.left + rect.width/2) - centerX) < 60) {
+                    spine.style.background = '#aaa';
+                    spine.style.width = '3px';
+                } else {
+                    spine.style.background = '#ccc';
+                    spine.style.width = '1px';
+                }
+            };
+
+            const end = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                // アニメーションを戻す
+                el.style.transition = 'all 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
+                el.style.zIndex = 10;
+                spine.style.background = '#ccc';
+                spine.style.width = '1px';
+
+                const rect = el.getBoundingClientRect();
+                const centerX = window.innerWidth / 2;
+
+                if (Math.abs((rect.left + rect.width/2) - centerX) < 60) {
+                    snapToSpine(el);
+                }
+            };
+
+            el.addEventListener('mousedown', start);
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+            
+            // passive: false にすることで、touchmove中のスクロールをブロックできる
+            el.addEventListener('touchstart', start, {passive: false});
+            window.addEventListener('touchmove', move, {passive: false});
+            window.addEventListener('touchend', end);
+        }
+
+        function snapToSpine(el) {
+            el.classList.add('snapped');
+            
+            const centerX = window.innerWidth / 2;
+            // 280pxの半分 = 140px
+            el.style.left = (centerX - 140) + 'px';
+            el.style.top = currentStackHeight + 'px';
+            
+            // ★ここがポイント：
+            // 積み上がって画面下にはみ出しそうなら、containerの高さを広げる
+            const estimatedHeight = 250; // 展開後の予想高さ
+            currentStackHeight += estimatedHeight;
+            
+            // 現在のスタック高さがコンテナを超えそうなら拡張
+            if (currentStackHeight > container.offsetHeight - 100) {
+                container.style.height = (currentStackHeight + 300) + 'px';
+            }
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
