@@ -40,12 +40,11 @@
             box-sizing: border-box;
         }
 
-        /* タイトルエリア */
         header {
             position: sticky; 
             right: 0; 
             top: 0;
-            z-index: 10;
+            z-index: 20; /* ヘッダーは常に手前に */
             background-color: #fcfcfc;
             padding: 0 40px 0 60px;
             scroll-snap-align: start; 
@@ -60,12 +59,10 @@
             border-left: 1px solid #ddd;
             padding-left: 40px;
             font-weight: 600;
-            height: 80%; /* 線の長さ */
-            
-            /* ▼▼▼ ここを変更しました ▼▼▼ */
+            height: 80%;
             display: flex;
-            align-items: flex-start; /* 横方向：右寄せ */
-            justify-content: center; /* 縦方向：中央揃え */
+            align-items: flex-start;
+            justify-content: center;
         }
 
         .subtitle {
@@ -81,13 +78,17 @@
             gap: 80px;
             padding-right: 60px;
             padding-left: 100px;
+            /* リスト自体の高さを確保してクリック判定を安定させる */
+            height: 100%;
+            justify-content: center;
         }
 
         .project-link {
+            position: relative; /* z-indexを効かせるため */
             display: block;
             text-decoration: none;
             color: #333;
-            transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: all 0.4s ease-out;
             scroll-snap-align: center;
             opacity: 0.4;
             filter: blur(4px);
@@ -95,13 +96,29 @@
             cursor: pointer;
             flex-shrink: 0; 
             min-height: 300px;
+            
+            /* ▼ 修正：クリック判定エリアの明確化 ▼ */
+            /* パディングをつけてタッチしやすくするが、マージンはgapで制御 */
+            padding: 10px; 
+            z-index: 1; /* 通常時は奥に */
         }
 
-        .project-link:hover,
+        /* アクティブ時（選択中） */
         .project-link.is-active {
             opacity: 1;
             filter: blur(0);
-            transform: scale(1);
+            transform: scale(1.05); /* 少し大きくして目立たせる */
+            z-index: 10; /* 最前面に出す（重要） */
+        }
+
+        /* ホバー時（PC用） */
+        @media (hover: hover) {
+            .project-link:hover {
+                opacity: 1;
+                filter: blur(0);
+                transform: scale(1);
+                z-index: 5;
+            }
         }
 
         .number {
@@ -110,6 +127,7 @@
             margin-bottom: 15px;
             font-family: monospace;
             text-orientation: sideways;
+            pointer-events: none; /* 文字自体へのクリックを親に透過させる */
         }
 
         .project-title {
@@ -118,6 +136,7 @@
             letter-spacing: 0.2em;
             margin-bottom: 20px;
             line-height: 1.4;
+            pointer-events: none;
         }
 
         .project-desc {
@@ -125,49 +144,35 @@
             color: #666;
             line-height: 2.2;
             height: 180px; 
+            pointer-events: none;
         }
 
         @media (max-width: 768px) {
-            #wrapper {
-                padding: 20px 0;
-            }
-            header {
-                padding: 0 20px 0 30px;
-            }
-            h1 {
-                font-size: 22px;
-                padding-left: 15px;
-                height: 70%;
-            }
-            .subtitle {
-                font-size: 10px;
-            }
+            #wrapper { padding: 20px 0; }
+            header { padding: 0 20px 0 30px; }
+            h1 { font-size: 22px; padding-left: 15px; height: 70%; }
+            .subtitle { font-size: 10px; }
+            
             #menu-list {
-                gap: 40px;
+                gap: 40px; /* 間隔を詰める */
                 padding-right: 30px;
                 padding-left: 60px;
             }
             .project-link {
-                scroll-snap-align: center;
                 opacity: 0.5;
                 filter: blur(3px);
                 min-height: 240px;
+                /* スマホでの誤タップ防止のためタッチ領域調整 */
+                padding: 0 10px; 
             }
-            .project-title {
-                font-size: 20px;
-            }
-            .project-desc {
-                font-size: 11px;
-                line-height: 1.8;
-                height: auto;
-            }
+            .project-title { font-size: 20px; }
+            .project-desc { font-size: 11px; line-height: 1.8; height: auto; }
         }
     </style>
 </head>
 <body>
 
     <div id="wrapper">
-        
         <header>
             <h1>
                 能動的な読書
@@ -176,14 +181,11 @@
         </header>
 
         <nav id="menu-list">
-
             <a href="page01.html" class="project-link">
                 <div class="number">01</div>
                 <div class="project-title">彷徨う文脈</div>
                 <div class="project-desc">
-                    散在する言葉を<br>
-                    物理的に集め<br>
-                    意味を構築する読み
+                    散在する言葉を<br>物理的に集め<br>意味を構築する読み
                 </div>
             </a>
 
@@ -191,9 +193,7 @@
                 <div class="number">02</div>
                 <div class="project-title">呼吸する余白</div>
                 <div class="project-desc">
-                    凝縮された黒塊から<br>
-                    可読性のある間隙を<br>
-                    探り当てる読み
+                    凝縮された黒塊から<br>可読性のある間隙を<br>探り当てる読み
                 </div>
             </a>
 
@@ -201,9 +201,7 @@
                 <div class="number">03</div>
                 <div class="project-title">揮発する記憶</div>
                 <div class="project-desc">
-                    ノイズに覆われた表層を<br>
-                    擦過し続け<br>
-                    忘却に抗う読み
+                    ノイズに覆われた表層を<br>擦過し続け<br>忘却に抗う読み
                 </div>
             </a>
 
@@ -211,9 +209,7 @@
                 <div class="number">04</div>
                 <div class="project-title">堆積する筋書き</div>
                 <div class="project-desc">
-                    偏在する断片を<br>
-                    自らの手で編み<br>
-                    物語を連ねる読み
+                    偏在する断片を<br>自らの手で編み<br>物語を連ねる読み
                 </div>
             </a>
 
@@ -221,33 +217,51 @@
                 <div class="number">05</div>
                 <div class="project-title">降り注ぐ言葉</div>
                 <div class="project-desc">
-                    零れ落ちる言葉を<br>
-                    自らの器で受け<br>
-                    意味を救い出す読み
+                    零れ落ちる言葉を<br>自らの器で受け<br>意味を救い出す読み
                 </div>
             </a>
-
         </nav>
-
     </div>
 
     <script>
         const links = document.querySelectorAll('.project-link');
 
+        // クリックイベントの制御
         links.forEach(link => {
             link.addEventListener('click', function(e) {
-                if (this.classList.contains('is-active')) {
+                // PCなどでマウスホバーができる環境、またはすでにアクティブな場合
+                if (window.matchMedia('(hover: hover)').matches || this.classList.contains('is-active')) {
+                    // そのままリンク遷移する（何もしない＝デフォルト動作）
                     return; 
                 }
-                e.preventDefault();
-                links.forEach(l => l.classList.remove('is-active'));
+
+                // スマホ（タッチ環境）で、かつアクティブでない場合
+                e.preventDefault(); // 遷移をキャンセル
+                e.stopPropagation(); // イベントのバブリングを止める（親要素への伝播防止）
+
+                // 他のすべてのアクティブを外す
+                links.forEach(l => {
+                    if (l !== this) {
+                        l.classList.remove('is-active');
+                        l.style.zIndex = 1; // 奥に戻す
+                    }
+                });
+                
+                // 自分をアクティブにする
                 this.classList.add('is-active');
+                this.style.zIndex = 10; // 最前面に出す（誤タップ防止）
             });
         });
 
+        // リンク以外をタップしたらリセット
         document.addEventListener('click', function(e) {
-            if (e.target.closest('.project-link')) return;
-            links.forEach(l => l.classList.remove('is-active'));
+            // クリックした要素がリンク自身やその子要素でなければリセット
+            if (!e.target.closest('.project-link')) {
+                links.forEach(l => {
+                    l.classList.remove('is-active');
+                    l.style.zIndex = 1;
+                });
+            }
         });
     </script>
 
