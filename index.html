@@ -19,38 +19,63 @@
             background-color: #fcfcfc;
             color: #111;
             font-family: 'Shippori Mincho', serif;
+            
+            /* ▼ 縦書き設定 ▼ */
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            
+            /* ▼ 横スクロール設定 ▼ */
             overflow-x: auto; 
             overflow-y: hidden;
+            
+            /* スクロールを滑らかに＆スナップさせる */
+            scroll-behavior: smooth;
+            scroll-snap-type: x mandatory; /* 横方向に強制スナップ */
             -webkit-overflow-scrolling: touch;
+            
             user-select: none;
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent; 
         }
 
+        /* 全体を包むラッパー（Flexボックス） */
         #wrapper {
-            width: 100%;
             height: 100%;
             display: flex;
-            flex-direction: row-reverse;
-            align-items: center;
-            justify-content: flex-start;
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            padding: 60px;
+            /* 縦書きモードでの「column」は、右から左への横並びになります */
+            flex-direction: column; 
+            align-items: center; /* 上下中央揃え */
+            padding: 60px 0; /* 上下の余白 */
             box-sizing: border-box;
+        }
+
+        /* タイトルエリア（スクロールしても右端に固定） */
+        header {
+            /* 縦書きなので right: 0 が「上端（開始位置）」に相当 */
+            position: sticky; 
+            right: 0; /* 右端に固定 */
+            top: 0;   /* 縦位置はずれないように */
+            z-index: 10;
+            background-color: #fcfcfc; /* 背景色がないと文字が透けるので */
+            padding: 0 40px 0 60px; /* 余白調整 */
+            
+            /* スナップの開始点 */
+            scroll-snap-align: start; 
+            
+            display: flex;
+            align-items: center;
+            height: 100%;
         }
 
         h1 {
             font-size: 32px;
             letter-spacing: 0.4em;
-            margin-left: 80px;
             border-left: 1px solid #ddd;
             padding-left: 40px;
             font-weight: 600;
             height: 80%;
             display: flex;
             align-items: flex-start;
-            flex-shrink: 0;
         }
 
         .subtitle {
@@ -60,89 +85,108 @@
             letter-spacing: 0.2em;
         }
 
+        /* メニューリスト（ここも横並び） */
         #menu-list {
             display: flex;
-            flex-direction: column;
-            gap: 60px;
-            padding-left: 40px;
+            flex-direction: column; /* 右から左へ並ぶ */
+            gap: 80px; /* 作品ごとの間隔を広めに */
+            padding-right: 60px; /* タイトルとの距離 */
+            padding-left: 100px; /* 最後の余白 */
         }
 
-        /* ▼▼▼ リンクのデザイン ▼▼▼ */
+        /* 作品リンク */
         .project-link {
             display: block;
             text-decoration: none;
             color: #333;
             transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
             
-            /* デフォルト：ぼかして薄くする */
+            /* スナップのポイント（画面の中央に来るように） */
+            scroll-snap-align: center;
+            
+            /* ぼかし設定 */
             opacity: 0.4;
             filter: blur(4px);
-            transform: translateX(0);
+            transform: scale(0.95);
             cursor: pointer;
+            
+            /* 幅の確保（つぶれないように） */
+            flex-shrink: 0; 
+            min-height: 300px; /* 縦書きなのでこれが「幅」に見える */
         }
 
-        /* アクティブ状態（ホバー または タップ選択中） */
+        /* アクティブ時 */
         .project-link:hover,
         .project-link.is-active {
             opacity: 1;
             filter: blur(0);
-            transform: translateX(-10px);
+            transform: scale(1);
         }
 
         .number {
-            font-size: 10px;
+            font-size: 12px;
             color: #ccc;
-            margin-bottom: 8px;
+            margin-bottom: 15px;
             font-family: monospace;
             text-orientation: sideways;
         }
 
         .project-title {
-            font-size: 24px;
+            font-size: 28px; /* 少し大きく */
             font-weight: 400;
             letter-spacing: 0.2em;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            line-height: 1.4;
         }
 
         .project-desc {
-            font-size: 12px;
+            font-size: 13px;
             color: #666;
-            line-height: 2.0;
-            min-height: 140px; 
+            line-height: 2.2;
+            height: 180px; 
         }
 
-        /* スマホ対応 */
+        /* ▼ スマホ対応 ▼ */
         @media (max-width: 768px) {
             #wrapper {
-                padding: 20px;
-                align-items: flex-start;
+                padding: 20px 0;
             }
+
+            header {
+                padding: 0 20px 0 30px;
+            }
+
             h1 {
                 font-size: 22px;
-                margin-left: 20px;
                 padding-left: 15px;
-                height: auto;
-                min-height: 60%;
+                height: 70%;
             }
+
             .subtitle {
-                font-size: 11px;
+                font-size: 10px;
             }
+
             #menu-list {
-                gap: 40px;
+                gap: 40px; /* 間隔を詰める */
+                padding-right: 30px;
+                padding-left: 60px;
             }
+
+            .project-link {
+                scroll-snap-align: center; /* 画面中央にピタッと止める */
+                opacity: 0.5;
+                filter: blur(3px);
+                min-height: 240px;
+            }
+
             .project-title {
-                font-size: 18px;
-                margin-bottom: 10px;
+                font-size: 20px;
             }
+
             .project-desc {
                 font-size: 11px;
                 line-height: 1.8;
-                min-height: auto;
-            }
-            /* スマホでも最初はしっかりぼかす */
-            .project-link {
-                opacity: 0.5;
-                filter: blur(3px);
+                height: auto;
             }
         }
     </style>
@@ -215,33 +259,22 @@
     </div>
 
     <script>
-        // すべてのリンク要素を取得
+        // 2回タップの実装
         const links = document.querySelectorAll('.project-link');
 
         links.forEach(link => {
             link.addEventListener('click', function(e) {
-                // すでにアクティブ（くっきり）なら、そのままリンク移動させる
                 if (this.classList.contains('is-active')) {
-                    return; // 通常のリンク動作（画面遷移）
+                    return; // 移動
                 }
-
-                // アクティブでない場合（ぼやけている場合）
-                e.preventDefault(); // 画面遷移を止める
-                
-                // 他のリンクのアクティブ状態を解除（一つだけ選べるようにする）
+                e.preventDefault();
                 links.forEach(l => l.classList.remove('is-active'));
-                
-                // 自分をアクティブにする
                 this.classList.add('is-active');
             });
         });
 
-        // リンク以外の場所をタップしたら、選択を解除して元の「ぼかし」に戻す
         document.addEventListener('click', function(e) {
-            // クリックした場所がリンクの中なら何もしない
             if (e.target.closest('.project-link')) return;
-
-            // リンク外なら全てのアクティブを解除
             links.forEach(l => l.classList.remove('is-active'));
         });
     </script>
