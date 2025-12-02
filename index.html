@@ -15,38 +15,45 @@
             padding: 0;
             width: 100%;
             height: 100%;
+            height: 100dvh; 
             background-color: #fcfcfc;
             color: #111;
             font-family: 'Shippori Mincho', serif;
-            overflow-x: auto; /* 横スクロール許可（縦書きなので） */
+            overflow-x: auto; 
             overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            
+            /* ▼ スマホでの長押しメニューや選択を禁止（演出のため） ▼ */
+            user-select: none;
+            -webkit-touch-callout: none;
+            /* タップ時のグレーの背景色を消す */
+            -webkit-tap-highlight-color: transparent; 
         }
 
-        /* 全体を縦書きレイアウトに */
         #wrapper {
             width: 100%;
             height: 100%;
             display: flex;
-            flex-direction: row-reverse; /* 右から左へ並べる */
+            flex-direction: row-reverse;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             writing-mode: vertical-rl;
             text-orientation: upright;
             padding: 60px;
             box-sizing: border-box;
         }
 
-        /* 研究タイトル */
         h1 {
             font-size: 32px;
             letter-spacing: 0.4em;
-            margin-left: 80px; /* 隣との余白 */
+            margin-left: 80px;
             border-left: 1px solid #ddd;
             padding-left: 40px;
             font-weight: 600;
             height: 80%;
             display: flex;
             align-items: flex-start;
+            flex-shrink: 0;
         }
 
         .subtitle {
@@ -56,31 +63,47 @@
             letter-spacing: 0.2em;
         }
 
-        /* メニューリスト */
         #menu-list {
             display: flex;
-            flex-direction: column; /* 縦書きモード内なので、実質は横並びになることもあるが、flex方向はwriting-modeに従う */
+            flex-direction: column;
             gap: 60px;
+            padding-left: 40px;
         }
 
-        /* 個別の作品リンク */
+        /* ▼▼▼ リンクのスタイル（PC/スマホ共通の基本設定） ▼▼▼ */
         .project-link {
             display: block;
             text-decoration: none;
             color: #333;
+            /* ふわっと変化させる */
             transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
             
-            /* ★初期状態：ぼかして薄くする（能動性を要求する） */
+            /* ★初期状態：ぼかして薄くする */
             opacity: 0.4;
             filter: blur(3px);
             transform: translateX(0);
+            cursor: pointer;
         }
 
-        /* ホバー時：くっきり見える */
-        .project-link:hover {
+        /* PC: ホバー時 / スマホ: タッチ中（active） */
+        .project-link:hover,
+        .project-link:active {
             opacity: 1;
             filter: blur(0);
-            transform: translateX(-10px); /* 少し浮き出る */
+            transform: translateX(-10px);
+        }
+
+        /* スマホでタッチした瞬間の反応を良くする */
+        .project-link:active {
+            transition: all 0.2s ease-out; /* 素早く反応させる */
+        }
+
+        .number {
+            font-size: 10px;
+            color: #ccc;
+            margin-bottom: 8px;
+            font-family: monospace;
+            text-orientation: sideways;
         }
 
         .project-title {
@@ -94,41 +117,46 @@
             font-size: 12px;
             color: #666;
             line-height: 2.0;
-            height: 200px; /* 説明文の長さ確保 */
+            min-height: 140px; 
         }
 
-        .number {
-            font-size: 10px;
-            color: #ccc;
-            margin-bottom: 10px;
-            font-family: monospace; /* 数字は等幅で */
-            text-orientation: sideways; /* 数字は横に寝かせる */
-        }
-
-        /* スマホ対応（縦書きを維持しつつサイズ調整） */
+        /* ▼▼▼ スマホ対応レイアウト調整 ▼▼▼ */
         @media (max-width: 768px) {
             #wrapper {
                 padding: 20px;
                 align-items: flex-start;
             }
+
             h1 {
-                font-size: 24px;
-                margin-left: 40px;
-                padding-left: 20px;
+                font-size: 22px;
+                margin-left: 20px;
+                padding-left: 15px;
+                height: auto;
+                min-height: 60%;
             }
+
+            .subtitle {
+                font-size: 11px;
+            }
+
             #menu-list {
                 gap: 40px;
             }
+
             .project-title {
                 font-size: 18px;
+                margin-bottom: 10px;
             }
-            /* スマホでは最初からある程度見えてないとタップできないので緩和 */
-            .project-link {
-                opacity: 0.7;
-                filter: blur(0.5px);
-            }
-        }
 
+            .project-desc {
+                font-size: 11px;
+                line-height: 1.8;
+                min-height: auto;
+            }
+            
+            /* スマホでも「ぼかし」を維持する設定に変更しました */
+            /* （前回のコードではここでopacity:0.8にしていましたが、今回は削除してPCと同じ設定を継承させます） */
+        }
     </style>
 </head>
 <body>
@@ -138,25 +166,9 @@
         <header>
             <h1>
                 能動的な読書
-                <span class="subtitle">卒業研究制作【仮】</span>
+                <span class="subtitle">卒業研究制作</span>
             </h1>
         </header>
-
-
-        <a href="index.html" style="
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    text-decoration: none;
-    color: #ccc;
-    font-family: 'Shippori Mincho', serif;
-    font-size: 12px;
-    z-index: 9999;
-    writing-mode: vertical-rl;
-    letter-spacing: 0.2em;
-">
-
-</a>
 
         <nav id="menu-list">
 
@@ -200,7 +212,7 @@
                 </div>
             </a>
 
-                        <a href="page05.html" class="project-link">
+            <a href="page05.html" class="project-link">
                 <div class="number">05</div>
                 <div class="project-title">降り注ぐ言葉</div>
                 <div class="project-desc">
@@ -209,7 +221,6 @@
                     意味を救い出す読み
                 </div>
             </a>
-
 
         </nav>
 
