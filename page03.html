@@ -10,26 +10,36 @@
     <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
 
     <style>
-        /* ▼▼▼ 変更点1：スクロール設定 ▼▼▼ */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
-            /* 高さを固定せず、コンテンツに合わせて伸びるようにする */
             min-height: 100%; 
-            height: auto; 
-            
             background-color: #f2f2f2;
             font-family: 'Shippori Mincho', serif;
             user-select: none;
-            
-            /* 縦スクロールは許可、横スクロールは禁止 */
             overflow-y: auto; 
-            overflow-x: hidden;
+            overflow-x: hidden; /* 横スクロール禁止 */
+            -webkit-text-size-adjust: 100%; /* スマホでの文字サイズ自動調整を防ぐ */
         }
 
-        /* ▼▼▼ 変更点2：背骨を画面に固定(fixed) ▼▼▼ */
-        /* これでスクロールしても常に画面中央にガイドが表示されます */
+        /* 戻るボタン（スマホでも押しやすい位置に） */
+        .back-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            text-decoration: none;
+            color: #aaa;
+            font-size: 12px;
+            z-index: 9999;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.2em;
+            padding: 10px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 4px;
+        }
+
+        /* 背骨（ガイド） */
         #spine {
             position: fixed; 
             top: 5%;
@@ -60,6 +70,8 @@
         .chapter-block {
             position: absolute;
             width: 240px;
+            /* ▼ スマホ対応：画面幅の85%を超えないようにする ▼ */
+            max-width: 85vw; 
             height: auto;
             min-height: 100px;
             background: #fff;
@@ -73,10 +85,7 @@
             align-items: center;
             padding: 15px 20px;
             transition: box-shadow 0.3s, transform 0.3s; 
-            /* transitionからtop/leftを外しました（ドラッグ追従性向上のためJS制御） */
-            
-            /* スマホでドラッグしやすくする */
-            touch-action: none; 
+            touch-action: none; /* 重要：ブラウザ標準のスクロールなどを無効化 */
         }
 
         .chapter-block:active {
@@ -130,6 +139,8 @@
             border-radius: 0;
             padding: 15px 25px;
             width: 280px;
+            /* スマホで接続後にはみ出さないよう調整 */
+            max-width: 90vw; 
         }
         
         .chapter-block.snapped .chapter-number {
@@ -153,17 +164,18 @@
             margin-top: 5px;
         }
         
-        /* コンテナの高さ確保用（フッター的余白） */
         #container {
             position: relative;
             width: 100%;
-            height: 100%; /* 初期高さ */
-            padding-bottom: 200px; /* 下に余白を持たせてスクロールしやすくする */
+            height: 100%; 
+            padding-bottom: 200px; 
         }
 
     </style>
 </head>
 <body>
+
+    <a href="index.html" class="back-link">目次へ戻る</a>
 
     <div id="spine"></div>
     <div id="container"></div>
@@ -204,7 +216,7 @@
                 createBlock(story);
             });
             
-            // 画面の高さを超えても大丈夫なように、初期コンテナの高さをセット
+            // 初期の高さを確保
             container.style.height = window.innerHeight + 'px';
         }
 
@@ -218,16 +230,21 @@
                 <div class="full-text">${data.full}</div>
             `;
 
-            // ランダム配置 (画面上部の見える範囲に出現させる)
-            // スクロールしないと見えない位置に出ると困るので、window.innerHeightの範囲内に収める
-            const randomX = Math.random() < 0.5 
-                ? (Math.random() * 20 + 2) + '%' 
-                : (Math.random() * 20 + 60) + '%';
+            // ▼▼▼ スマホ対応：配置計算の修正 ▼▼▼
+            // ブロックの想定幅（最大240pxだが、スマホでは画面幅による）
+            const blockWidth = Math.min(240, window.innerWidth * 0.85);
             
-            // 上の方（10%〜70%）に出現させる
+            // 画面幅からブロック幅を引いた「安全圏」の中でランダム配置
+            // これで絶対に画面外にはみ出さない
+            const safeWidth = window.innerWidth - blockWidth - 20; // 20pxは余白
+            
+            // 0 から safeWidth の間でランダム
+            const randomX = Math.random() * safeWidth + 10; // +10pxで左端の余白確保
+            
+            // 縦位置は上の方（10%〜70%）
             const randomY = (Math.random() * 60 + 10) + '%'; 
             
-            el.style.left = randomX;
+            el.style.left = randomX + 'px';
             el.style.top = randomY;
             
             addDragEvents(el);
@@ -244,17 +261,12 @@
                 isDragging = true;
                 el.style.zIndex = 100;
                 
-                // タッチ座標の取得（ページスクロール量も考慮する必要があるが、fixed配置ではないのでclientYでOK）
-                // ただしposition:absoluteなので、親要素基準。
-                
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
                 
                 startX = clientX;
                 startY = clientY;
                 
-                // 現在のCSS上の位置を取得（px変換）
-                // offsetLeft/Topを使うと親要素基準の正確な値が取れる
                 initialLeft = el.offsetLeft;
                 initialTop = el.offsetTop;
                 
@@ -264,8 +276,8 @@
             const move = (e) => {
                 if (!isDragging) return;
                 
-                // ★重要：ブロックをドラッグしている間は、画面スクロールを防ぐ
-                e.preventDefault(); 
+                // ブロックを掴んでいる間は画面スクロールを止める
+                if (e.cancelable) e.preventDefault(); 
 
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
@@ -276,7 +288,7 @@
                 el.style.left = (initialLeft + dx) + 'px';
                 el.style.top = (initialTop + dy) + 'px';
                 
-                // 吸着ガイド（視覚的にはfixedのspineを見る）
+                // 吸着ガイド
                 const rect = el.getBoundingClientRect();
                 const centerX = window.innerWidth / 2;
                 
@@ -293,7 +305,6 @@
                 if (!isDragging) return;
                 isDragging = false;
                 
-                // アニメーションを戻す
                 el.style.transition = 'all 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
                 el.style.zIndex = 10;
                 spine.style.background = '#ccc';
@@ -302,6 +313,7 @@
                 const rect = el.getBoundingClientRect();
                 const centerX = window.innerWidth / 2;
 
+                // 判定
                 if (Math.abs((rect.left + rect.width/2) - centerX) < 60) {
                     snapToSpine(el);
                 }
@@ -311,7 +323,7 @@
             window.addEventListener('mousemove', move);
             window.addEventListener('mouseup', end);
             
-            // passive: false にすることで、touchmove中のスクロールをブロックできる
+            // passive: false でスクロール防止を有効化
             el.addEventListener('touchstart', start, {passive: false});
             window.addEventListener('touchmove', move, {passive: false});
             window.addEventListener('touchend', end);
@@ -321,16 +333,22 @@
             el.classList.add('snapped');
             
             const centerX = window.innerWidth / 2;
-            // 280pxの半分 = 140px
-            el.style.left = (centerX - 140) + 'px';
+            // 要素の幅を取得してセンター合わせ（スマホ対応で幅が変わるため getBoundingClientRect を使う）
+            const rect = el.getBoundingClientRect();
+            const elWidth = rect.width;
+            
+            // スクロール分も考慮して配置するなら offsetLeft だが、
+            // ここでは絶対配置(absolute)なので親コンテナ基準
+            
+            // 中央位置の計算：画面中央 - 要素の半分
+            el.style.left = (centerX - elWidth / 2) + 'px';
             el.style.top = currentStackHeight + 'px';
             
-            // ★ここがポイント：
-            // 積み上がって画面下にはみ出しそうなら、containerの高さを広げる
-            const estimatedHeight = 250; // 展開後の予想高さ
+            // 高さを更新
+            const estimatedHeight = 250; 
             currentStackHeight += estimatedHeight;
             
-            // 現在のスタック高さがコンテナを超えそうなら拡張
+            // コンテナ拡張
             if (currentStackHeight > container.offsetHeight - 100) {
                 container.style.height = (currentStackHeight + 300) + 'px';
             }
