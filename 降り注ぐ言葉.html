@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>降り注ぐ言葉</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a2a3a;
+            color: #fff;
+            font-family: 'Shippori Mincho', serif;
+            user-select: none;
+            cursor: ew-resize;
+            transition: background-color 2s ease;
+        }
+
+        /* 完了時の背景（和紙のような生成り色） */
+        body.finished {
+            background-color: #f7f6f2; 
+            cursor: default;
+        }
+
+        .rain-char {
+            position: absolute;
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.9);
+            pointer-events: none;
+            will-change: top;
+            text-shadow: 0 0 8px rgba(255,255,255,0.6);
+        }
+
+        #catcher {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 60px;
+            border-bottom: 3px solid #fff;
+            border-left: 3px solid #fff;
+            border-right: 3px solid #fff;
+            border-radius: 0 0 15px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 1s;
+        }
+
+        #caught-text {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 16px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+            white-space: nowrap;
+        }
+
+        #archive {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            right: 40px;
+            bottom: 150px;
+            font-size: 14px;
+            line-height: 2.0;
+            color: rgba(255,255,255,0.2);
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            pointer-events: none;
+            transition: opacity 1s;
+        }
+        
+        .archive-span {
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #guide {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            font-size: 13px;
+            pointer-events: none;
+            letter-spacing: 0.2em;
+            transition: opacity 0.5s;
+        }
+
+        /* ▼▼▼ 結果表示デザイン ▼▼▼ */
+        #result-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease 0.5s;
+        }
+
+        /* 結果コンテナ（紙のようなエリア） */
+        #result-container {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            max-height: 70vh;
+            max-width: 80vw;
+            display: flex;
+            flex-wrap: wrap; /* 長すぎたら折り返す */
+            align-content: center;
+            gap: 1em;
+        }
+
+        /* 一文字ずつのアニメーション用 */
+        .res-char {
+            font-size: 32px;
+            color: #222;
+            opacity: 0; /* 最初は隠す */
+            animation: popIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* 落款とスコア */
+        #footer-info {
+            margin-top: 60px; /* 縦書きなので左側にマージン */
+            display: flex;
+            flex-direction: column; /* 縦書きの中での並び */
+            align-items: center;
+            gap: 20px;
+            opacity: 0;
+            animation: fadeInSimple 1s ease forwards;
+        }
+
+        #end-mark {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #d93a3a;
+            color: #d93a3a;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            writing-mode: horizontal-tb;
+            transform: rotate(-5deg);
+        }
+
+        #score {
+            font-size: 12px;
+            color: #888;
+            letter-spacing: 0.1em;
+            writing-mode: horizontal-tb; /* スコアは横書きで見やすく */
+        }
+
+        @keyframes fadeInSimple {
+            to { opacity: 1; }
+        }
+
+        /* 完了時の表示制御 */
+        body.finished #result-layer {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        body.finished #catcher,
+        body.finished #archive {
+            opacity: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="archive"></div>
+    <div id="guide">左右に動かして<br>言葉を受け止める</div>
+
+    <div id="catcher">
+        <div id="caught-text"></div>
+    </div>
+
+    <div id="result-layer">
+        <div id="result-container">
+            </div>
+        
+        <div id="footer-info" style="display:none;">
+            <div id="end-mark">収集<br>完了</div>
+            <div id="score"></div>
+        </div>
+    </div>
+
+    <script>
+        const textSource = "雨ニモマケズ風ニモマケズ雪ニモ夏ノ暑サニモマケヌ丈夫ナカラダヲモチ慾ハナク決シテ瞋ラズイツモシヅカニワラッテヰル";
+        
+        const catcher = document.getElementById('catcher');
+        const caughtTextDisplay = document.getElementById('caught-text');
+        const archive = document.getElementById('archive');
+        const guide = document.getElementById('guide');
+        const resultContainer = document.getElementById('result-container');
+        const footerInfo = document.getElementById('footer-info');
+        const scoreDisplay = document.getElementById('score');
+
+        let catcherX = window.innerWidth / 2;
+        let charIndex = 0;
+        let fallingChars = [];
+        let gameActive = false;
+        let isFinished = false;
+        let collectedChars = [];
+
+        const FALL_SPEED_BASE = 4.5; 
+        const SPAWN_RATE = 40; 
+        let frameCount = 0;
+
+        function init() {
+            window.addEventListener('mousemove', (e) => {
+                updateCatcherPos(e.clientX);
+                if (!gameActive && !isFinished) startGame();
+            });
+            
+            window.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                updateCatcherPos(e.touches[0].clientX);
+                if (!gameActive && !isFinished) startGame();
+            }, { passive: false });
+
+            updateCatcherPos(window.innerWidth / 2);
+            loop();
+        }
+
+        function startGame() {
+            gameActive = true;
+            guide.style.opacity = 0;
+        }
+
+        function updateCatcherPos(x) {
+            catcherX = x;
+            const limit = catcher.offsetWidth / 2;
+            if (catcherX < limit) catcherX = limit;
+            if (catcherX > window.innerWidth - limit) catcherX = window.innerWidth - limit;
+            
+            catcher.style.left = catcherX + 'px';
+        }
+
+        function spawnChar() {
+            if (charIndex >= textSource.length) return; 
+
+            const char = textSource[charIndex];
+            charIndex++;
+
+            const el = document.createElement('div');
+            el.textContent = char;
+            el.classList.add('rain-char');
+            
+            const x = Math.random() * (window.innerWidth - 60) + 30;
+            const y = -40;
+            const speed = FALL_SPEED_BASE + Math.random() * 2;
+
+            document.body.appendChild(el);
+
+            fallingChars.push({
+                el: el,
+                char: char,
+                x: x,
+                y: y,
+                speed: speed,
+                isCaught: false
+            });
+        }
+
+        function loop() {
+            if (isFinished) return;
+            requestAnimationFrame(loop);
+
+            if (gameActive && charIndex >= textSource.length && fallingChars.length === 0) {
+                finishGame();
+                return;
+            }
+
+            if (!gameActive) return;
+
+            frameCount++;
+            if (frameCount % SPAWN_RATE === 0) {
+                spawnChar();
+            }
+
+            const catcherRect = catcher.getBoundingClientRect();
+            const hitTop = catcherRect.top;
+            const hitBottom = catcherRect.top + 30;
+            const hitLeft = catcherRect.left;
+            const hitRight = catcherRect.right;
+
+            for (let i = fallingChars.length - 1; i >= 0; i--) {
+                const p = fallingChars[i];
+                p.y += p.speed;
+                p.el.style.top = p.y + 'px';
+                p.el.style.left = p.x + 'px';
+
+                if (!p.isCaught && p.y >= hitTop && p.y <= hitBottom) {
+                    if (p.x >= hitLeft && p.x <= hitRight) {
+                        catchChar(p, i);
+                        continue;
+                    }
+                }
+
+                if (p.y > window.innerHeight) {
+                    p.el.remove();
+                    fallingChars.splice(i, 1);
+                }
+            }
+        }
+
+        function catchChar(p, index) {
+            p.isCaught = true;
+            p.el.remove();
+            fallingChars.splice(index, 1);
+
+            const span = document.createElement('span');
+            span.textContent = p.char;
+            span.classList.add('archive-span');
+            archive.appendChild(span);
+            
+            caughtTextDisplay.textContent = p.char;
+            collectedChars.push(p.char);
+
+            catcher.style.background = "rgba(255,255,255,0.6)";
+            setTimeout(() => {
+                catcher.style.background = "rgba(255,255,255,0.1)";
+            }, 100);
+        }
+
+        function finishGame() {
+            isFinished = true;
+            document.body.classList.add('finished');
+
+            // 集めた文字を一文字ずつ生成してアニメーション
+            collectedChars.forEach((char, i) => {
+                const span = document.createElement('div');
+                span.textContent = char;
+                span.classList.add('res-char');
+                // 一文字ずつ遅れて表示させる（余韻）
+                span.style.animationDelay = `${i * 0.1 + 1.0}s`; // 1秒後から開始
+                resultContainer.appendChild(span);
+            });
+
+            // 最後にハンコとスコアを表示
+            const totalDelay = collectedChars.length * 0.1 + 2.0;
+            footerInfo.style.display = 'flex';
+            footerInfo.style.animationDelay = `${totalDelay}s`;
+            
+            scoreDisplay.textContent = `${textSource.length}文字中 ${collectedChars.length}文字を収集`;
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
