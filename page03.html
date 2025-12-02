@@ -145,3 +145,153 @@
 
     <div id="intro-overlay">
         <h1>揮発する記憶</h1>
+        
+        <div class="instruction-text">
+            記憶は揮発性を帯びています。<br>
+            <br>
+            白い霧を指で拭うことで、<br>
+            一時的にその形を留めることができます。<br>
+            <br>
+            手を止めれば、<br>
+            即座に白へと還ります。
+        </div>
+
+        <button id="start-btn">記憶に触れる</button>
+    </div>
+
+
+    <div id="content-layer">
+        <div id="text-inner">
+            人は忘却に抗えない。<br>
+            <br>
+            この言葉もまた、<br>
+            あなたが手を離した瞬間に<br>
+            白い静寂の向こう側へと<br>
+            消え失せるだろう。<br>
+            <br>
+            ただ、今この瞬間だけ、<br>
+            その意味を焼き付ける。<br>
+        </div>
+    </div>
+
+    <canvas id="fog-canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('fog-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const introOverlay = document.getElementById('intro-overlay');
+        const startBtn = document.getElementById('start-btn');
+
+        // パラメータ調整
+        const RECOVERY_SPEED = 0.06; // 白く戻る速度
+        const SCRATCH_RADIUS = 60;   // 拭う太さ
+
+        let isDrawing = false;
+        let lastPoint = null;
+        let isGameStarted = false;
+
+        function init() {
+            resize();
+            // 初期状態は真っ白
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        startBtn.addEventListener('click', () => {
+            introOverlay.style.opacity = 0;
+            setTimeout(() => {
+                introOverlay.style.display = 'none';
+            }, 1500);
+
+            canvas.style.opacity = 1;
+            isGameStarted = true;
+            loop();
+        });
+
+        // リサイズ対応（スマホの回転なども考慮）
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // リサイズするとキャンバスが消えるので白く塗り直す
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function loop() {
+            if (!isGameStarted) return;
+            requestAnimationFrame(loop);
+
+            // 霧を重ねる処理
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = `rgba(255, 255, 255, ${RECOVERY_SPEED})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function startDraw(e) {
+            if (!isGameStarted) return;
+            isDrawing = true;
+            
+            const { x, y } = getPos(e);
+            lastPoint = { x, y };
+            scratch(x, y);
+        }
+
+        function moveDraw(e) {
+            if (!isDrawing) return;
+            // スマホでのスクロールを防止
+            if (e.cancelable) e.preventDefault(); 
+            
+            const { x, y } = getPos(e);
+            scratch(x, y);
+        }
+
+        function endDraw() {
+            isDrawing = false;
+            lastPoint = null;
+        }
+
+        function scratch(x, y) {
+            ctx.globalCompositeOperation = 'destination-out'; 
+            ctx.beginPath();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#000';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = SCRATCH_RADIUS;
+            
+            if (lastPoint) {
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(x, y);
+            } else {
+                ctx.arc(x, y, SCRATCH_RADIUS / 2, 0, Math.PI * 2);
+            }
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            lastPoint = { x, y };
+        }
+
+        function getPos(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        // イベントリスナー
+        window.addEventListener('mousedown', startDraw);
+        window.addEventListener('mousemove', moveDraw);
+        window.addEventListener('mouseup', endDraw);
+        
+        // スマホ用イベント（passive: falseでpreventDefaultを有効化）
+        window.addEventListener('touchstart', startDraw, { passive: false });
+        window.addEventListener('touchmove', moveDraw, { passive: false });
+        window.addEventListener('touchend', endDraw);
+        
+        window.addEventListener('resize', resize);
+
+        init();
+
+    </script>
+</body>
+</html>
