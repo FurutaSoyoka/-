@@ -15,13 +15,36 @@
             padding: 0;
             width: 100%;
             height: 100%;
+            /* スマホのアドレスバー対策 */
+            height: 100dvh; 
             overflow: hidden;
             background-color: #f4f4f4;
             font-family: 'Shippori Mincho', serif;
             user-select: none;
             cursor: default;
+            /* スマホでの長押しメニューなどを無効化 */
+            -webkit-touch-callout: none;
+            /* スクロール等の動作をCSSレベルで禁止 */
+            touch-action: none; 
         }
 
+        /* 戻るボタン */
+        .back-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            text-decoration: none;
+            color: #ccc;
+            font-size: 12px;
+            z-index: 9999;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.2em;
+            padding: 10px;
+            background: rgba(244, 244, 244, 0.8);
+            border-radius: 4px;
+        }
+
+        /* 中央のドロップゾーン */
         #drop-zone {
             position: absolute;
             top: 50%;
@@ -36,6 +59,7 @@
             align-items: center;
             z-index: 0;
             transition: all 0.5s;
+            pointer-events: none; /* ドロップゾーン自体はクリックできなくていい */
         }
         
         #drop-zone::after {
@@ -46,6 +70,7 @@
             letter-spacing: 0.3em;
         }
 
+        /* 完了時のドロップゾーン */
         body.completed #drop-zone {
             border-color: transparent;
         }
@@ -53,56 +78,41 @@
             opacity: 0;
         }
 
+        /* 文字のスタイル */
         .char {
             position: absolute;
             font-size: 2.2rem;
-            color: rgba(0, 0, 0, 0.4);
+            color: rgba(0, 0, 0, 0.4); /* 漂っているときは薄く */
             cursor: grab;
-            padding: 30px;
-            touch-action: none;
+            padding: 30px; /* タッチ領域を広めに確保 */
+            touch-action: none; /* 重要：ここでのタッチ操作を独自に扱う */
             z-index: 10;
             
-            /* アニメーション設定 */
-            animation-name: float;
-            animation-iteration-count: infinite;
-            animation-timing-function: ease-in-out;
-            /* durationなどはJSでランダム設定 */
-            
-            transition: color 0.3s, opacity 0.3s; 
+            /* JSで物理演算するのでCSSアニメーションはなし */
+            will-change: transform, left, top;
         }
 
+        /* ドラッグ中 */
         .char.dragging {
-            animation: none; 
-            color: rgba(0, 0, 0, 0.8);
+            color: rgba(0, 0, 0, 0.8); /* 色を濃く */
             z-index: 100;
             cursor: grabbing;
-            transform: scale(1.2) rotate(0deg) !important;
+            transform: scale(1.2) !important; 
         }
 
+        /* 正しい位置にハマった時 */
         .char.locked {
-            animation: none;
-            color: #000;
+            color: #000; /* くっきり黒 */
             pointer-events: none;
             transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
             z-index: 1;
         }
 
-        @keyframes float {
-            0% {
-                transform: translate(0, 0) rotate(var(--r));
-            }
-            50% {
-                /* ここで大きく動く */
-                transform: translate(var(--mx), var(--my)) rotate(calc(var(--r) + 15deg));
-            }
-            100% {
-                transform: translate(0, 0) rotate(var(--r));
-            }
-        }
-
     </style>
 </head>
 <body>
+
+    <a href="index.html" class="back-link">目次へ戻る</a>
 
     <div id="drop-zone"></div>
     <div id="container"></div>
@@ -111,8 +121,12 @@
         const text = "意味を拾う旅"; 
         const container = document.getElementById('container');
         let lockedCount = 0;
+        
+        // 文字ごとの物理データを管理する配列
+        const charsData = [];
 
         function init() {
+            // 縦書き配置のための計算
             const totalHeight = text.length * 55; 
             const startY = window.innerHeight / 2 - totalHeight / 2;
 
@@ -121,68 +135,114 @@
                 span.textContent = char;
                 span.classList.add('char');
                 
-                let randomX, randomY;
-                do {
-                    randomX = Math.random() * (window.innerWidth - 80);
-                    randomY = Math.random() * (window.innerHeight - 80);
-                } while (
-                    randomX > window.innerWidth/2 - 150 && 
-                    randomX < window.innerWidth/2 + 150
-                );
-
-                span.style.left = randomX + 'px';
-                span.style.top = randomY + 'px';
-
-                // ▼▼▼ 調整箇所：動きを大きくしました ▼▼▼
+                // --- 初期配置（スマホ対応） ---
+                // 画面端ギリギリにならないようにマージン（60px）を取る
+                let x = Math.random() * (window.innerWidth - 60);
+                let y = Math.random() * (window.innerHeight - 60);
                 
-                // 1. 回転のバラつきを大きく（-60度 〜 60度）
-                const randomRotate = (Math.random() - 0.5) * 120; 
-                span.style.setProperty('--r', `${randomRotate}deg`);
-                
-                // 2. 移動範囲を大きく（-60px 〜 60px）
-                // ※前回の3倍くらい動きます
-                const moveRange = 120; 
-                const moveX = (Math.random() - 0.5) * moveRange + 'px';
-                const moveY = (Math.random() - 0.5) * moveRange + 'px';
-                span.style.setProperty('--mx', moveX);
-                span.style.setProperty('--my', moveY);
+                // 初期速度
+                let vx = (Math.random() - 0.5) * 1.5;
+                let vy = (Math.random() - 0.5) * 1.5;
 
-                // 3. 速度にもっとバラつきを持たせる（3秒〜8秒）
-                span.style.animationDuration = (3 + Math.random() * 5) + 's';
-                span.style.animationDelay = (Math.random() * -5) + 's';
+                // 初期回転
+                let rotation = (Math.random() - 0.5) * 360;
+                let vRot = (Math.random() - 0.5) * 0.2;
 
-                // ▲▲▲ 調整ここまで ▲▲▲
+                span.style.left = x + 'px';
+                span.style.top = y + 'px';
+                span.style.transform = `rotate(${rotation}deg)`;
 
+                // 正解位置
                 span.dataset.targetX = window.innerWidth / 2 - 20; 
                 span.dataset.targetY = startY + (i * 65); 
 
                 container.appendChild(span);
-                addDragEvents(span);
+                addDragEvents(span, i); // インデックスを渡す
+
+                // データ保存
+                charsData.push({
+                    el: span,
+                    x: x,
+                    y: y,
+                    vx: vx,
+                    vy: vy,
+                    rotation: rotation,
+                    vRot: vRot,
+                    isDragging: false,
+                    isLocked: false
+                });
             });
+
+            // アニメーションループ開始
+            requestAnimationFrame(animate);
         }
 
-        function addDragEvents(el) {
-            let isDragging = false;
-            let startX, startY, initialLeft, initialTop;
+        // 物理演算ループ（バウンド処理）
+        function animate() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            charsData.forEach(p => {
+                if (p.isDragging || p.isLocked) return;
+
+                // 位置更新
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rotation += p.vRot;
+
+                // 壁の判定（跳ね返り）
+                // 左右の壁（文字サイズ約50pxを考慮）
+                if (p.x < 0) {
+                    p.x = 0;
+                    p.vx *= -1;
+                } else if (p.x > w - 50) { 
+                    p.x = w - 50;
+                    p.vx *= -1;
+                }
+
+                // 上下の壁
+                if (p.y < 0) {
+                    p.y = 0;
+                    p.vy *= -1;
+                } else if (p.y > h - 50) {
+                    p.y = h - 50;
+                    p.vy *= -1;
+                }
+
+                // 画面に適用
+                p.el.style.left = p.x + 'px';
+                p.el.style.top = p.y + 'px';
+                p.el.style.transform = `rotate(${p.rotation}deg)`;
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function addDragEvents(el, index) {
+            let startX, startY;
+            const data = charsData[index]; 
 
             const start = (e) => {
-                if (el.classList.contains('locked')) return;
+                if (data.isLocked) return;
                 
-                isDragging = true;
+                data.isDragging = true;
                 el.classList.add('dragging');
                 
+                // ドラッグ中は回転リセット
+                el.style.transform = 'scale(1.2) rotate(0deg)';
+                
+                // タッチ・マウス座標の取得
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
                 startX = clientX;
                 startY = clientY;
-                
-                initialLeft = parseFloat(el.style.left);
-                initialTop = parseFloat(el.style.top);
             };
 
             const move = (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
+                if (!data.isDragging) return;
+                
+                // ★スマホでのスクロールを防止（重要）
+                if(e.cancelable) e.preventDefault(); 
 
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
@@ -190,40 +250,59 @@
                 const dx = clientX - startX;
                 const dy = clientY - startY;
 
-                el.style.left = `${initialLeft + dx}px`;
-                el.style.top = `${initialTop + dy}px`;
+                // データを直接更新
+                data.x += dx;
+                data.y += dy;
+
+                el.style.left = `${data.x}px`;
+                el.style.top = `${data.y}px`;
+
+                // 次の計算のために座標更新
+                startX = clientX;
+                startY = clientY;
             };
 
             const end = () => {
-                if (!isDragging) return;
-                isDragging = false;
+                if (!data.isDragging) return;
+                data.isDragging = false;
                 el.classList.remove('dragging');
 
+                // ドロップ判定
                 const rect = el.getBoundingClientRect();
                 const centerX = window.innerWidth / 2;
                 const centerY = window.innerHeight / 2;
                 
+                // 中心からの距離
                 const dist = Math.hypot(rect.left + rect.width/2 - centerX, rect.top + rect.height/2 - centerY);
 
                 if (dist < 120) {
-                    snapToTarget(el);
+                    snapToTarget(el, data);
+                } else {
+                    // 何もしなければ、そのまま漂い続ける
                 }
             };
 
+            // マウスイベント
             el.addEventListener('mousedown', start);
             window.addEventListener('mousemove', move);
             window.addEventListener('mouseup', end);
 
+            // タッチイベント（passive: falseでスクロール防止を有効化）
             el.addEventListener('touchstart', start, {passive: false});
             window.addEventListener('touchmove', move, {passive: false});
             window.addEventListener('touchend', end);
         }
 
-        function snapToTarget(el) {
+        function snapToTarget(el, data) {
+            data.isLocked = true;
+            
             el.style.left = el.dataset.targetX + 'px';
             el.style.top = el.dataset.targetY + 'px';
+            
+            // 重要：transformをリセットして縦書きスタイルへ
             el.style.transform = 'translate(0,0) rotate(0deg)';
             el.style.writingMode = 'vertical-rl';
+            
             el.classList.add('locked');
             
             lockedCount++;
@@ -232,7 +311,14 @@
             }
         }
 
+        // 画面サイズ変更時（回転など）の対応
+        window.addEventListener('resize', () => {
+            // 文字が画面外に出ないように補正する処理などを入れるとさらに親切だが、
+            // 今回はバウンド処理（animate関数）が自動的に画面内に戻してくれるのでOK
+        });
+
         init();
+
     </script>
 </body>
 </html>
