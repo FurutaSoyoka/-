@@ -73,3 +73,225 @@
         }
 
         body.completed #drop-zone {
+            border-color: transparent;
+        }
+        body.completed #drop-zone::after {
+            opacity: 0;
+        }
+
+        /* 文字のスタイル */
+        .char {
+            position: absolute;
+            font-size: 2.2rem;
+            color: rgba(0, 0, 0, 0.4); 
+            cursor: grab;
+            padding: 30px; /* タッチ領域を広めに確保 */
+            touch-action: none; /* 重要：ここでのタッチ操作を独自に扱う */
+            z-index: 10;
+            
+            /* アニメーション設定 */
+            animation-name: float;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+            
+            transition: color 0.3s, opacity 0.3s; 
+        }
+
+        /* ドラッグ中 */
+        .char.dragging {
+            animation: none; /* ドラッグ中は浮遊停止 */
+            color: rgba(0, 0, 0, 0.8); 
+            z-index: 100;
+            cursor: grabbing;
+            transform: scale(1.2) rotate(0deg) !important; 
+        }
+
+        /* 正しい位置にハマった時 */
+        .char.locked {
+            animation: none;
+            color: #000; 
+            pointer-events: none;
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(var(--r));
+            }
+            50% {
+                /* ランダムな移動量 */
+                transform: translate(var(--mx), var(--my)) rotate(calc(var(--r) + 15deg));
+            }
+            100% {
+                transform: translate(0, 0) rotate(var(--r));
+            }
+        }
+
+        /* スマホ向けのサイズ調整 */
+        @media (max-width: 768px) {
+            .char {
+                font-size: 1.8rem; /* 少し小さく */
+                padding: 20px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">目次へ戻る</a>
+
+    <div id="drop-zone"></div>
+    <div id="container"></div>
+
+    <script>
+        const text = "意味を拾う旅"; 
+        const container = document.getElementById('container');
+        let lockedCount = 0;
+
+        function init() {
+            // 縦書き配置のための計算
+            const totalHeight = text.length * 55; 
+            const startY = window.innerHeight / 2 - totalHeight / 2;
+
+            text.split('').forEach((char, i) => {
+                const span = document.createElement('div');
+                span.textContent = char;
+                span.classList.add('char');
+                
+                // --- 1. 初期配置（スマホ対応） ---
+                // 画面端ギリギリにならないようにマージン（約60px）を取る
+                // 文字サイズ分を引いた範囲でランダムにする
+                const safeWidth = window.innerWidth - 60;
+                const safeHeight = window.innerHeight - 60;
+
+                let randomX, randomY;
+                
+                // 中央（ドロップゾーン）を避けて配置するループ
+                do {
+                    randomX = Math.random() * safeWidth;
+                    randomY = Math.random() * safeHeight;
+                } while (
+                    // 画面中央付近ならやり直し
+                    randomX > window.innerWidth/2 - 120 && 
+                    randomX < window.innerWidth/2 + 120
+                );
+
+                span.style.left = randomX + 'px';
+                span.style.top = randomY + 'px';
+
+                // --- 2. 浮遊アニメーション用のランダム値 ---
+                const randomRotate = (Math.random() - 0.5) * 120; 
+                span.style.setProperty('--r', `${randomRotate}deg`);
+                
+                const moveRange = 80; // スマホだと動きすぎると画面外に出るので少し抑えめ
+                const moveX = (Math.random() - 0.5) * moveRange + 'px';
+                const moveY = (Math.random() - 0.5) * moveRange + 'px';
+                span.style.setProperty('--mx', moveX);
+                span.style.setProperty('--my', moveY);
+
+                span.style.animationDuration = (3 + Math.random() * 5) + 's';
+                span.style.animationDelay = (Math.random() * -5) + 's';
+
+                // --- 3. 正解位置 ---
+                span.dataset.targetX = window.innerWidth / 2 - 20; 
+                span.dataset.targetY = startY + (i * 65); 
+
+                container.appendChild(span);
+                addDragEvents(span);
+            });
+        }
+
+        function addDragEvents(el) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            const start = (e) => {
+                if (el.classList.contains('locked')) return;
+                
+                isDragging = true;
+                el.classList.add('dragging');
+                
+                // タッチ・マウス座標の取得
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                startX = clientX;
+                startY = clientY;
+                
+                // 現在の位置（style属性から数値を取得）
+                initialLeft = parseFloat(el.style.left);
+                initialTop = parseFloat(el.style.top);
+            };
+
+            const move = (e) => {
+                if (!isDragging) return;
+                
+                // ★スマホでの画面スクロールを防止（重要）
+                if(e.cancelable) e.preventDefault(); 
+
+                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                el.style.left = `${initialLeft + dx}px`;
+                el.style.top = `${initialTop + dy}px`;
+            };
+
+            const end = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                el.classList.remove('dragging');
+
+                // ドロップ判定
+                const rect = el.getBoundingClientRect();
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                
+                const dist = Math.hypot(rect.left + rect.width/2 - centerX, rect.top + rect.height/2 - centerY);
+
+                if (dist < 120) {
+                    snapToTarget(el);
+                }
+            };
+
+            // マウスイベント
+            el.addEventListener('mousedown', start);
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+
+            // タッチイベント（passive: falseでスクロール防止を有効化）
+            el.addEventListener('touchstart', start, {passive: false});
+            window.addEventListener('touchmove', move, {passive: false});
+            window.addEventListener('touchend', end);
+        }
+
+        function snapToTarget(el) {
+            el.style.left = el.dataset.targetX + 'px';
+            el.style.top = el.dataset.targetY + 'px';
+            
+            // アニメーション用の変数をリセットして固定
+            el.style.transform = 'translate(0,0) rotate(0deg)';
+            el.style.animation = 'none';
+            el.style.writingMode = 'vertical-rl';
+            
+            el.classList.add('locked');
+            
+            lockedCount++;
+            if (lockedCount === text.length) {
+                document.body.classList.add('completed');
+            }
+        }
+
+        // 画面リサイズ時の対応（念のため）
+        window.addEventListener('resize', () => {
+            // 必要であればここに再配置処理などを入れる
+        });
+
+        init();
+
+    </script>
+</body>
+</html>
