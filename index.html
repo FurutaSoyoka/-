@@ -44,7 +44,7 @@
             position: sticky; 
             right: 0; 
             top: 0;
-            z-index: 20; /* ヘッダーは常に手前に */
+            z-index: 20;
             background-color: #fcfcfc;
             padding: 0 40px 0 60px;
             scroll-snap-align: start; 
@@ -62,7 +62,7 @@
             height: 80%;
             display: flex;
             align-items: flex-start;
-            justify-content: center;
+            justify-content: center; /* タイトルも上下中央 */
         }
 
         .subtitle {
@@ -78,14 +78,19 @@
             gap: 80px;
             padding-right: 60px;
             padding-left: 100px;
-            /* リスト自体の高さを確保してクリック判定を安定させる */
             height: 100%;
             justify-content: center;
         }
 
+        /* ▼▼▼ リンクのデザイン変更点 ▼▼▼ */
         .project-link {
-            position: relative; /* z-indexを効かせるため */
-            display: block;
+            position: relative;
+            /* Flexボックスにして中身を中央揃えにする */
+            display: flex; 
+            flex-direction: column; /* 縦書きモードでは右から左へ並ぶ */
+            justify-content: center; /* 水平方向（右左）の中央 */
+            align-items: center;     /* 垂直方向（上下）の中央 ★ここが重要 */
+            
             text-decoration: none;
             color: #333;
             transition: all 0.4s ease-out;
@@ -96,22 +101,17 @@
             cursor: pointer;
             flex-shrink: 0; 
             min-height: 300px;
-            
-            /* ▼ 修正：クリック判定エリアの明確化 ▼ */
-            /* パディングをつけてタッチしやすくするが、マージンはgapで制御 */
             padding: 10px; 
-            z-index: 1; /* 通常時は奥に */
+            z-index: 1;
         }
 
-        /* アクティブ時（選択中） */
         .project-link.is-active {
             opacity: 1;
             filter: blur(0);
-            transform: scale(1.05); /* 少し大きくして目立たせる */
-            z-index: 10; /* 最前面に出す（重要） */
+            transform: scale(1.05);
+            z-index: 10;
         }
 
-        /* ホバー時（PC用） */
         @media (hover: hover) {
             .project-link:hover {
                 opacity: 1;
@@ -127,7 +127,7 @@
             margin-bottom: 15px;
             font-family: monospace;
             text-orientation: sideways;
-            pointer-events: none; /* 文字自体へのクリックを親に透過させる */
+            pointer-events: none;
         }
 
         .project-title {
@@ -144,6 +144,9 @@
             color: #666;
             line-height: 2.2;
             height: 180px; 
+            /* Flexアイテムとして中央揃えされるので、テキスト自体の配置も調整 */
+            display: flex;
+            align-items: center; /* 説明文自体も上下中央に */
             pointer-events: none;
         }
 
@@ -154,7 +157,7 @@
             .subtitle { font-size: 10px; }
             
             #menu-list {
-                gap: 40px; /* 間隔を詰める */
+                gap: 40px; 
                 padding-right: 30px;
                 padding-left: 60px;
             }
@@ -162,11 +165,10 @@
                 opacity: 0.5;
                 filter: blur(3px);
                 min-height: 240px;
-                /* スマホでの誤タップ防止のためタッチ領域調整 */
                 padding: 0 10px; 
             }
             .project-title { font-size: 20px; }
-            .project-desc { font-size: 11px; line-height: 1.8; height: auto; }
+            .project-desc { font-size: 11px; line-height: 1.8; height: auto; min-height: 140px; }
         }
     </style>
 </head>
@@ -226,36 +228,27 @@
     <script>
         const links = document.querySelectorAll('.project-link');
 
-        // クリックイベントの制御
         links.forEach(link => {
             link.addEventListener('click', function(e) {
-                // PCなどでマウスホバーができる環境、またはすでにアクティブな場合
                 if (window.matchMedia('(hover: hover)').matches || this.classList.contains('is-active')) {
-                    // そのままリンク遷移する（何もしない＝デフォルト動作）
                     return; 
                 }
+                e.preventDefault(); 
+                e.stopPropagation(); 
 
-                // スマホ（タッチ環境）で、かつアクティブでない場合
-                e.preventDefault(); // 遷移をキャンセル
-                e.stopPropagation(); // イベントのバブリングを止める（親要素への伝播防止）
-
-                // 他のすべてのアクティブを外す
                 links.forEach(l => {
                     if (l !== this) {
                         l.classList.remove('is-active');
-                        l.style.zIndex = 1; // 奥に戻す
+                        l.style.zIndex = 1; 
                     }
                 });
                 
-                // 自分をアクティブにする
                 this.classList.add('is-active');
-                this.style.zIndex = 10; // 最前面に出す（誤タップ防止）
+                this.style.zIndex = 10; 
             });
         });
 
-        // リンク以外をタップしたらリセット
         document.addEventListener('click', function(e) {
-            // クリックした要素がリンク自身やその子要素でなければリセット
             if (!e.target.closest('.project-link')) {
                 links.forEach(l => {
                     l.classList.remove('is-active');
