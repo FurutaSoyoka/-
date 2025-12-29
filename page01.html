@@ -23,7 +23,6 @@
             touch-action: none;
         }
 
-        /* 中央のドロップエリア */
         #drop-zone {
             position: absolute;
             top: 50%;
@@ -43,7 +42,6 @@
             }
         }
 
-        /* スタートボタン */
         #start-btn {
             position: absolute;
             top: 50%;
@@ -69,7 +67,6 @@
             transform: translate(-50%, -50%) scale(0.95) !important; 
         }
         
-        /* ガイドメッセージ */
         #guide-message {
             position: absolute;
             top: 50%;
@@ -85,30 +82,35 @@
             z-index: 0;
         }
 
-        /* 題名と著者名（最後に表示） */
+        /* 題名と著者名 */
         #finale-container {
             position: absolute;
-            top: 50%;
-            right: 5%; /* 画面端ギリギリに配置 */
-            transform: translateY(-50%);
+            /* ★変更：中央揃え(50%)をやめて、上揃え(20%)に変更 */
+            top: 18%; 
+            right: 8%; /* ★変更：右端の余白を少し広めに */
             writing-mode: vertical-rl;
             opacity: 0;
             transition: opacity 3s ease-in-out;
             z-index: 5;
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem; /* 題名と著者名の間隔 */
             pointer-events: none;
+            /* transform: translateY(-50%); これを削除して上固定にする */
         }
         .title-text { font-size: 1.8rem; color: #111; letter-spacing: 0.2em; }
-        .author-text { font-size: 1rem; color: #444; letter-spacing: 0.2em; margin-top: 2rem; }
+        .author-text { font-size: 1rem; color: #444; letter-spacing: 0.2em; margin-top: 3rem; }
 
         @media (max-width: 600px) {
+            /* スマホ時の調整 */
+            #finale-container { 
+                top: 18%;
+                right: 5%; 
+                gap: 0.8rem; 
+            }
             .title-text { font-size: 1.4rem; }
-            .author-text { font-size: 0.9rem; margin-top: 1rem; }
-            #finale-container { right: 3%; gap: 0.5rem; }
+            .author-text { font-size: 0.9rem; margin-top: 2rem; }
         }
 
-        /* 文字の基本スタイル */
         .char {
             position: absolute;
             font-size: 1.6rem;
@@ -118,16 +120,17 @@
             touch-action: none;
             z-index: 10;
             font-weight: 500;
+            
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            
             transition: top 1s cubic-bezier(0.16, 1, 0.3, 1), left 1s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s, transform 0.5s;
         }
 
-        /* スマホ調整：10行入るように文字を小さく */
         @media (max-width: 600px) {
             .char { 
-                font-size: 1.1rem; /* 少し小さく */
+                font-size: 1.1rem; 
                 padding: 15px; 
             }
         }
@@ -153,14 +156,12 @@
             z-index: 1;
         }
 
-        /* ★完成した行を消すためのクラス */
         .char.locked.invisible-line { 
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.9); /* 少し縮んで消える */
+            transform: translate(-50%, -50%) scale(0.9);
             transition: opacity 1.5s, transform 1.5s;
         }
 
-        /* ★最後に全員復活するためのクラス */
         .char.locked.clarified { 
             opacity: 1 !important; 
             transform: translate(-50%, -50%) scale(1) !important;
@@ -174,7 +175,7 @@
 
     <div id="drop-zone"></div>
     <div id="start-btn">物語を紡ぐ</div>
-    <div id="guide-message">文字を中央へ集めよ</div>
+    <div id="guide-message">中央へ集めよ</div>
     
     <div id="finale-container">
         <div class="title-text">私と小鳥と鈴と</div>
@@ -184,7 +185,6 @@
     <div id="container"></div>
 
     <script>
-        // 金子みすゞ『私と小鳥と鈴と』
         const story = [
             "私が両手をひろげても、",
             "お空はちっとも飛べないが、",
@@ -238,25 +238,30 @@
             const centerY = window.innerHeight / 2;
             const _isMobile = isMobile();
 
-            // ★レイアウト計算：全10行を画面中央に美しく配置する
-            // 最後の「全員集合」の時に真ん中に来るように計算します
-            
-            // 行間設定（スマホは詰め込む）
             const lineHeight = _isMobile ? 32 : 60; 
             const charHeight = _isMobile ? 30 : 50;
 
-            // 全体の幅を計算
             const totalWidth = story.length * lineHeight;
             
-            // 全体の中央開始位置（一番右の行のX座標）
-            // 画面中央 + (全体幅 / 2) - 余白調整
-            const blockStartX = centerX + (totalWidth / 2) - (lineHeight / 2);
+            // ★変更：本文ブロックを全体的に左へシフトする（題名との隙間を作るため）
+            // スマホなら少し、PCなら多めにシフト
+            const shiftLeft = _isMobile ? 30 : 80; 
+            const blockStartX = (centerX + (totalWidth / 2) - (lineHeight / 2)) - shiftLeft;
 
-            // 現在の行のX座標
             const startX = blockStartX - (lineIndex * lineHeight); 
             
-            // Y座標（文字数に応じて中央寄せ）
-            const startY = centerY - (text.length * charHeight) / 2;
+            // ★変更：上揃え（Top Align）に変更
+            // 画面上部から18%の位置を開始点とする
+            const topMargin = window.innerHeight * 0.18;
+            
+            // 縦書きなので、文字のY座標は「開始位置 + 文字のインデックス * 文字高さ」
+            // 文字の中心ではなく、頭を揃える
+            const startY = topMargin + (text.length * charHeight) / 2; 
+            // ※ transform(-50%, -50%)がかかっているため、中心座標を渡す必要がある
+            //   本来の「上端」は topMargin。
+            //   0文字目の中心 = topMargin + (charHeight/2)
+            //   i文字目の中心 = topMargin + (charHeight * i) + (charHeight/2)
+            //   ただ、前のコードのロジックを活かすなら、下記のように個別に計算します。
 
             text.split('').forEach((char, i) => {
                 const span = document.createElement('div');
@@ -264,8 +269,14 @@
                 span.classList.add('char');
                 span.style.top = '50%';
                 span.style.left = '50%';
+                
                 span.dataset.targetX = startX;
-                span.dataset.targetY = startY + (i * charHeight);
+                
+                // ★上揃えのY座標計算
+                // 上のマージン + (何文字目か * 文字の高さ)
+                // transformのズレ補正はCSS任せで、ここでは「その文字の中心が来るべきY」を指定
+                const exactY = topMargin + (i * charHeight);
+                span.dataset.targetY = exactY;
                 
                 container.appendChild(span);
                 currentLineChars.push(span);
@@ -280,24 +291,18 @@
         function showFinale() {
             guideMsg.style.opacity = 0;
 
-            // 1. タイトルを表示（少し早めに）
             setTimeout(() => {
                 finaleContainer.style.opacity = 1;
             }, 500);
 
-            // 2. 全ての消えていた文字を一斉に復活させる
-            // ランダムな順序でフワフワと浮き上がらせる
-            
-            // 配列をシャッフルするためのコピーを作成
             let shuffledChars = [...allLockedChars];
             shuffledChars.sort(() => Math.random() - 0.5);
 
             shuffledChars.forEach((char, index) => {
                 setTimeout(() => {
-                    // invisible-lineを外してclarifiedをつける
                     char.classList.remove('invisible-line');
                     char.classList.add('clarified');
-                }, index * 10); // 連続してじわーっと出る
+                }, index * 10);
             });
         }
 
@@ -463,10 +468,7 @@
         }
 
         function completeLine() {
-            // ★変更：完成した行を「見えない状態（invisible-line）」にする
-            // opacity: 0 になるが、DOM上には残っている
             currentLineChars.forEach(char => char.classList.add('invisible-line'));
-            
             currentLineIndex++;
             setTimeout(() => {
                 spawnLine(currentLineIndex);
