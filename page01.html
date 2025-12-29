@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>彷徨う文脈 - やまなし</title>
+    <title>彷徨う文脈 - 私と小鳥と鈴と</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +23,7 @@
             touch-action: none;
         }
 
+        /* 中央のドロップエリア */
         #drop-zone {
             position: absolute;
             top: 50%;
@@ -42,6 +43,7 @@
             }
         }
 
+        /* スタートボタン */
         #start-btn {
             position: absolute;
             top: 50%;
@@ -55,27 +57,19 @@
             background: rgba(255,255,255,0.9);
             cursor: pointer;
             z-index: 999;
-            /* 色の変化は早く、透明度変化はゆっくり */
             transition: background-color 0.2s, color 0.2s, transform 0.1s, opacity 1.5s;
             font-family: 'Shippori Mincho', serif;
             white-space: nowrap;
         }
         
-        /* ホバー時の挙動（PC） */
-        #start-btn:hover {
-            background: #333;
-            color: #fff;
-        }
-
-        /* ★クリック（タップ）された時のスタイル */
         #start-btn.pressed {
             background: #111 !important;
             color: #fff !important;
             border-color: #111 !important;
-            /* ギュッと押された感じ */
             transform: translate(-50%, -50%) scale(0.95) !important; 
         }
         
+        /* ガイドメッセージ */
         #guide-message {
             position: absolute;
             top: 50%;
@@ -91,31 +85,33 @@
             z-index: 0;
         }
 
+        /* 題名と著者名（最後に表示） */
         #finale-container {
             position: absolute;
             top: 50%;
-            right: 10%;
+            right: 5%; /* 画面端ギリギリに配置 */
             transform: translateY(-50%);
             writing-mode: vertical-rl;
             opacity: 0;
             transition: opacity 3s ease-in-out;
             z-index: 5;
             display: flex;
-            gap: 2rem;
+            gap: 1rem;
             pointer-events: none;
         }
-        .title-text { font-size: 2.5rem; color: #111; letter-spacing: 0.2em; }
-        .author-text { font-size: 1.2rem; color: #444; letter-spacing: 0.2em; margin-top: 4rem; }
+        .title-text { font-size: 1.8rem; color: #111; letter-spacing: 0.2em; }
+        .author-text { font-size: 1rem; color: #444; letter-spacing: 0.2em; margin-top: 2rem; }
 
         @media (max-width: 600px) {
-            .title-text { font-size: 1.8rem; }
-            .author-text { font-size: 1rem; margin-top: 2rem; }
-            #finale-container { right: 8%; gap: 1rem; }
+            .title-text { font-size: 1.4rem; }
+            .author-text { font-size: 0.9rem; margin-top: 1rem; }
+            #finale-container { right: 3%; gap: 0.5rem; }
         }
 
+        /* 文字の基本スタイル */
         .char {
             position: absolute;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             color: #333;
             cursor: grab;
             padding: 20px;
@@ -128,8 +124,12 @@
             transition: top 1s cubic-bezier(0.16, 1, 0.3, 1), left 1s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s, transform 0.5s;
         }
 
+        /* スマホ調整：10行入るように文字を小さく */
         @media (max-width: 600px) {
-            .char { font-size: 1.4rem; padding: 15px; }
+            .char { 
+                font-size: 1.1rem; /* 少し小さく */
+                padding: 15px; 
+            }
         }
 
         .char.scattered {
@@ -153,8 +153,21 @@
             z-index: 1;
         }
 
-        .char.locked.past-line { color: #ccc; filter: blur(0.5px); }
-        .char.locked.clarified { color: #000 !important; filter: blur(0) !important; text-shadow: 0 0 1px rgba(0,0,0,0.1); transition: color 2s, filter 2s; }
+        /* ★完成した行を消すためのクラス */
+        .char.locked.invisible-line { 
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9); /* 少し縮んで消える */
+            transition: opacity 1.5s, transform 1.5s;
+        }
+
+        /* ★最後に全員復活するためのクラス */
+        .char.locked.clarified { 
+            opacity: 1 !important; 
+            transform: translate(-50%, -50%) scale(1) !important;
+            color: #000 !important; 
+            text-shadow: 0 0 1px rgba(0,0,0,0.1); 
+            transition: opacity 2s ease-in-out, transform 2s, color 2s; 
+        }
     </style>
 </head>
 <body>
@@ -171,21 +184,18 @@
     <div id="container"></div>
 
     <script>
+        // 金子みすゞ『私と小鳥と鈴と』
         const story = [
-            "私が両手を広げても",
-            "お空はちっとも飛べないが",
-            "飛べる小鳥は私のように",
-            "地面を速く走れない",
-
-            "私が体をゆすっても",
-            "きれいな音はでないけど",
-            "あの鳴る鈴は私のように",
-            "たくさんな唄は知らないよ",
-
+            "私が両手をひろげても、",
+            "お空はちっとも飛べないが、",
+            "飛べる小鳥は私のように、",
+            "地面を速くは走れない。",
+            "私がからだをゆすっても、",
+            "きれいな音は出ないけど、",
+            "あの鳴る鈴は私のように、",
+            "たくさんな唄は知らないよ。",
             "鈴と、小鳥と、それから私、",
-            "みんなちがって、みんないい",
-            
-            
+            "みんなちがって、みんないい。"
         ];
 
         const container = document.getElementById('container');
@@ -205,16 +215,9 @@
         }
 
         startBtn.addEventListener('click', () => {
-            // ★クリック時の演出追加
-            // 1. クラスを追加して色を変え、凹ませる
             startBtn.classList.add('pressed');
-            startBtn.style.pointerEvents = 'none'; // 連打防止
-
-            // 2. フェードアウト開始（CSSのtransitionでゆっくり消える）
-            // 色が変わったのを見せてから消えるように、少しだけラグを持たせても良いが
-            // 今回は色変え即フェードアウトで「残り香」のように見せる
+            startBtn.style.pointerEvents = 'none';
             startBtn.style.opacity = 0;
-            
             spawnLine(0);
         });
 
@@ -224,7 +227,7 @@
                 return;
             }
 
-            guideMsg.innerText = "文字を中央へ集めよ";
+            guideMsg.innerText = "中央へ集めよ";
             guideMsg.style.opacity = 0.4;
 
             const text = story[lineIndex];
@@ -233,13 +236,26 @@
             
             const centerX = window.innerWidth / 2;
             const centerY = window.innerHeight / 2;
-            
             const _isMobile = isMobile();
-            const rightStart = window.innerWidth * (_isMobile ? 0.88 : 0.75);
-            const lineHeight = _isMobile ? 45 : 70; 
-            const charHeight = _isMobile ? 38 : 50;
+
+            // ★レイアウト計算：全10行を画面中央に美しく配置する
+            // 最後の「全員集合」の時に真ん中に来るように計算します
             
-            const startX = rightStart - (lineIndex * lineHeight); 
+            // 行間設定（スマホは詰め込む）
+            const lineHeight = _isMobile ? 32 : 60; 
+            const charHeight = _isMobile ? 30 : 50;
+
+            // 全体の幅を計算
+            const totalWidth = story.length * lineHeight;
+            
+            // 全体の中央開始位置（一番右の行のX座標）
+            // 画面中央 + (全体幅 / 2) - 余白調整
+            const blockStartX = centerX + (totalWidth / 2) - (lineHeight / 2);
+
+            // 現在の行のX座標
+            const startX = blockStartX - (lineIndex * lineHeight); 
+            
+            // Y座標（文字数に応じて中央寄せ）
             const startY = centerY - (text.length * charHeight) / 2;
 
             text.split('').forEach((char, i) => {
@@ -263,15 +279,26 @@
 
         function showFinale() {
             guideMsg.style.opacity = 0;
-            allLockedChars.forEach((char, index) => {
-                setTimeout(() => {
-                    char.classList.remove('past-line');
-                    char.classList.add('clarified');
-                }, index * 20);
-            });
+
+            // 1. タイトルを表示（少し早めに）
             setTimeout(() => {
                 finaleContainer.style.opacity = 1;
-            }, 1000);
+            }, 500);
+
+            // 2. 全ての消えていた文字を一斉に復活させる
+            // ランダムな順序でフワフワと浮き上がらせる
+            
+            // 配列をシャッフルするためのコピーを作成
+            let shuffledChars = [...allLockedChars];
+            shuffledChars.sort(() => Math.random() - 0.5);
+
+            shuffledChars.forEach((char, index) => {
+                setTimeout(() => {
+                    // invisible-lineを外してclarifiedをつける
+                    char.classList.remove('invisible-line');
+                    char.classList.add('clarified');
+                }, index * 10); // 連続してじわーっと出る
+            });
         }
 
         function initFloatingChar(el) {
@@ -354,7 +381,6 @@
 
             const start = (e) => {
                 if (el.classList.contains('locked')) return;
-                
                 if(e.cancelable) e.preventDefault();
 
                 const rect = el.getBoundingClientRect();
@@ -437,7 +463,10 @@
         }
 
         function completeLine() {
-            currentLineChars.forEach(char => char.classList.add('past-line'));
+            // ★変更：完成した行を「見えない状態（invisible-line）」にする
+            // opacity: 0 になるが、DOM上には残っている
+            currentLineChars.forEach(char => char.classList.add('invisible-line'));
+            
             currentLineIndex++;
             setTimeout(() => {
                 spawnLine(currentLineIndex);
