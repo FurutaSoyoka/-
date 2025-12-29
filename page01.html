@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -24,6 +23,7 @@
             touch-action: none;
         }
 
+        /* 中央のドロップゾーン */
         #drop-zone {
             position: absolute;
             top: 50%;
@@ -34,10 +34,6 @@
             border-radius: 50%;
             z-index: 0;
             pointer-events: none;
-        }
-
-        @media (max-width: 600px) {
-            #drop-zone { width: 60vw; height: 60vw; }
         }
 
         #start-btn {
@@ -53,14 +49,13 @@
             background: rgba(255,255,255,0.9);
             cursor: pointer;
             z-index: 999;
-            transition: background-color 0.2s, color 0.2s, transform 0.1s, opacity 1.5s;
-            white-space: nowrap;
+            transition: all 0.5s;
         }
         
         #start-btn.pressed {
-            background: #111 !important;
-            color: #fff !important;
-            transform: translate(-50%, -50%) scale(0.95) !important; 
+            background: #111;
+            color: #fff;
+            transform: translate(-50%, -50%) scale(0.95); 
         }
         
         #guide-message {
@@ -77,36 +72,29 @@
             opacity: 0;
         }
 
-        /* ★題名と著者名のコンテナ（一本の縦ライン） */
+        /* ★題名と著者名のコンテナ（一本のライン） */
         #finale-container {
             position: absolute;
             writing-mode: vertical-rl;
             opacity: 0;
             transition: opacity 3s ease-in-out;
             z-index: 5;
+            display: flex;
+            flex-direction: column; 
+            align-items: center; /* ★中央のラインを揃える */
+            justify-content: flex-start; /* 上から順に並べる */
+            gap: 2rem; /* 題名と作者の間の距離 */
             pointer-events: none;
-            text-align: left; /* 縦書きの上揃え */
         }
         
-        /* 題名と作者を同じラインに並べるための調整 */
-        .title-text { 
-            display: block;
-            font-size: 1.8rem; 
-            color: #111; 
-            letter-spacing: 0.2em; 
-            margin-bottom: 2rem; /* 作者名との縦の間隔 */
-        }
-        
-        .author-text { 
-            display: block;
-            font-size: 1rem; 
-            color: #444; 
-            letter-spacing: 0.2em;
-        }
+        .title-text { font-size: 1.8rem; color: #111; letter-spacing: 0.2em; white-space: nowrap; }
+        .author-text { font-size: 1rem; color: #444; letter-spacing: 0.2em; white-space: nowrap; }
 
         @media (max-width: 600px) {
-            .title-text { font-size: 1.3rem; margin-bottom: 1.5rem; }
-            .author-text { font-size: 0.85rem; }
+            #drop-zone { width: 60vw; height: 60vw; }
+            .title-text { font-size: 1.4rem; }
+            .author-text { font-size: 0.9rem; }
+            #finale-container { gap: 1.5rem; }
         }
 
         .char {
@@ -148,39 +136,29 @@
         }
 
         .char.locked.invisible-line { opacity: 0; transition: opacity 1.5s; }
-
-        .char.locked.clarified { 
-            opacity: 1 !important; 
-            color: #000 !important; 
-            transition: opacity 2s ease-in-out, color 2s; 
-        }
+        .char.locked.clarified { opacity: 1 !important; color: #000 !important; transition: opacity 2s, color 2s; }
     </style>
 </head>
 <body>
 
     <div id="drop-zone"></div>
     <div id="start-btn">物語を紡ぐ</div>
-    <div id="guide-message">文字を中央へ集めよ</div>
+    <div id="guide-message">中央へ集めよ</div>
     
     <div id="finale-container">
-        <span class="title-text">私と小鳥と鈴と</span>
-        <span class="author-text">金子みすゞ</span>
+        <div class="title-text">私と小鳥と鈴と</div>
+        <div class="author-text">金子みすゞ</div>
     </div>
 
     <div id="container"></div>
 
     <script>
         const story = [
-            "私が両手をひろげても、",
-            "お空はちっとも飛べないが、",
-            "飛べる小鳥は私のように、",
-            "地面を速くは走れない。",
-            "私がからだをゆすっても、",
-            "きれいな音は出ないけど、",
-            "あの鳴る鈴は私のように、",
-            "たくさんな唄は知らないよ。",
-            "鈴と、小鳥と、それから私、",
-            "みんなちがって、みんないい。"
+            "私が両手をひろげても、", "お空はちっとも飛べないが、",
+            "飛べる小鳥は私のように、", "地面を速くは走れない。",
+            "私がからだをゆすっても、", "きれいな音は出ないけど、",
+            "あの鳴る鈴は私のように、", "たくさんな唄は知らないよ。",
+            "鈴と、小鳥と、それから私、", "みんなちがって、みんないい。"
         ];
 
         const container = document.getElementById('container');
@@ -189,12 +167,9 @@
         const finaleContainer = document.getElementById('finale-container');
         
         let currentLineIndex = 0;
-        let currentLineChars = [];
-        let lockedCountInLine = 0;
         let allLockedChars = [];
         let floatingChars = [];
         let isAnimating = false;
-
         let layout = { startX: 0, startY: 0, lineHeight: 0, charHeight: 0 };
 
         function isMobile() { return window.innerWidth <= 600; }
@@ -207,7 +182,7 @@
             spawnLine(0);
         });
 
-        // ★左右余白を均等にする計算ロジック
+        // ★左右余白を均等にする計算
         function calculateLayout() {
             const _isMobile = isMobile();
             const winW = window.innerWidth;
@@ -216,23 +191,23 @@
             layout.lineHeight = _isMobile ? 32 : 55;
             layout.charHeight = _isMobile ? 28 : 45;
 
-            // 1. コンテンツの幅を算出
+            // 1. 本文と題名列の全幅を計算
             const bodyWidth = story.length * layout.lineHeight;
-            const titleColWidth = _isMobile ? 40 : 80; // 題名の列幅
-            const gap = _isMobile ? 20 : 50; // 本文と題名の隙間
+            const titleColWidth = _isMobile ? 40 : 80;
+            const gap = _isMobile ? 20 : 60;
             const totalWidth = bodyWidth + gap + titleColWidth;
 
             // 2. 左右均等な余白を算出
             const sideMargin = (winW - totalWidth) / 2;
 
-            // 3. 垂直の開始位置（上揃え）
-            layout.startY = winH * 0.15; 
+            // 3. 上揃え（天付き）の位置
+            layout.startY = winH * 0.18; 
 
-            // 4. 題名の位置設定（一番右の列）
+            // 4. 題名の位置（一番右の列）
             finaleContainer.style.right = `${sideMargin}px`;
             finaleContainer.style.top = `${layout.startY}px`;
 
-            // 5. 本文の開始位置（題名の左隣）
+            // 5. 本文の開始X（題名の左側）
             layout.startX = winW - sideMargin - titleColWidth - gap;
         }
 
@@ -243,21 +218,26 @@
             }
             guideMsg.style.opacity = 0.4;
             const text = story[lineIndex];
-            lockedCountInLine = 0;
-            currentLineChars = [];
-            
-            const currentLineX = layout.startX - (lineIndex * layout.lineHeight);
+            let currentLineChars = [];
+            let lockedCount = 0;
+            const lineX = layout.startX - (lineIndex * layout.lineHeight);
 
             text.split('').forEach((char, i) => {
                 const span = document.createElement('div');
                 span.textContent = char;
                 span.classList.add('char');
-                span.dataset.targetX = currentLineX;
-                span.dataset.targetY = layout.startY + (i * layout.charHeight) + (layout.charHeight/2);
+                span.dataset.targetX = lineX;
+                span.dataset.targetY = layout.startY + (i * layout.charHeight) + (layout.charHeight / 2);
                 
                 container.appendChild(span);
                 currentLineChars.push(span);
-                addDragEvents(span);
+                addDragEvents(span, () => {
+                    lockedCount++;
+                    if (lockedCount === text.length) {
+                        currentLineChars.forEach(c => c.classList.add('invisible-line'));
+                        setTimeout(() => spawnLine(++currentLineIndex), 800);
+                    }
+                });
                 setTimeout(() => initFloatingChar(span), 50 + (i * 40));
             });
         }
@@ -273,17 +253,15 @@
             });
         }
 
-        // --- 物理演算・ドラッグ処理（変更なし） ---
+        // --- 物理演算・ドラッグ処理 ---
         function initFloatingChar(el) {
             el.classList.add('scattered');
             const border = 50;
             let randomX, randomY;
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
             do {
-                randomX = Math.random() * (window.innerWidth - border*2) + border;
-                randomY = Math.random() * (window.innerHeight - border*2) + border;
-            } while (Math.hypot(randomX - centerX, randomY - centerY) < 120);
+                randomX = Math.random() * (window.innerWidth - border * 2) + border;
+                randomY = Math.random() * (window.innerHeight - border * 2) + border;
+            } while (Math.hypot(randomX - window.innerWidth / 2, randomY - window.innerHeight / 2) < 120);
             el.posX = randomX; el.posY = randomY;
             const speed = 0.2 + Math.random() * 0.3;
             const angle = Math.random() * Math.PI * 2;
@@ -307,7 +285,7 @@
             else isAnimating = false;
         }
 
-        function addDragEvents(el) {
+        function addDragEvents(el, onLock) {
             let isDragging = false, offsetX, offsetY;
             const start = (e) => {
                 if (el.classList.contains('locked')) return;
@@ -330,26 +308,18 @@
                 if (!isDragging) return;
                 isDragging = false; el.classList.remove('dragging');
                 const rect = el.getBoundingClientRect();
-                const currentX = rect.left + rect.width/2, currentY = rect.top + rect.height/2;
-                if (Math.hypot(currentX - window.innerWidth/2, currentY - window.innerHeight/2) < 150) snapToTarget(el);
-                else { el.classList.add('scattered'); el.posX = currentX; el.posY = currentY; }
+                const cX = rect.left + rect.width / 2, cY = rect.top + rect.height / 2;
+                if (Math.hypot(cX - window.innerWidth / 2, cY - window.innerHeight / 2) < 150) {
+                    el.classList.remove('scattered');
+                    const idx = floatingChars.indexOf(el); if (idx > -1) floatingChars.splice(idx, 1);
+                    el.style.left = el.dataset.targetX + 'px'; el.style.top = el.dataset.targetY + 'px';
+                    el.style.transform = 'translate(-50%, -50%) rotate(0deg)'; el.style.writingMode = 'vertical-rl';
+                    el.classList.add('locked'); allLockedChars.push(el);
+                    onLock();
+                } else { el.classList.add('scattered'); el.posX = cX; el.posY = cY; }
             };
             el.addEventListener('mousedown', start); window.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
             el.addEventListener('touchstart', start, {passive: false}); window.addEventListener('touchmove', move, {passive: false}); window.addEventListener('touchend', end);
-        }
-
-        function snapToTarget(el) {
-            el.classList.remove('scattered');
-            const index = floatingChars.indexOf(el);
-            if (index > -1) floatingChars.splice(index, 1);
-            el.style.left = el.dataset.targetX + 'px'; el.style.top = el.dataset.targetY + 'px';
-            el.style.transform = 'translate(-50%, -50%) rotate(0deg)'; el.style.writingMode = 'vertical-rl';
-            el.classList.add('locked'); allLockedChars.push(el);
-            lockedCountInLine++;
-            if (lockedCountInLine === currentLineChars.length) {
-                currentLineChars.forEach(char => char.classList.add('invisible-line'));
-                currentLineIndex++; setTimeout(() => spawnLine(currentLineIndex), 800);
-            }
         }
     </script>
 </body>
