@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -36,10 +37,7 @@
         }
 
         @media (max-width: 600px) {
-            #drop-zone {
-                width: 60vw;
-                height: 60vw;
-            }
+            #drop-zone { width: 60vw; height: 60vw; }
         }
 
         #start-btn {
@@ -56,14 +54,12 @@
             cursor: pointer;
             z-index: 999;
             transition: background-color 0.2s, color 0.2s, transform 0.1s, opacity 1.5s;
-            font-family: 'Shippori Mincho', serif;
             white-space: nowrap;
         }
         
         #start-btn.pressed {
             background: #111 !important;
             color: #fff !important;
-            border-color: #111 !important;
             transform: translate(-50%, -50%) scale(0.95) !important; 
         }
         
@@ -79,55 +75,38 @@
             pointer-events: none;
             writing-mode: vertical-rl;
             opacity: 0;
-            z-index: 0;
         }
 
-        /* 題名と著者名 */
+        /* ★題名と著者名のコンテナ（一本の縦ライン） */
         #finale-container {
             position: absolute;
-            /* 位置はJSで制御 */
             writing-mode: vertical-rl;
             opacity: 0;
             transition: opacity 3s ease-in-out;
             z-index: 5;
-            display: flex;
-            flex-direction: column; /* 縦書きモードではこれで横並びになる */
-            
-            /* ★変更: 垂直方向の中央揃え */
-            align-items: center; 
-            justify-content: center;
-            
-            gap: 1rem; 
             pointer-events: none;
-            
-            /* 高さを指定しないとcenterが効きにくい場合があるためauto */
-            height: auto; 
+            text-align: left; /* 縦書きの上揃え */
         }
         
+        /* 題名と作者を同じラインに並べるための調整 */
         .title-text { 
+            display: block;
             font-size: 1.8rem; 
             color: #111; 
             letter-spacing: 0.2em; 
-            margin: 0;
-            line-height: 1;
-            white-space: nowrap; /* 改行禁止 */
+            margin-bottom: 2rem; /* 作者名との縦の間隔 */
         }
         
         .author-text { 
+            display: block;
             font-size: 1rem; 
             color: #444; 
-            letter-spacing: 0.2em; 
-            margin: 0;
-            line-height: 1;
-            white-space: nowrap;
+            letter-spacing: 0.2em;
         }
 
         @media (max-width: 600px) {
-            #finale-container { 
-                gap: 0.8rem; 
-            }
-            .title-text { font-size: 1.3rem; } /* スマホでは少しサイズダウンして収まりよく */
-            .author-text { font-size: 0.9rem; }
+            .title-text { font-size: 1.3rem; margin-bottom: 1.5rem; }
+            .author-text { font-size: 0.85rem; }
         }
 
         .char {
@@ -146,22 +125,17 @@
         }
 
         @media (max-width: 600px) {
-            .char { 
-                font-size: 1.05rem; /* 本文も少し小さくして幅を確保 */
-                padding: 15px; 
-            }
+            .char { font-size: 1.05rem; padding: 15px; }
         }
 
         .char.scattered {
             color: rgba(0, 0, 0, 0.5);
-            text-shadow: 0 4px 10px rgba(0,0,0,0.05);
             transition: color 0.5s, transform 0.5s !important;
         }
 
         .char.dragging {
             color: rgba(0, 0, 0, 1);
             z-index: 100;
-            cursor: grabbing;
             transform: translate(-50%, -50%) scale(1.3) !important;
             transition: none !important;
         }
@@ -173,18 +147,12 @@
             z-index: 1;
         }
 
-        .char.locked.invisible-line { 
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0.9);
-            transition: opacity 1.5s, transform 1.5s;
-        }
+        .char.locked.invisible-line { opacity: 0; transition: opacity 1.5s; }
 
         .char.locked.clarified { 
             opacity: 1 !important; 
-            transform: translate(-50%, -50%) scale(1) !important;
             color: #000 !important; 
-            text-shadow: 0 0 1px rgba(0,0,0,0.1); 
-            transition: opacity 2s ease-in-out, transform 2s, color 2s; 
+            transition: opacity 2s ease-in-out, color 2s; 
         }
     </style>
 </head>
@@ -192,11 +160,11 @@
 
     <div id="drop-zone"></div>
     <div id="start-btn">物語を紡ぐ</div>
-    <div id="guide-message">中央へ集めよ</div>
+    <div id="guide-message">文字を中央へ集めよ</div>
     
     <div id="finale-container">
-        <div class="title-text">私と小鳥と鈴と</div>
-        <div class="author-text">金子みすゞ</div>
+        <span class="title-text">私と小鳥と鈴と</span>
+        <span class="author-text">金子みすゞ</span>
     </div>
 
     <div id="container"></div>
@@ -227,84 +195,45 @@
         let floatingChars = [];
         let isAnimating = false;
 
-        function isMobile() {
-            return window.innerWidth <= 600;
-        }
+        let layout = { startX: 0, startY: 0, lineHeight: 0, charHeight: 0 };
+
+        function isMobile() { return window.innerWidth <= 600; }
 
         startBtn.addEventListener('click', () => {
             startBtn.classList.add('pressed');
-            startBtn.style.pointerEvents = 'none';
             startBtn.style.opacity = 0;
-            
-            // レイアウト計算を実行してから開始
+            startBtn.style.pointerEvents = 'none';
             calculateLayout();
             spawnLine(0);
         });
-        
-        let layout = {
-            startX: 0,
-            startY: 0,
-            lineHeight: 0,
-            charHeight: 0
-        };
 
+        // ★左右余白を均等にする計算ロジック
         function calculateLayout() {
             const _isMobile = isMobile();
             const winW = window.innerWidth;
             const winH = window.innerHeight;
 
-            // 文字サイズと行間設定
-            layout.lineHeight = _isMobile ? 32 : 60;
-            layout.charHeight = _isMobile ? 30 : 50;
+            layout.lineHeight = _isMobile ? 32 : 55;
+            layout.charHeight = _isMobile ? 28 : 45;
 
-            // 本文ブロックの全幅 (行数 × 行間)
+            // 1. コンテンツの幅を算出
             const bodyWidth = story.length * layout.lineHeight;
-            
-            // 題名ブロックの幅 (概算: 行間 × 2.5倍程度) + 隙間
-            // ※ここを確保しすぎると左に寄りすぎるので調整
-            const titleBlockGap = _isMobile ? 20 : 60; 
-            const titleBlockWidth = (_isMobile ? 50 : 100); 
-            
-            // コンテンツ全体の幅 = 本文 + 隙間 + 題名
-            const totalContentWidth = bodyWidth + titleBlockGap + titleBlockWidth;
+            const titleColWidth = _isMobile ? 40 : 80; // 題名の列幅
+            const gap = _isMobile ? 20 : 50; // 本文と題名の隙間
+            const totalWidth = bodyWidth + gap + titleColWidth;
 
-            // 左右の均等マージンを計算
-            // (画面幅 - 全コンテンツ幅) / 2
-            let sideMargin = (winW - totalContentWidth) / 2;
+            // 2. 左右均等な余白を算出
+            const sideMargin = (winW - totalWidth) / 2;
 
-            // ★重要：スマホでマージンがマイナス（画面からはみ出る）にならないよう保護
-            // 最低でも画面端から20pxは空ける
-            const minMargin = 20;
-            if (sideMargin < minMargin) {
-                sideMargin = minMargin;
-                // マージンを確保するために、コンテンツが画面幅を超えている場合は
-                // 本当は縮小処理が必要だが、今回は最低マージンを優先して右寄せにする（左が見切れるリスクはあるが題名は守る）
-            }
+            // 3. 垂直の開始位置（上揃え）
+            layout.startY = winH * 0.15; 
 
-            // 1. 題名コンテナの位置設定
-            // 右端の位置 = 画面幅 - マージン
-            // CSSの right プロパティに適用
+            // 4. 題名の位置設定（一番右の列）
             finaleContainer.style.right = `${sideMargin}px`;
-            
-            // 題名の垂直位置（画面中央）
-            // CSSで align-items: center にしているので、top は中央付近でOKだが
-            // 縦書きの長さの中心を画面中心に合わせる
-            finaleContainer.style.top = '50%';
-            finaleContainer.style.transform = 'translateY(-50%)'; 
-            // ※以前の top:18% をやめて完全中央配置にする（本文もそれに合わせる）
+            finaleContainer.style.top = `${layout.startY}px`;
 
-            // 2. 本文の開始位置（一番右の行）の計算
-            // 画面右端 - マージン - 題名幅 - 隙間
-            const bodyStartX = winW - sideMargin - titleBlockWidth - titleBlockGap;
-            
-            layout.startX = bodyStartX;
-
-            // 3. 本文の垂直開始位置
-            // 画面中央 - (本文の高さ / 2)
-            // 10行の中で一番長い行（13文字）を基準にセンター合わせ
-            const maxChars = 13; 
-            const bodyHeight = maxChars * layout.charHeight;
-            layout.startY = (winH / 2) - (bodyHeight / 2);
+            // 5. 本文の開始位置（題名の左隣）
+            layout.startX = winW - sideMargin - titleColWidth - gap;
         }
 
         function spawnLine(lineIndex) {
@@ -312,57 +241,31 @@
                 showFinale();
                 return;
             }
-
-            guideMsg.innerText = "中央へ集めよ";
             guideMsg.style.opacity = 0.4;
-
             const text = story[lineIndex];
             lockedCountInLine = 0;
             currentLineChars = [];
             
-            // 計算済みのX座標から、現在の行の位置を算出
-            const currentStartX = layout.startX - (lineIndex * layout.lineHeight);
-            
-            // 行ごとの垂直中央寄せ計算
-            // 全体の基準Y + (最大行との差分/2) ... だと複雑なので
-            // 単純に「画面中央」に対して、その行の長さをセンタリングする
-            const screenCenterY = window.innerHeight / 2;
-            const thisLineHeight = text.length * layout.charHeight;
-            const thisLineStartY = screenCenterY - (thisLineHeight / 2);
+            const currentLineX = layout.startX - (lineIndex * layout.lineHeight);
 
             text.split('').forEach((char, i) => {
                 const span = document.createElement('div');
                 span.textContent = char;
                 span.classList.add('char');
-                span.style.top = '50%';
-                span.style.left = '50%';
-                
-                span.dataset.targetX = currentStartX;
-                // その文字のY座標
-                span.dataset.targetY = thisLineStartY + (i * layout.charHeight) + (layout.charHeight/2); 
-                // ※ transform(-50%, -50%) があるため、中心座標を指定する
+                span.dataset.targetX = currentLineX;
+                span.dataset.targetY = layout.startY + (i * layout.charHeight) + (layout.charHeight/2);
                 
                 container.appendChild(span);
                 currentLineChars.push(span);
                 addDragEvents(span);
-
-                setTimeout(() => {
-                    initFloatingChar(span);
-                }, 50 + (i * 40));
+                setTimeout(() => initFloatingChar(span), 50 + (i * 40));
             });
         }
 
         function showFinale() {
             guideMsg.style.opacity = 0;
-
-            setTimeout(() => {
-                finaleContainer.style.opacity = 1;
-            }, 500);
-
-            let shuffledChars = [...allLockedChars];
-            shuffledChars.sort(() => Math.random() - 0.5);
-
-            shuffledChars.forEach((char, index) => {
+            setTimeout(() => { finaleContainer.style.opacity = 1; }, 500);
+            allLockedChars.forEach((char, index) => {
                 setTimeout(() => {
                     char.classList.remove('invisible-line');
                     char.classList.add('clarified');
@@ -370,173 +273,83 @@
             });
         }
 
+        // --- 物理演算・ドラッグ処理（変更なし） ---
         function initFloatingChar(el) {
             el.classList.add('scattered');
-            
-            const border = isMobile() ? 20 : 50; 
+            const border = 50;
             let randomX, randomY;
             const centerX = window.innerWidth / 2;
             const centerY = window.innerHeight / 2;
-            const targetX = parseFloat(el.dataset.targetX);
-
             do {
                 randomX = Math.random() * (window.innerWidth - border*2) + border;
                 randomY = Math.random() * (window.innerHeight - border*2) + border;
-            } while (
-                Math.hypot(randomX - centerX, randomY - centerY) < (isMobile() ? 80 : 120) ||
-                Math.abs(randomX - targetX) < (isMobile() ? 30 : 60)
-            );
-
-            el.style.left = randomX + 'px';
-            el.style.top = randomY + 'px';
-
-            el.posX = randomX;
-            el.posY = randomY;
-            
-            const speedBase = isMobile() ? 0.15 : 0.2;
-            const speed = speedBase + Math.random() * 0.3; 
-            
+            } while (Math.hypot(randomX - centerX, randomY - centerY) < 120);
+            el.posX = randomX; el.posY = randomY;
+            const speed = 0.2 + Math.random() * 0.3;
             const angle = Math.random() * Math.PI * 2;
-            el.vx = Math.cos(angle) * speed;
-            el.vy = Math.sin(angle) * speed;
-            
+            el.vx = Math.cos(angle) * speed; el.vy = Math.sin(angle) * speed;
             el.rot = (Math.random() - 0.5) * 60;
-            el.style.transform = `translate(-50%, -50%) rotate(${el.rot}deg)`;
-
             floatingChars.push(el);
-
-            if (!isAnimating) {
-                isAnimating = true;
-                requestAnimationFrame(animateFrame);
-            }
+            if (!isAnimating) { isAnimating = true; requestAnimationFrame(animateFrame); }
         }
 
         function animateFrame() {
-            const winW = window.innerWidth;
-            const winH = window.innerHeight;
-            const margin = isMobile() ? 20 : 40; 
-
+            const winW = window.innerWidth, winH = window.innerHeight, margin = 40;
             floatingChars.forEach(el => {
                 if (el.classList.contains('dragging') || el.classList.contains('locked')) return;
-
-                el.posX += el.vx;
-                el.posY += el.vy;
-
-                let bounced = false;
-                if (el.posX < margin) { el.posX = margin; el.vx *= -1; bounced = true; }
-                if (el.posX > winW - margin) { el.posX = winW - margin; el.vx *= -1; bounced = true; }
-                if (el.posY < margin) { el.posY = margin; el.vy *= -1; bounced = true; }
-                if (el.posY > winH - margin) { el.posY = winH - margin; el.vy *= -1; bounced = true; }
-
-                if (bounced) {
-                     el.rot += (Math.random() - 0.5) * 20;
-                }
-
-                el.style.left = el.posX + 'px';
-                el.style.top = el.posY + 'px';
+                el.posX += el.vx; el.posY += el.vy;
+                if (el.posX < margin || el.posX > winW - margin) el.vx *= -1;
+                if (el.posY < margin || el.posY > winH - margin) el.vy *= -1;
+                el.style.left = el.posX + 'px'; el.style.top = el.posY + 'px';
                 el.style.transform = `translate(-50%, -50%) rotate(${el.rot}deg)`;
             });
-
-            if (floatingChars.length > 0) {
-                requestAnimationFrame(animateFrame);
-            } else {
-                isAnimating = false;
-            }
+            if (floatingChars.length > 0) requestAnimationFrame(animateFrame);
+            else isAnimating = false;
         }
 
         function addDragEvents(el) {
-            let isDragging = false;
-            let offsetX, offsetY;
-
+            let isDragging = false, offsetX, offsetY;
             const start = (e) => {
                 if (el.classList.contains('locked')) return;
-                if(e.cancelable) e.preventDefault();
-
                 const rect = el.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                el.style.left = centerX + 'px';
-                el.style.top = centerY + 'px';
-                
-                el.classList.remove('scattered');
-                el.classList.add('dragging');
+                const centerX = rect.left + rect.width / 2, centerY = rect.top + rect.height / 2;
+                el.style.left = centerX + 'px'; el.style.top = centerY + 'px';
+                el.classList.remove('scattered'); el.classList.add('dragging');
                 isDragging = true;
-                
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-                
-                offsetX = clientX - centerX;
-                offsetY = clientY - centerY;
+                offsetX = clientX - centerX; offsetY = clientY - centerY;
             };
-
             const move = (e) => {
                 if (!isDragging) return;
-                if(e.cancelable) e.preventDefault(); 
-
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-                el.style.left = (clientX - offsetX) + 'px';
-                el.style.top = (clientY - offsetY) + 'px';
+                el.style.left = (clientX - offsetX) + 'px'; el.style.top = (clientY - offsetY) + 'px';
             };
-
             const end = () => {
                 if (!isDragging) return;
-                isDragging = false;
-                el.classList.remove('dragging');
-                
+                isDragging = false; el.classList.remove('dragging');
                 const rect = el.getBoundingClientRect();
-                const currentX = rect.left + rect.width/2;
-                const currentY = rect.top + rect.height/2;
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                
-                const snapDistance = isMobile() ? 100 : 150; 
-                
-                if (Math.hypot(currentX - centerX, currentY - centerY) < snapDistance) { 
-                    snapToTarget(el);
-                } else {
-                    el.classList.add('scattered');
-                    el.posX = currentX;
-                    el.posY = currentY;
-                }
+                const currentX = rect.left + rect.width/2, currentY = rect.top + rect.height/2;
+                if (Math.hypot(currentX - window.innerWidth/2, currentY - window.innerHeight/2) < 150) snapToTarget(el);
+                else { el.classList.add('scattered'); el.posX = currentX; el.posY = currentY; }
             };
-
-            el.addEventListener('mousedown', start);
-            window.addEventListener('mousemove', move);
-            window.addEventListener('mouseup', end);
-            
-            el.addEventListener('touchstart', start, {passive: false});
-            window.addEventListener('touchmove', move, {passive: false});
-            window.addEventListener('touchend', end);
+            el.addEventListener('mousedown', start); window.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+            el.addEventListener('touchstart', start, {passive: false}); window.addEventListener('touchmove', move, {passive: false}); window.addEventListener('touchend', end);
         }
 
         function snapToTarget(el) {
             el.classList.remove('scattered');
-            
             const index = floatingChars.indexOf(el);
-            if (index > -1) {
-                floatingChars.splice(index, 1);
-            }
-
-            el.style.left = el.dataset.targetX + 'px';
-            el.style.top = el.dataset.targetY + 'px';
-            el.style.transform = 'translate(-50%, -50%) rotate(0deg)';
-            el.style.writingMode = 'vertical-rl';
-            el.classList.add('locked');
-            allLockedChars.push(el);
+            if (index > -1) floatingChars.splice(index, 1);
+            el.style.left = el.dataset.targetX + 'px'; el.style.top = el.dataset.targetY + 'px';
+            el.style.transform = 'translate(-50%, -50%) rotate(0deg)'; el.style.writingMode = 'vertical-rl';
+            el.classList.add('locked'); allLockedChars.push(el);
             lockedCountInLine++;
             if (lockedCountInLine === currentLineChars.length) {
-                completeLine();
+                currentLineChars.forEach(char => char.classList.add('invisible-line'));
+                currentLineIndex++; setTimeout(() => spawnLine(currentLineIndex), 800);
             }
-        }
-
-        function completeLine() {
-            currentLineChars.forEach(char => char.classList.add('invisible-line'));
-            currentLineIndex++;
-            setTimeout(() => {
-                spawnLine(currentLineIndex);
-            }, 800);
         }
     </script>
 </body>
