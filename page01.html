@@ -85,19 +85,23 @@
         /* 題名と著者名 */
         #finale-container {
             position: absolute;
-            /* top, right は JSで計算して設定するため削除 */
+            /* 位置はJSで制御 */
             writing-mode: vertical-rl;
             opacity: 0;
             transition: opacity 3s ease-in-out;
             z-index: 5;
             display: flex;
-            flex-direction: column;
-            /* ★修正ポイント1: 縦書きでの「上揃え」を確実にする設定 */
-            align-items: flex-end; /* 右から左へ並ぶ軸の終点＝上端 */
-            text-align: left;      /* テキスト自体も上揃えに */
+            flex-direction: column; /* 縦書きモードではこれで横並びになる */
             
-            gap: 1.5rem; 
+            /* ★変更: 垂直方向の中央揃え */
+            align-items: center; 
+            justify-content: center;
+            
+            gap: 1rem; 
             pointer-events: none;
+            
+            /* 高さを指定しないとcenterが効きにくい場合があるためauto */
+            height: auto; 
         }
         
         .title-text { 
@@ -105,7 +109,8 @@
             color: #111; 
             letter-spacing: 0.2em; 
             margin: 0;
-            line-height: 1; /* 行の高さを文字高に合わせてズレを防ぐ */
+            line-height: 1;
+            white-space: nowrap; /* 改行禁止 */
         }
         
         .author-text { 
@@ -114,13 +119,14 @@
             letter-spacing: 0.2em; 
             margin: 0;
             line-height: 1;
+            white-space: nowrap;
         }
 
         @media (max-width: 600px) {
             #finale-container { 
                 gap: 0.8rem; 
             }
-            .title-text { font-size: 1.4rem; }
+            .title-text { font-size: 1.3rem; } /* スマホでは少しサイズダウンして収まりよく */
             .author-text { font-size: 0.9rem; }
         }
 
@@ -141,7 +147,7 @@
 
         @media (max-width: 600px) {
             .char { 
-                font-size: 1.1rem; 
+                font-size: 1.05rem; /* 本文も少し小さくして幅を確保 */
                 padding: 15px; 
             }
         }
@@ -229,12 +235,12 @@
             startBtn.classList.add('pressed');
             startBtn.style.pointerEvents = 'none';
             startBtn.style.opacity = 0;
-            // 初回呼び出し時にレイアウトを計算して適用
+            
+            // レイアウト計算を実行してから開始
             calculateLayout();
             spawnLine(0);
         });
         
-        // レイアウト計算用の変数
         let layout = {
             startX: 0,
             startY: 0,
@@ -242,50 +248,64 @@
             charHeight: 0
         };
 
-        // ★修正ポイント2: 画面中央に揃えるためのレイアウト計算関数
         function calculateLayout() {
             const _isMobile = isMobile();
             const winW = window.innerWidth;
             const winH = window.innerHeight;
 
+            // 文字サイズと行間設定
             layout.lineHeight = _isMobile ? 32 : 60;
             layout.charHeight = _isMobile ? 30 : 50;
 
-            // 本文全体の幅
+            // 本文ブロックの全幅 (行数 × 行間)
             const bodyWidth = story.length * layout.lineHeight;
-            // 題名・作者名エリアの幅（概算：3行分程度＋隙間）
-            const titleAreaWidth = layout.lineHeight * 3.5;
             
-            // コンテンツ全体の幅（本文＋題名エリア）
-            const totalContentWidth = bodyWidth + titleAreaWidth;
+            // 題名ブロックの幅 (概算: 行間 × 2.5倍程度) + 隙間
+            // ※ここを確保しすぎると左に寄りすぎるので調整
+            const titleBlockGap = _isMobile ? 20 : 60; 
+            const titleBlockWidth = (_isMobile ? 50 : 100); 
+            
+            // コンテンツ全体の幅 = 本文 + 隙間 + 題名
+            const totalContentWidth = bodyWidth + titleBlockGap + titleBlockWidth;
 
-            // 左右の均等な余白を計算
-            const sideMargin = (winW - totalContentWidth) / 2;
+            // 左右の均等マージンを計算
+            // (画面幅 - 全コンテンツ幅) / 2
+            let sideMargin = (winW - totalContentWidth) / 2;
 
-            // コンテンツの右端の座標
-            const contentRightEdge = winW - sideMargin;
-
-            // 題名コンテナの位置を設定（右端基準）
-            finaleContainer.style.right = `${sideMargin}px`;
-            // 上位置もここで設定（画面上部から20%）
-            finaleContainer.style.top = `${winH * 0.2}px`;
-
-            // 本文の開始X座標（コンテンツ右端から題名エリア分を引いた位置）
-            layout.startX = contentRightEdge - titleAreaWidth;
-
-            // 本文の開始Y座標（上揃え基準、題名と同じ高さ）
-            layout.startY = winH * 0.2;
-        }
-
-        // リサイズ時にもレイアウトを再計算（オプション）
-        window.addEventListener('resize', () => {
-            if (currentLineIndex > 0) {
-                 // プレイ途中でのリサイズ対応は複雑になるため今回は省略
-                 // 必要であればここで calculateLayout() を呼び、
-                 // 既存の locked 文字の位置を再設定する処理が必要
+            // ★重要：スマホでマージンがマイナス（画面からはみ出る）にならないよう保護
+            // 最低でも画面端から20pxは空ける
+            const minMargin = 20;
+            if (sideMargin < minMargin) {
+                sideMargin = minMargin;
+                // マージンを確保するために、コンテンツが画面幅を超えている場合は
+                // 本当は縮小処理が必要だが、今回は最低マージンを優先して右寄せにする（左が見切れるリスクはあるが題名は守る）
             }
-        });
 
+            // 1. 題名コンテナの位置設定
+            // 右端の位置 = 画面幅 - マージン
+            // CSSの right プロパティに適用
+            finaleContainer.style.right = `${sideMargin}px`;
+            
+            // 題名の垂直位置（画面中央）
+            // CSSで align-items: center にしているので、top は中央付近でOKだが
+            // 縦書きの長さの中心を画面中心に合わせる
+            finaleContainer.style.top = '50%';
+            finaleContainer.style.transform = 'translateY(-50%)'; 
+            // ※以前の top:18% をやめて完全中央配置にする（本文もそれに合わせる）
+
+            // 2. 本文の開始位置（一番右の行）の計算
+            // 画面右端 - マージン - 題名幅 - 隙間
+            const bodyStartX = winW - sideMargin - titleBlockWidth - titleBlockGap;
+            
+            layout.startX = bodyStartX;
+
+            // 3. 本文の垂直開始位置
+            // 画面中央 - (本文の高さ / 2)
+            // 10行の中で一番長い行（13文字）を基準にセンター合わせ
+            const maxChars = 13; 
+            const bodyHeight = maxChars * layout.charHeight;
+            layout.startY = (winH / 2) - (bodyHeight / 2);
+        }
 
         function spawnLine(lineIndex) {
             if (lineIndex >= story.length) {
@@ -293,18 +313,22 @@
                 return;
             }
 
-            guideMsg.innerText = "文字を中央へ集めよ";
+            guideMsg.innerText = "中央へ集めよ";
             guideMsg.style.opacity = 0.4;
 
             const text = story[lineIndex];
             lockedCountInLine = 0;
             currentLineChars = [];
             
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-
-            // 計算済みの開始位置から、現在の行のX座標を決定
+            // 計算済みのX座標から、現在の行の位置を算出
             const currentStartX = layout.startX - (lineIndex * layout.lineHeight);
+            
+            // 行ごとの垂直中央寄せ計算
+            // 全体の基準Y + (最大行との差分/2) ... だと複雑なので
+            // 単純に「画面中央」に対して、その行の長さをセンタリングする
+            const screenCenterY = window.innerHeight / 2;
+            const thisLineHeight = text.length * layout.charHeight;
+            const thisLineStartY = screenCenterY - (thisLineHeight / 2);
 
             text.split('').forEach((char, i) => {
                 const span = document.createElement('div');
@@ -314,9 +338,9 @@
                 span.style.left = '50%';
                 
                 span.dataset.targetX = currentStartX;
-                // 上揃えの位置計算
-                const exactY = layout.startY + (i * layout.charHeight);
-                span.dataset.targetY = exactY;
+                // その文字のY座標
+                span.dataset.targetY = thisLineStartY + (i * layout.charHeight) + (layout.charHeight/2); 
+                // ※ transform(-50%, -50%) があるため、中心座標を指定する
                 
                 container.appendChild(span);
                 currentLineChars.push(span);
