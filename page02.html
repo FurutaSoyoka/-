@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>呼吸する余白 - 私と小鳥と鈴と</title>
+    <title>私と小鳥と鈴と - 呼吸する余白</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,151 +13,113 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
-            color: #0a0a0a;
             font-family: 'Shippori Mincho', serif;
-            cursor: crosshair;
-            transition: background-color 0.8s ease;
+            touch-action: none;
         }
 
         #container {
             width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
-            position: relative;
         }
 
-        /* テキストブロック：中央配置を厳守 */
         #text-block {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(16px, 4vw, 22px); /* 画面サイズに合わせて可変 */
+            font-size: clamp(18px, 5vw, 24px);
             white-space: nowrap;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
             
-            /* 初期状態：中心で凝縮 */
+            /* 初期状態：中心で完全に重なる */
             line-height: 0;
             letter-spacing: -1em;
             opacity: 0;
             
-            /* 重なりの演出 */
             mix-blend-mode: multiply;
-            transition: line-height 0.4s cubic-bezier(0.23, 1, 0.32, 1),
-                        letter-spacing 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+            /* 粘り気のある動きを実現するイージング */
+            transition: line-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        letter-spacing 0.5s cubic-bezier(0.16, 1, 0.3, 1),
                         opacity 1.5s ease;
         }
 
-        /* 案内文 */
         #instruction {
-            position: absolute;
-            bottom: 10%;
-            width: 100%;
-            text-align: center;
-            font-size: 12px;
-            letter-spacing: 0.2em;
-            color: #999;
-            pointer-events: none;
-            transition: opacity 0.5s;
+            position: absolute; bottom: 8%; width: 100%;
+            text-align: center; font-size: 12px; letter-spacing: 0.2em;
+            color: #aaa; pointer-events: none; transition: opacity 0.8s;
         }
 
-        /* スイートスポットに入った時の演出 */
-        body.readable {
-            background-color: #fff;
-        }
-        body.readable #text-block {
-            mix-blend-mode: normal;
-            color: #000;
-        }
+        /* 読みやすい距離に入った時の変化 */
+        body.readable { background-color: #fff; }
+        body.readable #text-block { mix-blend-mode: normal; color: #000; }
 
-        /* 中央の軸を示す微かな印（必要なければ消してください） */
-        #center-axis {
-            position: absolute;
-            width: 4px; height: 4px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 50%;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
 
     <div id="container">
-        <div id="center-axis"></div>
         <div id="text-block">
             私が両手をひろげても、<br>
             お空はちっとも飛べないが、<br>
-            飛べる小鳥は私のやうに、<br>
-            地べたを速くは走れない。<br>
-            <br>
-            私がからだをゆすっても、<br>
-            きれいな音は出ないけど、<br>
-            あの鳴る鈴は私のやうに、<br>
-            たくさんな唄は知らないよ。<br>
+            飛べる小鳥は私のように、<br>
+            地面を速くは走れない。<br>
             <br>
             鈴と、小鳥と、それから私、<br>
-            みんなちがつて、みんないい。
+            みんなちがって、みんないい。
         </div>
-        <div id="instruction">中心から遠ざかるほど、意味はほどけてゆく</div>
     </div>
+
+    <div id="instruction">中心から、縦や横に引き延ばして。</div>
 
     <script>
         const textBlock = document.getElementById('text-block');
         const instruction = document.getElementById('instruction');
         const body = document.body;
 
-        // パラメータ設定
-        const READABLE_DIST_RATIO = 0.35; // 画面のどのあたりで読めるようになるか
-        const MAX_LS = 1.2;  // 最大文字間
-        const MAX_LH = 2.8;  // 最大行間
-        const MIN_LS = -0.8; // 凝縮時文字間
-        const MIN_LH = 0.05; // 凝縮時行間
-
-        window.onload = () => {
-            textBlock.style.opacity = 1;
+        // パラメータ：どれだけ広がるか
+        const SCALES = {
+            lh: { min: 0.05, max: 3.5 }, // 横の行間
+            ls: { min: -0.8, max: 1.5 }  // 縦の文字間
         };
 
-        function handleMove(clientX, clientY) {
-            // 画面中心からの距離を計算
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            
-            // 中心からの距離（0〜1に正規化）
-            const dx = clientX - centerX;
-            const dy = clientY - centerY;
-            const maxDist = Math.sqrt(centerX ** 2 + centerY ** 2);
-            const dist = Math.sqrt(dx ** dx + dy ** dy); 
-            const distRatio = Math.min(Math.sqrt(dx*dx + dy*dy) / maxDist * 1.5, 1.0);
+        window.onload = () => { textBlock.style.opacity = 1; };
 
-            // 指数関数的に変化させて「中央での凝縮感」を出す
-            const easeRatio = Math.pow(distRatio, 0.8);
+        function update(clientX, clientY) {
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+            const centerX = winW / 2;
+            const centerY = winH / 2;
 
-            // スタイルの計算
-            const ls = MIN_LS + (MAX_LS - MIN_LS) * easeRatio;
-            const lh = MIN_LH + (MAX_LH - MIN_LH) * easeRatio;
+            // 中心からの距離（0.0 〜 1.0）
+            // Xは横方向、Yは縦方向の独立した距離を使う
+            const distX = Math.abs(clientX - centerX) / (winW / 2);
+            const distY = Math.abs(clientY - centerY) / (winH / 2);
 
-            textBlock.style.letterSpacing = `${ls}em`;
+            // 指数関数的なカーブで、中心付近での「凝縮」を強調
+            const curveX = Math.pow(distX, 0.85);
+            const curveY = Math.pow(distY, 0.85);
+
+            // スタイルの適用
+            // Xの動きで行間（line-height）、Yの動きで文字間（letter-spacing）を制御
+            const lh = SCALES.lh.min + (SCALES.lh.max - SCALES.lh.min) * curveX;
+            const ls = SCALES.ls.min + (SCALES.ls.max - SCALES.ls.min) * curveY;
+
             textBlock.style.lineHeight = lh;
+            textBlock.style.letterSpacing = `${ls}em`;
 
-            // 読めるゾーンの判定（中心から特定の距離のリング状）
-            // distRatioが0.3〜0.5の間を「読みやすい」とする
-            if (distRatio > 0.25 && distRatio < 0.45) {
+            // 読めるスイートスポット判定（縦横の両方が適切な広さのとき）
+            if (distX > 0.3 && distX < 0.6 && distY > 0.2 && distY < 0.6) {
                 body.classList.add('readable');
             } else {
                 body.classList.remove('readable');
             }
 
             // 操作されたら案内を消す
-            if (distRatio > 0.1) instruction.style.opacity = 0;
+            if (distX > 0.1 || distY > 0.1) instruction.style.opacity = 0;
         }
 
-        // イベント登録
-        window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => update(e.clientX, e.clientY));
         window.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            update(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: false });
-
     </script>
 </body>
 </html>
