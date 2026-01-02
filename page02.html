@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>呼吸する余白 - 私と小鳥と鈴と</title>
+    <title>呼吸する余白 - 羅生門</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
-            font-family: 'Shippori Mincho', serif;
+            font-family: 'Shippori Mincho', "Yu Mincho", "Hiragino Mincho ProN", serif;
             touch-action: none;
             cursor: crosshair;
         }
@@ -26,17 +26,18 @@
         #text-block {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(16px, 4.5vw, 22px); 
-            white-space: nowrap;
+            font-size: clamp(16px, 4.5vw, 20px); 
+            height: 80%;
+            max-width: 90%;
             
-            /* 初期状態の設定はJS側で計算されるため、ここでは最小値を指定 */
+            /* 初期値（外側：凝縮状態） */
             line-height: 0.05;
-            letter-spacing: -0.85em;
+            letter-spacing: -0.9em;
             opacity: 0;
             
             mix-blend-mode: multiply;
             
-            /* 動きの滑らかさ */
+            /* インクの粘り気を感じさせる動き */
             transition: line-height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
                         letter-spacing 0.6s cubic-bezier(0.16, 1, 0.3, 1),
                         opacity 1.5s ease, color 1s;
@@ -48,6 +49,7 @@
             color: #aaa; pointer-events: none; transition: opacity 0.8s;
         }
 
+        /* 読みやすい距離に入った時の背景変化 */
         body.readable { background-color: #fff; }
         body.readable #text-block { mix-blend-mode: normal; color: #000; }
 
@@ -63,13 +65,16 @@
     <div id="container">
         <div id="center-marker"></div>
         <div id="text-block">
-            私が両手をひろげても、<br>
-            お空はちっとも飛べないが、<br>
-            飛べる小鳥は私のように、<br>
-            地面を速くは走れない。<br>
+            或る日の暮方の事である。<br>
+            一人の下人が、羅生門の下で雨やみを待っていた。<br>
+            広い門の下には、この男のほかに誰もいない。<br>
+            ただ、所々丹塗の剥げた、大きな円柱に、<br>
+            蟋蟀が一匹とまっている。<br>
             <br>
-            鈴と、小鳥と、それから私、<br>
-            みんなちがって、みんないい。
+            羅生門が、朱雀大路にある以上は、<br>
+            この男のほかにも、雨やみをする市女笠や揉烏帽子が、<br>
+            もう二三人はありそうなものである。<br>
+            それが、この男のほかには誰もいない。
         </div>
     </div>
 
@@ -80,15 +85,16 @@
         const instruction = document.getElementById('instruction');
         const body = document.body;
 
+        // パラメータ：行間と文字間の範囲
         const CONFIG = {
-            lh: { min: 0.05, max: 3.5 },
-            ls: { min: -0.85, max: 1.2 }
+            lh: { min: 0.05, max: 3.5 }, // 横の行間
+            ls: { min: -0.9, max: 0.5 }   // 縦の文字間
         };
 
         window.onload = () => {
             textBlock.style.opacity = 1;
-            // 初期表示のために一度計算を実行（画面中央を想定）
-            updateSpace(window.innerWidth / 2, window.innerHeight / 2);
+            // 初期状態（画面外側を想定した凝縮）
+            updateSpace(0, 0);
         };
 
         function updateSpace(clientX, clientY) {
@@ -101,28 +107,25 @@
             const distX = Math.abs(clientX - centerX) / (winW / 2);
             const distY = Math.abs(clientY - centerY) / (winH / 2);
 
-            // 指数関数的なイージング
+            // べき乗によるイージング（中心付近での感度を高める）
             const easedX = Math.pow(distX, 0.8);
             const easedY = Math.pow(distY, 0.8);
 
-            // ★ここを修正★
-            // 距離の値を反転（1.0 から引く）させて適用します。
-            // 中心に近い（easedが小さい）ほど値が大きくなり、最大値に近づきます。
+            // 中心に近い（easedが小さい）ほど広がるように計算を反転 (1.0 - eased)
             const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * (1.0 - easedX);
             const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * (1.0 - easedY);
 
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            // 読めるゾーンの判定も合わせて調整（中心付近をスイートスポットに）
-            // 中心から近すぎず、遠すぎない範囲
-            if (distX < 0.5 && distX > 0.1 && distY < 0.5 && distY > 0.1) {
+            // スイートスポット判定：中心付近の一定範囲内
+            if (distX < 0.45 && distX > 0.05 && distY < 0.45 && distY > 0.05) {
                 body.classList.add('readable');
             } else {
                 body.classList.remove('readable');
             }
 
-            // 案内を消す判定
+            // 操作に応じて案内を消す
             if (distX < 0.8 || distY < 0.8) instruction.style.opacity = 0;
         }
 
