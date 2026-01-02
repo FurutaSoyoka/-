@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>呼吸する余白</title>
+    <title>呼吸する余白 - 私と小鳥と鈴と</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,265 +11,151 @@
 
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            /* スマホのアドレスバー対策 */
-            height: 100dvh; 
-            overflow: hidden;
-            background-color: #f7f6f3; 
-            color: #0a0a0a; 
-            font-family: 'Shippori Mincho', "Yu Mincho", serif;
-            cursor: crosshair; 
-            transition: background-color 1s ease;
-            user-select: none;
-            /* スマホでの長押しメニューなどを無効化 */
-            -webkit-touch-callout: none;
-            /* スクロール等の動作をCSSレベルで禁止 */
-            touch-action: none; 
-        }
-
-        /* 戻るボタン */
-        .back-link {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            text-decoration: none;
-            color: #ccc;
-            font-size: 12px;
-            z-index: 9999;
-            writing-mode: vertical-rl;
-            letter-spacing: 0.2em;
-            padding: 10px;
-            /* 背景をつけて読みやすく */
-            background: rgba(247, 246, 243, 0.8);
-            border-radius: 4px;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #f7f6f3;
+            color: #0a0a0a;
+            font-family: 'Shippori Mincho', serif;
+            cursor: crosshair;
+            transition: background-color 0.8s ease;
         }
 
         #container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px; /* スマホ用に余白を少し減らす */
-            box-sizing: border-box;
+            width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
         }
 
+        /* テキストブロック：中央配置を厳守 */
         #text-block {
-            writing-mode: vertical-rl; 
+            writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: 20px; 
-            height: 80%;
-            max-width: 90%;
-            
-            /* 初期値：完全に重なり合った状態 */
-            line-height: 0.1; 
-            letter-spacing: -1em;
-            
-            /* ヌルッとした動き */
-            transition: line-height 0.5s cubic-bezier(0.19, 1, 0.22, 1),
-                        letter-spacing 0.5s cubic-bezier(0.19, 1, 0.22, 1),
-                        opacity 1s, color 1s;
-
-            mix-blend-mode: multiply; 
-            opacity: 0; 
-        }
-
-        /* 説明書きレイヤー */
-        #instruction-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            font-size: clamp(16px, 4vw, 22px); /* 画面サイズに合わせて可変 */
+            white-space: nowrap;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            pointer-events: none;
-            transition: opacity 1s ease;
-            z-index: 100;
+            
+            /* 初期状態：中心で凝縮 */
+            line-height: 0;
+            letter-spacing: -1em;
+            opacity: 0;
+            
+            /* 重なりの演出 */
+            mix-blend-mode: multiply;
+            transition: line-height 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                        letter-spacing 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                        opacity 1.5s ease;
         }
 
-        #instruction-layer p {
-            font-size: 13px;
-            letter-spacing: 0.25em;
-            color: #666;
-            background: rgba(247, 246, 243, 0.9); 
-            padding: 30px 50px;
-            border: 1px solid rgba(0,0,0,0.05);
-            text-align: center;
-            line-height: 2.2;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            /* スマホで幅広になりすぎないように */
-            width: 70%;
-            box-sizing: border-box;
-        }
-        
-        .hint-arrow {
-            margin-top: 25px;
-            font-size: 24px;
-            color: #aaa;
-            animation: pulse 2.5s infinite ease-in-out;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; transform: translate(0, 0); }
-            50% { opacity: 1; transform: translate(15px, 15px); }
-        }
-
-        /* 状態表示 */
-        #status {
+        /* 案内文 */
+        #instruction {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            font-size: 10px;
-            color: #ccc;
-            font-family: monospace;
+            bottom: 10%;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            color: #999;
             pointer-events: none;
-            opacity: 0.6;
+            transition: opacity 0.5s;
         }
 
-        /* 読める状態（スイートスポット） */
+        /* スイートスポットに入った時の演出 */
         body.readable {
-            background-color: #fff; 
+            background-color: #fff;
         }
         body.readable #text-block {
-            mix-blend-mode: normal; 
-            color: #000; 
+            mix-blend-mode: normal;
+            color: #000;
         }
 
-        /* ▼ スマホ対応（メディアクエリ） ▼ */
-        @media (max-width: 768px) {
-            #text-block {
-                font-size: 16px; /* 文字サイズを少し小さく */
-                height: 85%; /* 高さを確保 */
-            }
-            #instruction-layer p {
-                padding: 20px 30px;
-                font-size: 12px;
-            }
+        /* 中央の軸を示す微かな印（必要なければ消してください） */
+        #center-axis {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 50%;
+            pointer-events: none;
         }
-
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">目次へ戻る</a>
-
-    <div id="instruction-layer">
-        <p>言葉は凝縮されています。<br>余白を探り当て、<br>意味をほどいてください。</p>
-        <div class="hint-arrow">↘</div>
-    </div>
-
     <div id="container">
+        <div id="center-axis"></div>
         <div id="text-block">
-            或る日の暮方の事である。<br>
-            一人の下人が、羅生門の下で雨やみを待っていた。<br>
-            広い門の下には、この男のほかに誰もいない。<br>
-            ただ、所々丹塗の剥げた、大きな円柱に、<br>
-            蟋蟀が一匹とまっている。<br>
+            私が両手をひろげても、<br>
+            お空はちっとも飛べないが、<br>
+            飛べる小鳥は私のやうに、<br>
+            地べたを速くは走れない。<br>
             <br>
-            羅生門が、朱雀大路にある以上は、<br>
-            この男のほかにも、雨やみをする市女笠や揉烏帽子が、<br>
-            もう二三人はありそうなものである。<br>
-            それが、この男のほかには誰もいない。<br>
+            私がからだをゆすっても、<br>
+            きれいな音は出ないけど、<br>
+            あの鳴る鈴は私のやうに、<br>
+            たくさんな唄は知らないよ。<br>
             <br>
-            何故かというと、この二三年、京都には、<br>
-            地震とか辻風とか火事とか饑饉とかいう災がつづいて起った。<br>
-            そこで洛中のさびれ方は一通りではない。<br>
-            旧記によれば、仏像や仏具を打砕いて、<br>
-            その丹がついたり、金銀の箔がついたりした木を、<br>
-            路ばたにつみ重ねて、薪の料に売っていたという事である。<br>
-            洛中がその始末であるから、羅生門の修理などは、<br>
-            元より誰も捨てて顧る者がなかった。
+            鈴と、小鳥と、それから私、<br>
+            みんなちがつて、みんないい。
         </div>
+        <div id="instruction">中心から遠ざかるほど、意味はほどけてゆく</div>
     </div>
-
-    <div id="status">Waiting for input...</div>
 
     <script>
         const textBlock = document.getElementById('text-block');
-        const instruction = document.getElementById('instruction-layer');
-        const status = document.getElementById('status');
+        const instruction = document.getElementById('instruction');
         const body = document.body;
 
-        // 設定パラメータ
-        const MIN_LETTER_SPACING = -0.9; 
-        const MIN_LINE_HEIGHT = 0.0; 
-        
-        const MAX_LETTER_SPACING = 2.0;
-        const MAX_LINE_HEIGHT = 4.5;
-
-        const READABLE_RANGE = {
-            lsMin: 0.00, lsMax: 0.40, 
-            lhMin: 1.60, lhMax: 2.40  
-        };
+        // パラメータ設定
+        const READABLE_DIST_RATIO = 0.35; // 画面のどのあたりで読めるようになるか
+        const MAX_LS = 1.2;  // 最大文字間
+        const MAX_LH = 2.8;  // 最大行間
+        const MIN_LS = -0.8; // 凝縮時文字間
+        const MIN_LH = 0.05; // 凝縮時行間
 
         window.onload = () => {
-            updateSpace(0, 0);
-            setTimeout(() => {
-                textBlock.style.opacity = 1;
-            }, 600);
+            textBlock.style.opacity = 1;
         };
 
-        function updateSpace(x, y) {
-            const ratioX = x / window.innerWidth;
-            const ratioY = y / window.innerHeight;
+        function handleMove(clientX, clientY) {
+            // 画面中心からの距離を計算
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            // 中心からの距離（0〜1に正規化）
+            const dx = clientX - centerX;
+            const dy = clientY - centerY;
+            const maxDist = Math.sqrt(centerX ** 2 + centerY ** 2);
+            const dist = Math.sqrt(dx ** dx + dy ** dy); 
+            const distRatio = Math.min(Math.sqrt(dx*dx + dy*dy) / maxDist * 1.5, 1.0);
 
-            const moveDistance = ratioX + ratioY;
-            if (moveDistance > 0.15) {
-                instruction.style.opacity = Math.max(0, 1 - (moveDistance - 0.15) * 2);
-            } else {
-                instruction.style.opacity = 1;
-            }
+            // 指数関数的に変化させて「中央での凝縮感」を出す
+            const easeRatio = Math.pow(distRatio, 0.8);
 
-            const lineHeight = MIN_LINE_HEIGHT + (MAX_LINE_HEIGHT - MIN_LINE_HEIGHT) * ratioX;
-            const letterSpacing = MIN_LETTER_SPACING + (MAX_LETTER_SPACING - MIN_LETTER_SPACING) * ratioY;
+            // スタイルの計算
+            const ls = MIN_LS + (MAX_LS - MIN_LS) * easeRatio;
+            const lh = MIN_LH + (MAX_LH - MIN_LH) * easeRatio;
 
-            textBlock.style.letterSpacing = `${letterSpacing}em`;
-            textBlock.style.lineHeight = lineHeight;
+            textBlock.style.letterSpacing = `${ls}em`;
+            textBlock.style.lineHeight = lh;
 
-            body.className = '';
-            const isReadable = 
-                letterSpacing >= READABLE_RANGE.lsMin && 
-                letterSpacing <= READABLE_RANGE.lsMax &&
-                lineHeight >= READABLE_RANGE.lhMin && 
-                lineHeight <= READABLE_RANGE.lhMax;
-
-            if (isReadable) {
+            // 読めるゾーンの判定（中心から特定の距離のリング状）
+            // distRatioが0.3〜0.5の間を「読みやすい」とする
+            if (distRatio > 0.25 && distRatio < 0.45) {
                 body.classList.add('readable');
-                status.textContent = "Readable Zone";
-                status.style.color = "#d14"; 
             } else {
-                status.style.color = "#ddd";
-                if (ratioX < 0.1 && ratioY < 0.1) {
-                    status.textContent = "Compressed Mass";
-                } else {
-                    status.textContent = "Searching...";
-                }
+                body.classList.remove('readable');
             }
+
+            // 操作されたら案内を消す
+            if (distRatio > 0.1) instruction.style.opacity = 0;
         }
 
-        // PC: マウス移動
-        window.addEventListener('mousemove', (e) => updateSpace(e.clientX, e.clientY));
-        
-        // スマホ: タッチ移動
+        // イベント登録
+        window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
         window.addEventListener('touchmove', (e) => {
-            // スクロールなどのデフォルト動作を無効化
-            if(e.cancelable) e.preventDefault(); 
-            
-            const t = e.touches[0];
-            updateSpace(t.clientX, t.clientY);
-        }, { passive: false });
-
-        // スマホ: タッチ開始時も反応させる（タップだけでも動くように）
-        window.addEventListener('touchstart', (e) => {
-            // if(e.cancelable) e.preventDefault(); // リンクなどは押せるようにここは制御しない
-            const t = e.touches[0];
-            updateSpace(t.clientX, t.clientY);
+            e.preventDefault();
+            handleMove(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: false });
 
     </script>
