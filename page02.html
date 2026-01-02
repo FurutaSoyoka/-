@@ -14,14 +14,12 @@
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
             font-family: 'Shippori Mincho', serif;
-            touch-action: none;
+            touch-action: none; /* ブラウザのズームなどを防ぐ */
         }
 
         #container {
             width: 100%; height: 100%;
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
         }
 
         #text-block {
@@ -30,16 +28,15 @@
             font-size: clamp(16px, 4.2vw, 19px); 
             text-align: center;
             
-            /* 極限の密集：文字が完全に重なって一つの塊になる数値 */
-            line-height: 0;
-            letter-spacing: -1.2em;
+            /* 【重要】CSSで最初から凝縮状態にしておく */
+            line-height: 0; 
+            letter-spacing: -1.2em; 
             opacity: 0;
             
-            /* 密集時は色が重なって真っ黒になる効果 */
             mix-blend-mode: multiply;
             color: #000;
             
-            /* 広がる時の粘り気を強く設定 */
+            /* 動きの滑らかさ */
             transition: line-height 0.8s cubic-bezier(0.16, 1, 0.3, 1),
                         letter-spacing 0.8s cubic-bezier(0.16, 1, 0.3, 1),
                         opacity 1.5s ease;
@@ -55,7 +52,7 @@
 
         #center-marker {
             position: absolute; width: 6px; height: 6px;
-            background: rgba(0,0,0,0.04); border-radius: 50%;
+            background: rgba(0,0,0,0.05); border-radius: 50%;
             pointer-events: none;
             left: 50%; top: 50%; transform: translate(-50%, -50%);
         }
@@ -87,14 +84,13 @@
         const body = document.body;
 
         const CONFIG = {
-            lh: { min: 0, max: 4.2 },   // 行間：0からスタート
-            ls: { min: -1.2, max: 1.3 }, // 文字間：より深く重ねる
-            baseDist: 15 // 塊を維持する遊びの距離
+            lh: { min: 0, max: 4.2 }, 
+            ls: { min: -1.2, max: 1.3 },
+            baseDist: 40 // 反応し始める指の間隔（px）
         };
 
+        // ページ読み込み時に透明度だけ戻す
         window.onload = () => {
-            // 最初は強制的に最小値（密集状態）を適用
-            updateSpace(0);
             setTimeout(() => {
                 textBlock.style.opacity = 1;
             }, 500);
@@ -105,10 +101,8 @@
         }
 
         function updateSpace(dist) {
-            // 広がり方の計算
+            // 指を広げた距離に基づいて計算
             let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
-            
-            // 動き出しに溜めを作り、後半で一気に広がる演出
             const intensity = Math.pow(Math.min(scale, 1.2), 1.3);
 
             const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * intensity;
@@ -117,7 +111,6 @@
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            // 演出の切り替え
             if (intensity > 0.4) {
                 body.classList.add('readable');
                 instruction.style.opacity = 0;
@@ -126,6 +119,15 @@
             }
         }
 
+        // 触れた瞬間の処理を追加
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                const dist = getDistance(e.touches[0], e.touches[1]);
+                updateSpace(dist);
+            }
+        }, { passive: false });
+
+        // 動かしている間の処理
         window.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2) {
                 if (e.cancelable) e.preventDefault();
