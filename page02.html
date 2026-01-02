@@ -27,20 +27,21 @@
         #text-block {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            /* 1ページに収まり、かつ均等に見えるサイズ */
-            font-size: clamp(15px, 4vw, 18px); 
+            font-size: clamp(16px, 4.2vw, 19px); 
             text-align: center;
             
-            /* 初期状態：極限まで凝縮 */
-            line-height: 0.01;
-            letter-spacing: -1.0em;
+            /* 極限の密集：文字が完全に重なって一つの塊になる数値 */
+            line-height: 0;
+            letter-spacing: -1.2em;
             opacity: 0;
             
+            /* 密集時は色が重なって真っ黒になる効果 */
             mix-blend-mode: multiply;
+            color: #000;
             
-            /* 粘り気とキレのある動き */
-            transition: line-height 0.7s cubic-bezier(0.19, 1, 0.22, 1),
-                        letter-spacing 0.7s cubic-bezier(0.19, 1, 0.22, 1),
+            /* 広がる時の粘り気を強く設定 */
+            transition: line-height 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        letter-spacing 0.8s cubic-bezier(0.16, 1, 0.3, 1),
                         opacity 1.5s ease;
         }
 
@@ -51,11 +52,10 @@
         }
 
         body.readable { background-color: #fff; }
-        body.readable #text-block { mix-blend-mode: normal; color: #000; }
 
         #center-marker {
             position: absolute; width: 6px; height: 6px;
-            background: rgba(0,0,0,0.03); border-radius: 50%;
+            background: rgba(0,0,0,0.04); border-radius: 50%;
             pointer-events: none;
             left: 50%; top: 50%; transform: translate(-50%, -50%);
         }
@@ -87,13 +87,17 @@
         const body = document.body;
 
         const CONFIG = {
-            lh: { min: 0.01, max: 4.0 }, // 行間（左右）をさらに拡大
-            ls: { min: -1.0, max: 1.2 }, // 文字間（上下）を大げさに変化
-            baseDist: 20
+            lh: { min: 0, max: 4.2 },   // 行間：0からスタート
+            ls: { min: -1.2, max: 1.3 }, // 文字間：より深く重ねる
+            baseDist: 15 // 塊を維持する遊びの距離
         };
 
         window.onload = () => {
-            textBlock.style.opacity = 1;
+            // 最初は強制的に最小値（密集状態）を適用
+            updateSpace(0);
+            setTimeout(() => {
+                textBlock.style.opacity = 1;
+            }, 500);
         };
 
         function getDistance(t1, t2) {
@@ -101,11 +105,11 @@
         }
 
         function updateSpace(dist) {
-            // 広がり方の感度：分母を小さくして、少しの動きで大きく変わるように
-            let scale = Math.max(0, (dist - CONFIG.baseDist) / 180);
+            // 広がり方の計算
+            let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
             
-            // べき乗（1.2）にすることで、広げれば広げるほど加速してバラバラになる演出
-            const intensity = Math.pow(Math.min(scale, 1.2), 1.2);
+            // 動き出しに溜めを作り、後半で一気に広がる演出
+            const intensity = Math.pow(Math.min(scale, 1.2), 1.3);
 
             const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * intensity;
             const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * intensity;
@@ -113,7 +117,8 @@
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            if (intensity > 0.5) {
+            // 演出の切り替え
+            if (intensity > 0.4) {
                 body.classList.add('readable');
                 instruction.style.opacity = 0;
             } else {
