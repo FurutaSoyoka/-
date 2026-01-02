@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>呼吸する余白 - 羅生門 (Pinch Action)</title>
+    <title>呼吸する余白 - 羅生門</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,8 +13,9 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
-            font-family: 'Shippori Mincho', serif;
-            touch-action: none; /* ブラウザのデフォルトズームを無効化 */
+            font-family: 'Shippori Mincho', "Yu Mincho", "Hiragino Mincho ProN", serif;
+            touch-action: none;
+            cursor: crosshair;
         }
 
         #container {
@@ -25,89 +26,96 @@
         #text-block {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(16px, 4.5vw, 20px); 
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start; /* 上揃え */
+            font-size: clamp(16px, 4.2vw, 19px); /* 1ページに収まりやすいよう微調整 */
+            height: 80%;
+            max-width: 90%;
             
-            /* 初期状態：真ん中にギュッと凝縮 */
+            /* 初期状態（一番初めのコードの凝縮設定） */
             line-height: 0.05;
             letter-spacing: -0.9em;
             opacity: 0;
             
-            /* 指の動きに吸い付くような滑らかな変化 */
-            transition: 
-                line-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                letter-spacing 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 1.5s ease;
-        }
-
-        .title {
-            /* 題名と本文の間隔を広く */
-            margin-left: 3em; 
-            font-weight: 600;
+            mix-blend-mode: multiply;
+            
+            /* インクの粘り気を感じさせる動き（一番初めの設定を維持） */
+            transition: line-height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                        letter-spacing 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 1.5s ease, color 1s;
         }
 
         #instruction {
             position: absolute; bottom: 8%; width: 100%;
-            text-align: center; font-size: 11px; letter-spacing: 0.2em;
-            color: #bbb; pointer-events: none;
+            text-align: center; font-size: 11px; letter-spacing: 0.25em;
+            color: #aaa; pointer-events: none; transition: opacity 0.8s;
         }
 
+        /* 読みやすい距離（広げた時）の背景変化 */
         body.readable { background-color: #fff; }
+        body.readable #text-block { mix-blend-mode: normal; color: #000; }
+
+        #center-marker {
+            position: absolute; width: 6px; height: 6px;
+            background: rgba(0,0,0,0.03); border-radius: 50%;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
     <div id="container">
+        <div id="center-marker"></div>
         <div id="text-block">
-            <span class="title">或る日の暮方の事である。</span>
-            <span>一人の下人が、羅生門の下で</span>
-            <span>雨やみを待っていた。</span>
-            <span>広い門の下には、この男のほかに</span>
-            <span>誰もいない。ただ、所々丹塗の</span>
-            <span>剥げた、大きな円柱に、</span>
-            <span>蟋蟀が一匹とまっている。</span>
+            或る日の暮方の事である。<br>
+            一人の下人が、羅生門の下で雨やみを待っていた。<br>
+            広い門の下には、この男のほかに誰もいない。<br>
+            ただ、所々丹塗の剥げた、大きな円柱に、<br>
+            蟋蟀が一匹とまっている。<br>
+            <br>
+            羅生門が、朱雀大路にある以上は、<br>
+            この男のほかにも、雨やみをする市女笠や揉烏帽子が、<br>
+            もう二三人はありそうなものである。<br>
+            それが、この男のほかには誰もいない。
         </div>
     </div>
 
-    <div id="instruction">二本の指で、間を広げる</div>
+    <div id="instruction">中心を探り、意味をほどく</div>
 
     <script>
         const textBlock = document.getElementById('text-block');
         const instruction = document.getElementById('instruction');
         const body = document.body;
 
-        // パラメータ設定
+        // パラメータ：一番初めのコードの数値をベースに調整
         const CONFIG = {
             lh: { min: 0.05, max: 3.5 }, // 行間
-            ls: { min: -0.9, max: 0.5 },  // 文字間
-            baseDist: 50 // 凝縮状態の基準距離（px）
+            ls: { min: -0.9, max: 0.4 },  // 文字間
+            baseDist: 40 // これより指を広げると文字がほどけ始める
         };
 
         window.onload = () => {
-            setTimeout(() => { textBlock.style.opacity = 1; }, 500);
+            textBlock.style.opacity = 1;
         };
 
-        // 2点間の距離を計算する関数
+        // 二点間の距離を計算
         function getDistance(t1, t2) {
             return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         }
 
-        function updateSpacing(dist) {
-            // 基準距離からの広がり具合を計算（1.0以上で広がっていく）
+        function updateSpace(dist) {
+            // 指を広げる動作（ピンチアウト）を数値化
             let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
             
-            // 指を広げるほど値が大きくなるようマッピング
-            const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * Math.min(scale, 1.2);
-            const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * Math.min(scale, 1.2);
+            // ほどける量（最大値を超えないように制限）
+            const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * Math.min(scale, 1.0);
+            const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * Math.min(scale, 1.0);
 
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            // スイートスポット判定
-            if (scale > 0.6 && scale < 1.0) {
+            // 一定以上広がったら背景を白く、説明を消す
+            if (scale > 0.5) {
                 body.classList.add('readable');
+                instruction.style.opacity = 0;
             } else {
                 body.classList.remove('readable');
             }
@@ -116,18 +124,17 @@
         window.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2) {
                 if (e.cancelable) e.preventDefault();
-                
                 const dist = getDistance(e.touches[0], e.touches[1]);
-                updateSpacing(dist);
-                
-                instruction.style.opacity = 0;
+                updateSpace(dist);
             }
         }, { passive: false });
 
-        // 指を離した時にゆっくり元の凝縮状態に戻す（お好みで）
+        // 指を離した時にゆっくり元の凝縮状態に戻る（お好みで有効にしてください）
+        /*
         window.addEventListener('touchend', () => {
-            // updateSpacing(CONFIG.baseDist); // 戻したくない場合はここをコメントアウト
+            updateSpace(CONFIG.baseDist);
         });
+        */
     </script>
 </body>
 </html>
