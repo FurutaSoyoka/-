@@ -20,29 +20,28 @@
         #container {
             width: 100%; height: 100%;
             display: flex; 
-            justify-content: center; /* 左右の中央 */
-            align-items: center;     /* 上下の中央 */
+            justify-content: center; 
+            align-items: center;
         }
 
         #text-block {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(16px, 4.2vw, 19px);
-            
-            /* テキストそのものも中央に寄せる（上下の広がりを均等にするため） */
+            /* 1ページに収まり、かつ均等に見えるサイズ */
+            font-size: clamp(15px, 4vw, 18px); 
             text-align: center;
             
-            /* 初期状態：中心に凝縮 */
-            line-height: 0.05;
-            letter-spacing: -0.9em;
+            /* 初期状態：極限まで凝縮 */
+            line-height: 0.01;
+            letter-spacing: -1.0em;
             opacity: 0;
             
             mix-blend-mode: multiply;
             
-            /* 指の動きに追従する滑らかな遷移 */
-            transition: line-height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                        letter-spacing 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                        opacity 1.5s ease, color 1s;
+            /* 粘り気とキレのある動き */
+            transition: line-height 0.7s cubic-bezier(0.19, 1, 0.22, 1),
+                        letter-spacing 0.7s cubic-bezier(0.19, 1, 0.22, 1),
+                        opacity 1.5s ease;
         }
 
         #instruction {
@@ -68,15 +67,15 @@
         <div id="center-marker"></div>
         <div id="text-block">
             或る日の暮方の事である。<br>
-            一人の下人が、羅生門の下で雨やみを待っていた。<br>
-            広い門の下には、この男のほかに誰もいない。<br>
-            ただ、所々丹塗の剥げた、大きな円柱に、<br>
-            蟋蟀が一匹とまっている。<br>
-            <br>
-            羅生門が、朱雀大路にある以上は、<br>
-            この男のほかににも、雨やみをする市女笠や揉烏帽子が、<br>
-            もう二三人はありそうなものである。<br>
-            それが、この男のほかにには誰もいない。
+            一人の下人が羅生門の下で<br>
+            雨やみを待っていたのだ。<br>
+            広い門の下にはこの男の他<br>
+            誰もいない。ただ所々丹塗<br>
+            の剥げた大きな円柱に一匹<br>
+            蟋蟀がとまっているだけだ。<br>
+            羅生門が朱雀大路にある様<br>
+            この男の他にも雨やみする<br>
+            人が居そうなものであるが
         </div>
     </div>
 
@@ -88,9 +87,9 @@
         const body = document.body;
 
         const CONFIG = {
-            lh: { min: 0.05, max: 3.5 }, // 左右の広がり
-            ls: { min: -0.9, max: 0.4 },  // 上下の広がり
-            baseDist: 30 // 最初の塊のサイズ
+            lh: { min: 0.01, max: 4.0 }, // 行間（左右）をさらに拡大
+            ls: { min: -1.0, max: 1.2 }, // 文字間（上下）を大げさに変化
+            baseDist: 20
         };
 
         window.onload = () => {
@@ -102,11 +101,11 @@
         }
 
         function updateSpace(dist) {
-            // 指を広げた量
-            let scale = Math.max(0, (dist - CONFIG.baseDist) / 220);
+            // 広がり方の感度：分母を小さくして、少しの動きで大きく変わるように
+            let scale = Math.max(0, (dist - CONFIG.baseDist) / 180);
             
-            // イージングをかけて広がりを自然に
-            const intensity = Math.pow(Math.min(scale, 1.0), 0.8);
+            // べき乗（1.2）にすることで、広げれば広げるほど加速してバラバラになる演出
+            const intensity = Math.pow(Math.min(scale, 1.2), 1.2);
 
             const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * intensity;
             const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * intensity;
@@ -114,8 +113,7 @@
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            // 読める状態の演出
-            if (intensity > 0.6) {
+            if (intensity > 0.5) {
                 body.classList.add('readable');
                 instruction.style.opacity = 0;
             } else {
