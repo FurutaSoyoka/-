@@ -13,88 +13,85 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
-            font-family: 'Shippori Mincho', "Yu Mincho", "Hiragino Mincho ProN", serif;
+            font-family: 'Shippori Mincho', serif;
             touch-action: none;
             cursor: crosshair;
         }
 
         #container {
             width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; 
+            justify-content: center; /* 水平方向の中央（行の集まりを中央に） */
+            align-items: center;    /* 垂直方向の中央 */
         }
 
         #text-block {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(16px, 4.5vw, 20px); 
-            height: 80%;
-            max-width: 90%;
+            font-size: clamp(17px, 4.5vw, 21px); 
+            /* 上揃えにするための設定 */
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; 
             
-            /* 初期値（外側：凝縮状態） */
-            line-height: 0.05;
-            letter-spacing: -0.9em;
+            height: 75vh; /* 1ページに収まる高さ */
+            max-width: 85vw;
+            
+            /* 初期状態：中心で凝縮 */
+            line-height: 0.1;
+            letter-spacing: -0.8em;
             opacity: 0;
             
-            mix-blend-mode: multiply;
-            
-            /* インクの粘り気を感じさせる動き */
-            transition: line-height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                        letter-spacing 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                        opacity 1.5s ease, color 1s;
+            transition: 
+                line-height 0.7s cubic-bezier(0.23, 1, 0.32, 1),
+                letter-spacing 0.7s cubic-bezier(0.23, 1, 0.32, 1),
+                opacity 1.5s ease;
+        }
+
+        /* 題名（1行目）と本文の間隔を広げる */
+        .title {
+            margin-left: 2.5em; /* 縦書きなので左側のマージンが行間に相当 */
+            font-weight: 600;
         }
 
         #instruction {
             position: absolute; bottom: 8%; width: 100%;
-            text-align: center; font-size: 11px; letter-spacing: 0.25em;
-            color: #aaa; pointer-events: none; transition: opacity 0.8s;
+            text-align: center; font-size: 11px; letter-spacing: 0.2em;
+            color: #bbb; pointer-events: none; transition: opacity 0.8s;
         }
 
-        /* 読みやすい距離に入った時の背景変化 */
         body.readable { background-color: #fff; }
-        body.readable #text-block { mix-blend-mode: normal; color: #000; }
-
-        #center-marker {
-            position: absolute; width: 6px; height: 6px;
-            background: rgba(0,0,0,0.03); border-radius: 50%;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
 
     <div id="container">
-        <div id="center-marker"></div>
         <div id="text-block">
-            或る日の暮方の事である。<br>
-            一人の下人が、羅生門の下で雨やみを待っていた。<br>
-            広い門の下には、この男のほかに誰もいない。<br>
-            ただ、所々丹塗の剥げた、大きな円柱に、<br>
-            蟋蟀が一匹とまっている。<br>
-            <br>
-            羅生門が、朱雀大路にある以上は、<br>
-            この男のほかにも、雨やみをする市女笠や揉烏帽子が、<br>
-            もう二三人はありそうなものである。<br>
-            それが、この男のほかには誰もいない。
+            <span class="title">或る日の暮方の事である。</span>
+            <span>一人の下人が、羅生門の下で</span>
+            <span>雨やみを待っていた。</span>
+            <span>広い門の下には、この男のほかに</span>
+            <span>誰もいない。ただ、所々丹塗の</span>
+            <span>剥げた、大きな円柱に、</span>
+            <span>蟋蟀が一匹とまっている。</span>
         </div>
     </div>
 
-    <div id="instruction">中心を探り、意味をほどく</div>
+    <div id="instruction">中心に触れ、余白を解く</div>
 
     <script>
         const textBlock = document.getElementById('text-block');
         const instruction = document.getElementById('instruction');
         const body = document.body;
 
-        // パラメータ：行間と文字間の範囲
         const CONFIG = {
-            lh: { min: 0.05, max: 3.5 }, // 横の行間
-            ls: { min: -0.9, max: 0.5 }   // 縦の文字間
+            lh: { min: 0.2, max: 3.2 }, // 行間（左右）
+            ls: { min: -0.5, max: 0.4 }  // 文字間（上下）
         };
 
         window.onload = () => {
             textBlock.style.opacity = 1;
-            // 初期状態（画面外側を想定した凝縮）
-            updateSpace(0, 0);
+            updateSpace(window.innerWidth / 2, window.innerHeight / 2);
         };
 
         function updateSpace(clientX, clientY) {
@@ -103,38 +100,35 @@
             const centerX = winW / 2;
             const centerY = winH / 2;
 
-            // 中心からの距離（0.0 〜 1.0）
+            // 中心からの距離を計算 (0.0=中心, 1.0=端)
             const distX = Math.abs(clientX - centerX) / (winW / 2);
             const distY = Math.abs(clientY - centerY) / (winH / 2);
 
-            // べき乗によるイージング（中心付近での感度を高める）
-            const easedX = Math.pow(distX, 0.8);
-            const easedY = Math.pow(distY, 0.8);
+            // 指の動きに合わせ、中心に近いほど広がる（反転計算）
+            // 0.7乗することで中心付近での広がりをより滑らかに
+            const intensityX = Math.pow(Math.max(0, 1.0 - distX), 0.7);
+            const intensityY = Math.pow(Math.max(0, 1.0 - distY), 0.7);
 
-            // 中心に近い（easedが小さい）ほど広がるように計算を反転 (1.0 - eased)
-            const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * (1.0 - easedX);
-            const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * (1.0 - easedY);
+            const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * intensityX;
+            const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * intensityY;
 
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            // スイートスポット判定：中心付近の一定範囲内
-            if (distX < 0.45 && distX > 0.05 && distY < 0.45 && distY > 0.05) {
+            // 中心に近い時に背景を白く
+            if (distX < 0.3 && distY < 0.3) {
                 body.classList.add('readable');
             } else {
                 body.classList.remove('readable');
             }
 
-            // 操作に応じて案内を消す
-            if (distX < 0.8 || distY < 0.8) instruction.style.opacity = 0;
+            if (distX < 0.7 || distY < 0.7) instruction.style.opacity = 0;
         }
 
         window.addEventListener('mousemove', (e) => updateSpace(e.clientX, e.clientY));
-        
         window.addEventListener('touchmove', (e) => {
             if (e.cancelable) e.preventDefault();
-            const t = e.touches[0];
-            updateSpace(t.clientX, t.clientY);
+            updateSpace(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: false });
     </script>
 </body>
