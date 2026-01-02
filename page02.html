@@ -13,31 +13,33 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
-            font-family: 'Shippori Mincho', "Yu Mincho", "Hiragino Mincho ProN", serif;
+            font-family: 'Shippori Mincho', serif;
             touch-action: none;
-            cursor: crosshair;
         }
 
         #container {
             width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; 
+            justify-content: center; /* 左右の中央 */
+            align-items: center;     /* 上下の中央 */
         }
 
         #text-block {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(16px, 4.2vw, 19px); /* 1ページに収まりやすいよう微調整 */
-            height: 80%;
-            max-width: 90%;
+            font-size: clamp(16px, 4.2vw, 19px);
             
-            /* 初期状態（一番初めのコードの凝縮設定） */
+            /* テキストそのものも中央に寄せる（上下の広がりを均等にするため） */
+            text-align: center;
+            
+            /* 初期状態：中心に凝縮 */
             line-height: 0.05;
             letter-spacing: -0.9em;
             opacity: 0;
             
             mix-blend-mode: multiply;
             
-            /* インクの粘り気を感じさせる動き（一番初めの設定を維持） */
+            /* 指の動きに追従する滑らかな遷移 */
             transition: line-height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
                         letter-spacing 0.6s cubic-bezier(0.16, 1, 0.3, 1),
                         opacity 1.5s ease, color 1s;
@@ -49,7 +51,6 @@
             color: #aaa; pointer-events: none; transition: opacity 0.8s;
         }
 
-        /* 読みやすい距離（広げた時）の背景変化 */
         body.readable { background-color: #fff; }
         body.readable #text-block { mix-blend-mode: normal; color: #000; }
 
@@ -57,6 +58,7 @@
             position: absolute; width: 6px; height: 6px;
             background: rgba(0,0,0,0.03); border-radius: 50%;
             pointer-events: none;
+            left: 50%; top: 50%; transform: translate(-50%, -50%);
         }
     </style>
 </head>
@@ -72,9 +74,9 @@
             蟋蟀が一匹とまっている。<br>
             <br>
             羅生門が、朱雀大路にある以上は、<br>
-            この男のほかにも、雨やみをする市女笠や揉烏帽子が、<br>
+            この男のほかににも、雨やみをする市女笠や揉烏帽子が、<br>
             もう二三人はありそうなものである。<br>
-            それが、この男のほかには誰もいない。
+            それが、この男のほかにには誰もいない。
         </div>
     </div>
 
@@ -85,35 +87,35 @@
         const instruction = document.getElementById('instruction');
         const body = document.body;
 
-        // パラメータ：一番初めのコードの数値をベースに調整
         const CONFIG = {
-            lh: { min: 0.05, max: 3.5 }, // 行間
-            ls: { min: -0.9, max: 0.4 },  // 文字間
-            baseDist: 40 // これより指を広げると文字がほどけ始める
+            lh: { min: 0.05, max: 3.5 }, // 左右の広がり
+            ls: { min: -0.9, max: 0.4 },  // 上下の広がり
+            baseDist: 30 // 最初の塊のサイズ
         };
 
         window.onload = () => {
             textBlock.style.opacity = 1;
         };
 
-        // 二点間の距離を計算
         function getDistance(t1, t2) {
             return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         }
 
         function updateSpace(dist) {
-            // 指を広げる動作（ピンチアウト）を数値化
-            let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
+            // 指を広げた量
+            let scale = Math.max(0, (dist - CONFIG.baseDist) / 220);
             
-            // ほどける量（最大値を超えないように制限）
-            const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * Math.min(scale, 1.0);
-            const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * Math.min(scale, 1.0);
+            // イージングをかけて広がりを自然に
+            const intensity = Math.pow(Math.min(scale, 1.0), 0.8);
+
+            const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * intensity;
+            const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * intensity;
 
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            // 一定以上広がったら背景を白く、説明を消す
-            if (scale > 0.5) {
+            // 読める状態の演出
+            if (intensity > 0.6) {
                 body.classList.add('readable');
                 instruction.style.opacity = 0;
             } else {
@@ -128,13 +130,6 @@
                 updateSpace(dist);
             }
         }, { passive: false });
-
-        // 指を離した時にゆっくり元の凝縮状態に戻る（お好みで有効にしてください）
-        /*
-        window.addEventListener('touchend', () => {
-            updateSpace(CONFIG.baseDist);
-        });
-        */
     </script>
 </body>
 </html>
