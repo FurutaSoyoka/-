@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>呼吸する余白 - 羅生門</title>
+    <title>呼吸する余白 - 羅生門 (Pinch Action)</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,50 +14,44 @@
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
             font-family: 'Shippori Mincho', serif;
-            touch-action: none;
-            cursor: crosshair;
+            touch-action: none; /* ブラウザのデフォルトズームを無効化 */
         }
 
         #container {
             width: 100%; height: 100%;
-            display: flex; 
-            justify-content: center; /* 水平方向の中央（行の集まりを中央に） */
-            align-items: center;    /* 垂直方向の中央 */
+            display: flex; justify-content: center; align-items: center;
         }
 
         #text-block {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(17px, 4.5vw, 21px); 
-            /* 上揃えにするための設定 */
+            font-size: clamp(16px, 4.5vw, 20px); 
             display: flex;
             flex-direction: column;
-            align-items: flex-start; 
+            align-items: flex-start; /* 上揃え */
             
-            height: 75vh; /* 1ページに収まる高さ */
-            max-width: 85vw;
-            
-            /* 初期状態：中心で凝縮 */
-            line-height: 0.1;
-            letter-spacing: -0.8em;
+            /* 初期状態：真ん中にギュッと凝縮 */
+            line-height: 0.05;
+            letter-spacing: -0.9em;
             opacity: 0;
             
+            /* 指の動きに吸い付くような滑らかな変化 */
             transition: 
-                line-height 0.7s cubic-bezier(0.23, 1, 0.32, 1),
-                letter-spacing 0.7s cubic-bezier(0.23, 1, 0.32, 1),
+                line-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                letter-spacing 0.4s cubic-bezier(0.16, 1, 0.3, 1),
                 opacity 1.5s ease;
         }
 
-        /* 題名（1行目）と本文の間隔を広げる */
         .title {
-            margin-left: 2.5em; /* 縦書きなので左側のマージンが行間に相当 */
+            /* 題名と本文の間隔を広く */
+            margin-left: 3em; 
             font-weight: 600;
         }
 
         #instruction {
             position: absolute; bottom: 8%; width: 100%;
             text-align: center; font-size: 11px; letter-spacing: 0.2em;
-            color: #bbb; pointer-events: none; transition: opacity 0.8s;
+            color: #bbb; pointer-events: none;
         }
 
         body.readable { background-color: #fff; }
@@ -77,59 +71,63 @@
         </div>
     </div>
 
-    <div id="instruction">中心に触れ、余白を解く</div>
+    <div id="instruction">二本の指で、間を広げる</div>
 
     <script>
         const textBlock = document.getElementById('text-block');
         const instruction = document.getElementById('instruction');
         const body = document.body;
 
+        // パラメータ設定
         const CONFIG = {
-            lh: { min: 0.2, max: 3.2 }, // 行間（左右）
-            ls: { min: -0.5, max: 0.4 }  // 文字間（上下）
+            lh: { min: 0.05, max: 3.5 }, // 行間
+            ls: { min: -0.9, max: 0.5 },  // 文字間
+            baseDist: 50 // 凝縮状態の基準距離（px）
         };
 
         window.onload = () => {
-            textBlock.style.opacity = 1;
-            updateSpace(window.innerWidth / 2, window.innerHeight / 2);
+            setTimeout(() => { textBlock.style.opacity = 1; }, 500);
         };
 
-        function updateSpace(clientX, clientY) {
-            const winW = window.innerWidth;
-            const winH = window.innerHeight;
-            const centerX = winW / 2;
-            const centerY = winH / 2;
+        // 2点間の距離を計算する関数
+        function getDistance(t1, t2) {
+            return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        }
 
-            // 中心からの距離を計算 (0.0=中心, 1.0=端)
-            const distX = Math.abs(clientX - centerX) / (winW / 2);
-            const distY = Math.abs(clientY - centerY) / (winH / 2);
-
-            // 指の動きに合わせ、中心に近いほど広がる（反転計算）
-            // 0.7乗することで中心付近での広がりをより滑らかに
-            const intensityX = Math.pow(Math.max(0, 1.0 - distX), 0.7);
-            const intensityY = Math.pow(Math.max(0, 1.0 - distY), 0.7);
-
-            const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * intensityX;
-            const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * intensityY;
+        function updateSpacing(dist) {
+            // 基準距離からの広がり具合を計算（1.0以上で広がっていく）
+            let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
+            
+            // 指を広げるほど値が大きくなるようマッピング
+            const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * Math.min(scale, 1.2);
+            const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * Math.min(scale, 1.2);
 
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            // 中心に近い時に背景を白く
-            if (distX < 0.3 && distY < 0.3) {
+            // スイートスポット判定
+            if (scale > 0.6 && scale < 1.0) {
                 body.classList.add('readable');
             } else {
                 body.classList.remove('readable');
             }
-
-            if (distX < 0.7 || distY < 0.7) instruction.style.opacity = 0;
         }
 
-        window.addEventListener('mousemove', (e) => updateSpace(e.clientX, e.clientY));
         window.addEventListener('touchmove', (e) => {
-            if (e.cancelable) e.preventDefault();
-            updateSpace(e.touches[0].clientX, e.touches[0].clientY);
+            if (e.touches.length === 2) {
+                if (e.cancelable) e.preventDefault();
+                
+                const dist = getDistance(e.touches[0], e.touches[1]);
+                updateSpacing(dist);
+                
+                instruction.style.opacity = 0;
+            }
         }, { passive: false });
+
+        // 指を離した時にゆっくり元の凝縮状態に戻す（お好みで）
+        window.addEventListener('touchend', () => {
+            // updateSpacing(CONFIG.baseDist); // 戻したくない場合はここをコメントアウト
+        });
     </script>
 </body>
 </html>
