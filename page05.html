@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Breathing Space - Minimalist</title>
+    <title>Breathing Space - Responsive Minimal</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,7 +33,7 @@
             cursor: ew-resize;
         }
 
-        /* 文字が落ちるコンテナ（マスク適用） */
+        /* 落下コンテナ（マスク適用） */
         #rain-container {
             position: absolute;
             top: 0;
@@ -48,16 +48,15 @@
             -webkit-mask-image: linear-gradient(to bottom, black var(--mask-start), transparent var(--mask-end));
         }
 
-        /* 落ちてくる文字：小さく、光らせない */
         .rain-char {
             position: absolute;
-            font-size: 18px; /* 小さめに設定 */
+            font-size: 18px;
             color: #ffffff;
             will-change: top;
-            text-shadow: none; /* 光彩を削除 */
+            text-shadow: none;
         }
 
-        /* 受け皿：よりミニマルに */
+        /* 受け皿 */
         #catcher {
             position: absolute;
             bottom: var(--catcher-pos-bottom);
@@ -73,7 +72,6 @@
             z-index: 10;
         }
 
-        /* キャッチした瞬間の文字 */
         #caught-text {
             position: absolute;
             top: -40px;
@@ -101,7 +99,7 @@
             z-index: 1;
         }
 
-        /* 結果表示エリア：すっきりと1行（または適切な折り返し）に */
+        /* 結果表示エリア：縦書き・自動折り返し */
         #result-layer {
             position: fixed;
             top: 0;
@@ -114,18 +112,24 @@
             justify-content: center;
             align-items: center;
             background: var(--bg-bottom);
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         #result-container {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            height: 60vh; /* 高さを固定して、不必要な行の分散を防ぐ */
+            /* スマホの画面高さに合わせて調整（見切れ防止） */
+            max-height: 65dvh; 
+            max-width: 90vw;
             display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            font-size: 22px;
+            flex-direction: column;
+            flex-wrap: wrap; /* 高さを超えたら左へ折り返し */
+            align-content: center; /* 中央寄せ */
+            gap: 0.2em 1.2em; /* 文字間と行間（カラム間） */
+            font-size: clamp(18px, 5vw, 24px);
             line-height: 1.5;
-            letter-spacing: 0.1em;
+            overflow-x: auto; /* 万が一の時の横スクロール */
         }
 
         .res-char {
@@ -134,7 +138,7 @@
         }
 
         #footer-info {
-            margin-top: 60px;
+            margin-top: 40px;
             text-align: center;
         }
 
@@ -271,7 +275,6 @@
             for (let i = fallingChars.length - 1; i >= 0; i--) {
                 const p = fallingChars[i];
                 p.y += p.speed;
-                
                 p.el.style.top = p.y + 'px';
                 p.el.style.left = p.x + 'px';
 
@@ -295,13 +298,11 @@
             fallingChars.splice(index, 1);
             collectedChars.push(p.char);
 
-            // 一文字ずつ表示を切り替え
             caughtTextDisplay.textContent = p.char;
             caughtTextDisplay.classList.remove('active');
             void caughtTextDisplay.offsetWidth; 
             caughtTextDisplay.classList.add('active');
 
-            // 収集時の繊細な反応
             catcher.style.background = "rgba(255, 255, 255, 0.2)";
             setTimeout(() => {
                 catcher.style.background = "rgba(255, 255, 255, 0.05)";
@@ -312,17 +313,15 @@
             isFinished = true;
             resultLayer.style.display = 'flex';
             
-            // 全ての文字を一つのスパンとして追加し、美しく並べる
             collectedChars.forEach((char, i) => {
                 const span = document.createElement('span');
                 span.textContent = char;
                 span.classList.add('res-char');
                 resultContainer.appendChild(span);
                 
-                // 順次フェードイン
                 setTimeout(() => {
                     span.style.opacity = '1';
-                }, i * 60);
+                }, i * 50);
             });
 
             scoreDisplay.textContent = `${collectedChars.length} / ${textSource.length}`;
