@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>読むために、手を動かす</title>
+    <title>一文字ずつ、手繰り寄せる</title>
     <style>
         :root {
             --bg-color: #f8f9fa;
             --text-color: #333;
-            --accent-color: #888;
+            --accent-color: #bbb;
         }
 
         body, html {
@@ -28,50 +28,43 @@
         #app {
             width: 85%;
             max-width: 400px;
-            text-align: left; /* 読みやすさのため左寄せ */
-            line-height: 2.2;
-            letter-spacing: 0.1em;
-            min-height: 10em; /* 表示エリアを固定 */
+            min-height: 12em;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        /* 1文字ずつのアニメーション用 */
+        #text-display {
+            font-size: 1.25rem;
+            line-height: 2.2;
+            letter-spacing: 0.15em;
+            word-break: break-all;
+        }
+
+        /* 出てきた文字のアニメーション */
         .char {
             opacity: 0;
+            transform: translateX(-5px);
             display: inline-block;
-            animation: fadeIn 0.4s forwards;
+            animation: charAppear 0.2s forwards ease-out;
         }
 
-        @keyframes fadeIn {
-            to { opacity: 1; }
+        @keyframes charAppear {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
-        #progress-container {
+        /* 状況ガイド */
+        #status-guide {
             position: fixed;
-            bottom: 12%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 1px;
-            background: #ddd;
-        }
-
-        #progress-bar {
-            width: 0%;
-            height: 100%;
-            background: var(--text-color);
-            transition: width linear;
-        }
-
-        #guide {
-            position: fixed;
-            bottom: 6%;
-            left: 0;
+            bottom: 8%;
             width: 100%;
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--accent-color);
-            opacity: 0;
-            transition: opacity 0.5s;
+            letter-spacing: 0.2em;
         }
 
         #overlay {
@@ -82,7 +75,6 @@
             height: 100%;
             background: var(--bg-color);
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 100;
@@ -91,9 +83,9 @@
         button {
             background: none;
             border: 1px solid var(--text-color);
-            padding: 12px 24px;
+            padding: 15px 30px;
             font-family: inherit;
-            cursor: pointer;
+            letter-spacing: 0.1em;
         }
     </style>
 </head>
@@ -104,101 +96,88 @@
     </div>
 
     <div id="app">
-        <div id="text-content"></div>
+        <div id="text-display"></div>
     </div>
 
-    <div id="progress-container">
-        <div id="progress-bar"></div>
-    </div>
-    <div id="guide">スマホを軽く振る</div>
+    <div id="status-guide">左右に軽く振って読み進める</div>
 
     <script>
-        const texts = [
-            "本作品は、スマートフォンにおける無意識なスクロール行為によって、文章が読まれなくなっている現状に対し、",
+        const sentences = [
+            "本作品は、スマートフォンにおける無意識なスクロール行為によって、",
+            "文章が読まれなくなっている現状に対し、",
             "「振る」という身体的動作を、読む行為のトリガーとして設計した。",
-            "文章はスクロールでは進まない。",
-            "一定時間表示された後に、端末を振ることでのみ、次の文章が現れる。",
-            "これにより、読むことに区切りと意識的な動作を与え、",
-            "情報を単に消費するのではなく、「読む体験」へと変換することを目的とする。"
+            "文章はスクロールでは進まず、振ることで一文字ずつ現れる。",
+            "一文字ずつ、その手で手繰り寄せるように。",
+            "情報を消費するのではなく、「読む体験」へと変換するために。"
         ];
 
-        let currentIndex = 0;
-        let canShake = false;
-        let isTyping = false;
-        const typingSpeed = 50; // 1文字あたりの表示速度(ms)
-        const readTimeBase = 1500; // 文字表示完了後の最低待機時間(ms)
-        const shakeThreshold = 12; // 感度：値を小さくするほど敏感になります（以前は15+10でした）
+        let currentSentenceIdx = 0;
+        let currentCharIdx = 0;
+        let isWaitingNextSentence = false;
+        let lastShakeTime = 0;
+        const shakeCooldown = 150; // 次の文字が出るまでの最短時間(ms)
+        const shakeThreshold = 8;  // X軸の加速度の変化量のしきい値（小さいほど敏感）
 
-        const contentEl = document.getElementById('text-content');
-        const progressBar = document.getElementById('progress-bar');
-        const guideEl = document.getElementById('guide');
-        const overlay = document.getElementById('overlay');
+        const displayEl = document.getElementById('text-display');
+        const statusEl = document.getElementById('status-guide');
 
-        // 文字を1文字ずつ表示する関数
-        function typeWriter(text) {
-            isTyping = true;
-            canShake = false;
-            contentEl.innerHTML = '';
-            guideEl.style.opacity = 0;
-            progressBar.style.transition = "none";
-            progressBar.style.width = "0%";
+        // 文字を追加表示する
+        function showNextChar() {
+            const now = Date.now();
+            if (now - lastShakeTime < shakeCooldown) return;
 
-            const chars = text.split("");
-            chars.forEach((char, i) => {
+            const currentSentence = sentences[currentSentenceIdx];
+
+            // 新しい文章の開始時
+            if (currentCharIdx === 0 && !isWaitingNextSentence) {
+                displayEl.innerHTML = '';
+            }
+
+            if (currentCharIdx < currentSentence.length) {
                 const span = document.createElement('span');
-                span.innerText = char;
+                span.innerText = currentSentence[currentCharIdx];
                 span.className = 'char';
-                span.style.animationDelay = `${i * typingSpeed}ms`;
-                contentEl.appendChild(span);
-            });
+                displayEl.appendChild(span);
+                
+                currentCharIdx++;
+                lastShakeTime = now;
+                vibrate(15); // 軽い手応え
 
-            // 全文字表示完了後の処理
-            const totalTypingTime = chars.length * typingSpeed;
-            setTimeout(() => {
-                isTyping = false;
-                startProgress();
-            }, totalTypingTime);
-        }
-
-        // 読み待ちプログレスバーの開始
-        function startProgress() {
-            progressBar.style.transition = `width ${readTimeBase}ms linear`;
-            progressBar.style.width = "100%";
-
-            setTimeout(() => {
-                canShake = true;
-                guideEl.style.opacity = 1;
-            }, readTimeBase);
-        }
-
-        // 振動フィードバック（可能なデバイスのみ）
-        function vibrate() {
-            if (navigator.vibrate) {
-                navigator.vibrate(10); 
+                // 文章がすべて出揃ったか
+                if (currentCharIdx === currentSentence.length) {
+                    isWaitingNextSentence = true;
+                    statusEl.innerText = "大きく振って次の行へ";
+                } else {
+                    statusEl.innerText = "振って読み進める";
+                }
+            } else if (isWaitingNextSentence) {
+                // 文章が終わった状態で振られたら次へ
+                vibrate(40); // 少し強めの手応え
+                currentSentenceIdx++;
+                if (currentSentenceIdx >= sentences.length) currentSentenceIdx = 0;
+                currentCharIdx = 0;
+                isWaitingNextSentence = false;
+                displayEl.innerHTML = '';
+                statusEl.innerText = "振って読み進める";
             }
         }
 
-        // 加速度センサーの処理
-        let lastAcc = { x: 0, y: 0, z: 0 };
+        function vibrate(ms) {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        }
+
+        let lastX = 0;
         function handleMotion(event) {
-            if (!canShake || isTyping) return;
+            const acc = event.acceleration; // 重力を除いた加速度
+            if (!acc || acc.x === null) return;
 
-            const acc = event.accelerationIncludingGravity;
-            if (!acc) return;
-
-            // 変化量を計算（より敏感に反応させるため）
-            const deltaX = Math.abs(acc.x - lastAcc.x);
-            const deltaY = Math.abs(acc.y - lastAcc.y);
-            const deltaZ = Math.abs(acc.z - lastAcc.z);
+            // X軸（左右）の動きの強さを計算
+            const deltaX = Math.abs(acc.x - lastX);
             
-            if (deltaX > shakeThreshold || deltaY > shakeThreshold || deltaZ > shakeThreshold) {
-                vibrate();
-                currentIndex++;
-                if (currentIndex >= texts.length) currentIndex = 0;
-                typeWriter(texts[currentIndex]);
+            if (deltaX > shakeThreshold) {
+                showNextChar();
             }
-
-            lastAcc = { x: acc.x, y: acc.y, z: acc.z };
+            lastX = acc.x;
         }
 
         document.getElementById('start-btn').addEventListener('click', async () => {
@@ -210,8 +189,7 @@
             } else {
                 window.addEventListener('devicemotion', handleMotion);
             }
-            overlay.style.display = 'none';
-            typeWriter(texts[currentIndex]);
+            document.getElementById('overlay').style.display = 'none';
         });
     </script>
 </body>
