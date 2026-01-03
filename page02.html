@@ -16,6 +16,7 @@
             font-family: 'Shippori Mincho', serif;
             touch-action: none;
             -webkit-user-select: none;
+            transition: background-color 1.2s ease; /* 背景変化をより滑らかに */
         }
 
         #container {
@@ -26,7 +27,6 @@
             align-items: center;
         }
 
-        /* --- 文字の塊：最初から中央に表示されるように修正 --- */
         #text-block {
             position: absolute;
             top: 50%; left: 50%;
@@ -38,31 +38,29 @@
             text-align: center;
             white-space: nowrap;
             
-            /* 確実に塊に見える最小限の数値 */
+            /* 初期状態：塊 */
             line-height: 0.1; 
             letter-spacing: -0.9em; 
-            opacity: 1; /* 最初から表示 */
+            opacity: 1;
             color: #000;
             
-            /* ブラウザの非表示防止 */
             min-height: 20px;
             min-width: 20px;
-            
             mix-blend-mode: multiply;
             
-            transition: line-height 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                        letter-spacing 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            /* 戻る時（治る時）の速度。0.8s〜1.2sくらいが呼吸に近い */
+            transition: line-height 1s cubic-bezier(0.16, 1, 0.3, 1),
+                        letter-spacing 1s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 10;
         }
 
-        /* --- 説明エリア：塊の下に配置 --- */
         #intro-wrapper {
             position: absolute;
-            bottom: 15%; /* 画面下部から配置 */
+            bottom: 15%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: opacity 0.8s ease;
+            transition: opacity 1s ease;
             z-index: 5;
         }
 
@@ -137,7 +135,10 @@
         }
 
         function updateSpace(dist) {
-            introWrapper.classList.add('fade-out');
+            // 指が触れている間は案内を消す
+            if (dist > CONFIG.baseDist) {
+                introWrapper.classList.add('fade-out');
+            }
 
             let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
             const intensity = Math.pow(Math.min(scale, 1.2), 1.2);
@@ -155,6 +156,8 @@
             }
         }
 
+        // --- タッチイベントの制御 ---
+
         window.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 const dist = getDistance(e.touches[0], e.touches[1]);
@@ -169,6 +172,15 @@
                 updateSpace(dist);
             }
         }, { passive: false });
+
+        // 【追加】指を離した時の処理：初期状態の距離を渡して「治す」
+        window.addEventListener('touchend', (e) => {
+            // 指が1本以下になったら元の塊（baseDist）に戻す
+            updateSpace(CONFIG.baseDist);
+            
+            // 案内を再び出したい場合は、以下のコメントを外してください
+            // introWrapper.classList.remove('fade-out');
+        });
     </script>
 </body>
 </html>
