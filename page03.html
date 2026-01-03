@@ -28,20 +28,20 @@
         }
 
         #intro-overlay h1 {
-            font-size: 22px; letter-spacing: 0.3em;
-            margin-bottom: 30px; color: #333;
+            font-size: 20px; letter-spacing: 0.3em;
+            margin-bottom: 30px; color: #333; font-weight: normal;
         }
 
         .instruction-text {
-            font-size: 13px; line-height: 2.4;
-            text-align: center; color: #888;
+            font-size: 12px; line-height: 2.4;
+            text-align: center; color: #999;
             margin-bottom: 50px; letter-spacing: 0.1em;
         }
 
         #start-btn {
             padding: 10px 30px; background: transparent;
-            border: 1px solid #ddd; color: #888;
-            font-size: 13px; letter-spacing: 0.2em;
+            border: 1px solid #eee; color: #999;
+            font-size: 12px; letter-spacing: 0.2em;
             cursor: pointer; border-radius: 2px;
         }
 
@@ -49,26 +49,31 @@
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
-            z-index: 0; padding: 30px; box-sizing: border-box;
+            z-index: 0; padding: 40px; box-sizing: border-box;
         }
 
         #text-container {
             writing-mode: vertical-rl; text-orientation: upright;
-            max-height: 85vh; max-width: 90vw;
+            max-height: 80vh; max-width: 85vw;
         }
 
         #text-inner {
-            color: #666; /* 霧に隠れやすく調整 */
-            font-size: 17px; line-height: 2.4; letter-spacing: 0.15em;
+            color: #777; /* 少し薄くして白に馴染ませる */
+            font-size: 15px; /* PCサイズを縮小 */
+            line-height: 2.6; letter-spacing: 0.15em;
         }
         
         #text-inner p { margin: 0 0 0 1.5em; }
+
+        @media (max-width: 768px) {
+            #text-inner { font-size: 13.5px; line-height: 2.2; } /* スマホサイズを縮小 */
+        }
 
         #fog-canvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 10; touch-action: none;
-            opacity: 0; transition: opacity 1.5s;
+            opacity: 0; transition: opacity 1s;
         }
 
         #next-btn-container {
@@ -81,9 +86,9 @@
 
         #next-btn {
             background: transparent; border: none;
-            border-bottom: 1px solid #ddd; color: #ccc;
+            border-bottom: 1px solid #eee; color: #ddd;
             padding: 5px 10px; font-size: 11px;
-            letter-spacing: 0.3em; cursor: pointer;
+            letter-spacing: 0.2em; cursor: pointer;
         }
     </style>
 </head>
@@ -121,7 +126,7 @@
         const nextBtnContainer = document.getElementById('next-btn-container');
         const nextBtn = document.getElementById('next-btn');
 
-        const RECOVERY_SPEED = 0.03; // 「すーーっ」と消える絶妙な速度
+        const RECOVERY_SPEED = 0.04; // 戻るスピード（すーーっ）
         const SCRATCH_RADIUS = 60;
 
         let isDrawing = false;
@@ -129,7 +134,7 @@
         let isGameStarted = false;
         let hasInteracted = false;
         let currentSegmentIndex = 0;
-        let frameCount = 0;
+        let whiteoutTimer = 0; // 完全隠蔽までのカウンタ
 
         function init() {
             resize();
@@ -138,35 +143,26 @@
             textInner.innerHTML = storySegments[0];
         }
 
-        // --- 共通の「パッと見せて、消えていく」演出関数 ---
+        // パッと見せてから、白く還る演出
         function transitionToSegment(index) {
-            // 1. 霧を一度全消去（透明にする）
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 2. テキストを更新
             textInner.innerHTML = storySegments[index];
-            
-            // 3. 演出用にフレームカウントをリセット
-            frameCount = 0;
+            whiteoutTimer = 0; // タイマーリセット
         }
 
         startBtn.addEventListener('click', () => {
             introOverlay.style.opacity = 0;
             setTimeout(() => { introOverlay.style.display = 'none'; }, 1500);
-            
             canvas.style.opacity = 1;
             isGameStarted = true;
-            
-            transitionToSegment(0); // 最初の演出実行
+            transitionToSegment(0);
             loop();
         });
 
         nextBtn.addEventListener('click', () => {
             if (currentSegmentIndex >= storySegments.length - 1) return;
             currentSegmentIndex++;
-            
-            transitionToSegment(currentSegmentIndex); // 切り替え時の演出実行
-
+            transitionToSegment(currentSegmentIndex);
             if (currentSegmentIndex === storySegments.length - 1) {
                 nextBtn.textContent = "（終）";
                 nextBtn.disabled = true;
@@ -184,19 +180,26 @@
             if (!isGameStarted) return;
             requestAnimationFrame(loop);
             
-            // 霧を徐々に重ねる
+            // 通常の霧再生（半透明の重ね塗り）
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = `rgba(255, 255, 255, ${RECOVERY_SPEED})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 【重要】ゴースト防止策
-            // 一定フレーム(約5秒)経過したら、完全に不透明な白で上書きして透けを無くす
-            frameCount++;
-            if (frameCount > 300 && !isDrawing) {
-                ctx.fillStyle = '#ffffff';
-                ctx.globalAlpha = 0.1; // じわじわ完全に白くする
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.globalAlpha = 1.0;
+            // ★ 修正：完全に白くするための強制処理
+            // 指を離してから一定時間(約4秒)経つと、完全に100%の白で塗りつぶす
+            if (!isDrawing) {
+                whiteoutTimer++;
+                if (whiteoutTimer > 200) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.globalAlpha = 0.05; // 最後にじわじわと100%の白へ
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.globalAlpha = 1.0;
+                }
+                // さらに時間が経ったら完全に固定（計算誤差を排除）
+                if (whiteoutTimer > 350) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
             }
         }
 
@@ -215,7 +218,7 @@
             }
             ctx.stroke();
             lastPoint = { x, y };
-            frameCount = 0; // 動かしている間は完全隠蔽タイマーをリセット
+            whiteoutTimer = 0; // 擦っている間は白化タイマーをリセット
         }
 
         function getPos(e) {
