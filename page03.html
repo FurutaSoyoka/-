@@ -67,6 +67,7 @@
             cursor: pointer;
             transition: all 0.4s;
             border-radius: 2px;
+            outline: none;
         }
 
         /* コンテンツレイヤー */
@@ -92,8 +93,7 @@
         }
 
         #text-inner {
-            /* 文字を完全に見えなくするため、少しだけ明るいグレー(#444)に調整 */
-            color: #444; 
+            color: #555; /* 霧に完全に隠れやすく、かつ読みやすい濃度 */
             font-size: 17px;
             line-height: 2.4;
             letter-spacing: 0.15em;
@@ -145,7 +145,7 @@
             font-size: 11px;
             letter-spacing: 0.3em;
             cursor: pointer;
-            transition: all 1.5s;
+            transition: all 0.5s;
             outline: none;
             -webkit-tap-highlight-color: transparent;
         }
@@ -199,12 +199,11 @@
         const nextBtnContainer = document.getElementById('next-btn-container');
         const nextBtn = document.getElementById('next-btn');
 
-        // ▼▼▼ 調整箇所 ▼▼▼
-        const BASE_RECOVERY_SPEED = 0.03; // さらにおだやかに（忘却の速度を遅く）
-        const FLASH_RECOVERY_SPEED = 0.12; // 次の項へ行った時の「濃い霧」が戻る速度
+        // ▼▼▼ 速度調整 ▼▼▼
+        const BASE_RECOVERY_SPEED = 0.025; // 「すーーっ」と消えていく遅い速度
+        let recoverySpeed = BASE_RECOVERY_SPEED;
         const SCRATCH_RADIUS = 55;
 
-        let recoverySpeed = BASE_RECOVERY_SPEED;
         let isDrawing = false;
         let lastPoint = null;
         let isGameStarted = false;
@@ -218,9 +217,15 @@
             textInner.innerHTML = storySegments[currentSegmentIndex];
         }
 
+        // --- 開始ボタン ---
         startBtn.addEventListener('click', () => {
             introOverlay.style.opacity = 0;
             setTimeout(() => { introOverlay.style.display = 'none'; }, 1500);
+
+            // 【重要】開始時に霧をクリアして「パッ」と見せる
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             canvas.style.opacity = 1;
             isGameStarted = true;
             loop();
@@ -237,12 +242,33 @@
             if (!isGameStarted) return;
             requestAnimationFrame(loop);
             
-            // 霧を重ねる。完全に見えないようにするために合成モードを調整
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = `rgba(255, 255, 255, ${recoverySpeed})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
+        // --- 「次の刻へ」ボタン ---
+        nextBtn.addEventListener('click', () => {
+            if (currentSegmentIndex >= storySegments.length - 1) return;
+
+            // 1. 霧を一度全消去（パッと現れる）
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. 文字更新
+            currentSegmentIndex++;
+            textInner.innerHTML = storySegments[currentSegmentIndex];
+
+            // 3. 速度は常に一定の「すーーっ」とした遅さに
+            recoverySpeed = BASE_RECOVERY_SPEED;
+
+            if (currentSegmentIndex === storySegments.length - 1) {
+                nextBtn.textContent = "（終）";
+                nextBtn.disabled = true;
+            }
+        });
+
+        // --- 削る処理 ---
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out'; 
             ctx.beginPath();
@@ -260,32 +286,6 @@
             ctx.shadowBlur = 0;
             lastPoint = { x, y };
         }
-
-        // --- 次の項へ ---
-        nextBtn.addEventListener('click', () => {
-            if (currentSegmentIndex >= storySegments.length - 1) return;
-
-            // 1. 霧を完全にクリア（パッと見せる）
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 2. 文字更新
-            currentSegmentIndex++;
-            textInner.innerHTML = storySegments[currentSegmentIndex];
-
-            // 3. 演出：霧を「濃く・短く」戻す
-            recoverySpeed = FLASH_RECOVERY_SPEED;
-
-            // 4. 一定時間後に通常のゆっくりした速度に戻す
-            setTimeout(() => {
-                recoverySpeed = BASE_RECOVERY_SPEED;
-            }, 1000); // 1秒間だけ濃い霧が戻る演出
-
-            if (currentSegmentIndex === storySegments.length - 1) {
-                nextBtn.textContent = "（終）";
-                nextBtn.disabled = true;
-            }
-        });
 
         function startDraw(e) {
             if (!isGameStarted) return;
