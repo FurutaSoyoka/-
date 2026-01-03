@@ -7,10 +7,9 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
-        /* --- 基本設定 --- */
         body, html {
             margin: 0;
             padding: 0;
@@ -21,10 +20,10 @@
             font-family: 'Shippori Mincho', serif;
             cursor: default;
             user-select: none;
-            position: fixed; /* iOSスクロール不具合対策 */
+            position: fixed;
         }
 
-        /* --- イントロ画面 --- */
+        /* イントロ画面 */
         #intro-overlay {
             position: fixed;
             top: 0;
@@ -37,47 +36,40 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: opacity 1.2s ease;
-            padding: 20px;
-            box-sizing: border-box;
+            transition: opacity 1.5s ease;
         }
 
         #intro-overlay h1 {
-            font-size: 24px;
+            font-size: 22px;
             letter-spacing: 0.3em;
             margin-bottom: 30px;
-            font-weight: 700;
+            font-weight: normal;
             color: #333;
         }
 
         .instruction-text {
-            font-size: 14px;
-            line-height: 2.2;
+            font-size: 13px;
+            line-height: 2.4;
             text-align: center;
-            color: #777;
-            margin-bottom: 40px;
+            color: #888;
+            margin-bottom: 50px;
             letter-spacing: 0.1em;
         }
 
         #start-btn {
-            padding: 12px 35px;
-            background: #fff;
-            border: 1px solid #333;
-            color: #333;
+            padding: 10px 30px;
+            background: transparent;
+            border: 1px solid #ddd;
+            color: #888;
             font-family: 'Shippori Mincho', serif;
-            font-size: 14px;
+            font-size: 13px;
             letter-spacing: 0.2em;
             cursor: pointer;
-            transition: all 0.3s;
-            border-radius: 4px;
-        }
-        
-        #start-btn:active {
-            background: #333;
-            color: #fff;
+            transition: all 0.4s;
+            border-radius: 2px;
         }
 
-        /* --- 物語表示レイヤー --- */
+        /* コンテンツレイヤー */
         #content-layer {
             position: absolute;
             top: 0;
@@ -88,34 +80,31 @@
             justify-content: center;
             align-items: center;
             z-index: 0;
-            padding: 40px 20px;
+            padding: 30px;
             box-sizing: border-box;
         }
 
         #text-container {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            max-height: 80vh; 
-            max-width: 85vw;
+            max-height: 85vh; 
+            max-width: 90vw;
         }
 
         #text-inner {
             color: #1a1a1a;
-            font-size: 18px; /* PC用 */
+            font-size: 17px;
             line-height: 2.4;
             letter-spacing: 0.15em;
-            transition: opacity 0.6s ease;
         }
         
         #text-inner p { margin: 0 0 0 1.5em; }
 
-        /* スマホ向け文字サイズ調整 */
         @media (max-width: 768px) {
-            #text-inner { font-size: 16px; line-height: 2.1; }
-            #text-inner p { margin: 0 0 0 1.2em; }
+            #text-inner { font-size: 15px; line-height: 2.0; }
         }
 
-        /* --- 霧（Canvas） --- */
+        /* 霧 */
         #fog-canvas {
             position: absolute;
             top: 0;
@@ -126,66 +115,49 @@
             cursor: crosshair;
             touch-action: none;
             opacity: 0;
-            transition: opacity 1.5s;
+            transition: opacity 2s;
         }
 
-        /* --- 操作ボタン --- */
+        /* 「次へ」ボタン（主張を抑えたデザイン） */
         #next-btn-container {
             position: absolute;
             bottom: 40px;
             left: 40px;
             z-index: 20;
             opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.8s, transform 0.8s;
+            transition: opacity 1.5s ease;
             pointer-events: none;
         }
 
         #next-btn-container.visible {
             opacity: 1;
-            transform: translateY(0);
             pointer-events: auto;
         }
 
         #next-btn {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #333;
-            color: #333;
-            padding: 12px 30px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #ccc; /* 下線のみのシンプルなデザイン */
+            color: #aaa;
+            padding: 5px 10px;
             font-family: 'Shippori Mincho', serif;
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.15em;
+            font-size: 12px;
+            letter-spacing: 0.3em;
             cursor: pointer;
-            border-radius: 50px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.5s;
             outline: none;
             -webkit-tap-highlight-color: transparent;
         }
-
-        /* ホバー（PC） */
-        @media (hover: hover) {
-            #next-btn:hover {
-                background: #f5f5f5;
-                box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-            }
+        
+        #next-btn:hover {
+            color: #666;
+            border-bottom: 1px solid #888;
         }
 
-        /* 押した時のフィードバック（重要） */
-        #next-btn:active, #next-btn.is-active {
-            background: #333 !important;
-            color: #fff !important;
-            transform: scale(0.92);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        #next-btn:disabled {
-            background: #eee !important;
-            border-color: #ccc !important;
-            color: #aaa !important;
-            cursor: not-allowed;
-            transform: none !important;
+        /* ボタンを押した瞬間、少しだけ文字が沈む程度の演出 */
+        #next-btn:active {
+            transform: translateY(2px);
+            color: #333;
         }
 
     </style>
@@ -195,7 +167,7 @@
     <div id="intro-overlay">
         <h1>揮発する記憶</h1>
         <div class="instruction-text">
-            夏目漱石『夢十夜』より抜粋<br><br>
+            夏目漱石『夢十夜』より<br><br>
             白い霧を指で拭うことで、<br>
             物語を一時的に留めることができます。<br><br>
             手を止めれば、即座に白へと還ります。
@@ -251,7 +223,7 @@
 
         startBtn.addEventListener('click', () => {
             introOverlay.style.opacity = 0;
-            setTimeout(() => { introOverlay.style.display = 'none'; }, 1200);
+            setTimeout(() => { introOverlay.style.display = 'none'; }, 1500);
             canvas.style.opacity = 1;
             isGameStarted = true;
             loop();
@@ -272,32 +244,10 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        function startDraw(e) {
-            if (!isGameStarted) return;
-            isDrawing = true;
-            const { x, y } = getPos(e);
-            lastPoint = { x, y };
-            scratch(x, y);
-            if (!hasInteracted) {
-                hasInteracted = true;
-                setTimeout(() => { nextBtnContainer.classList.add('visible'); }, 1500);
-            }
-        }
-
-        function moveDraw(e) {
-            if (!isDrawing) return;
-            if (e.cancelable) e.preventDefault();
-            const { x, y } = getPos(e);
-            scratch(x, y);
-        }
-
-        function endDraw() { isDrawing = false; lastPoint = null; }
-
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out'; 
             ctx.beginPath();
             ctx.shadowBlur = 20;
-            ctx.shadowColor = '#000';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
             ctx.lineWidth = SCRATCH_RADIUS;
@@ -312,34 +262,45 @@
             lastPoint = { x, y };
         }
 
-        function getPos(e) {
-            const t = e.touches ? e.touches[0] : e;
-            return { x: t.clientX, y: t.clientY };
-        }
-
+        // --- 「次の刻へ」ボタンの処理 ---
         nextBtn.addEventListener('click', () => {
             if (currentSegmentIndex >= storySegments.length - 1) return;
 
-            nextBtn.classList.add('is-active');
-            nextBtn.disabled = true;
-            textInner.style.opacity = 0;
-            recoverySpeed = 0.3; 
+            // 1. 霧を完全にクリアする（物語を一瞬だけ見せる）
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            setTimeout(() => {
-                currentSegmentIndex++;
-                textInner.innerHTML = storySegments[currentSegmentIndex];
-                textInner.style.opacity = 1;
-                recoverySpeed = BASE_RECOVERY_SPEED;
-                nextBtn.classList.remove('is-active');
+            // 2. テキストを更新
+            currentSegmentIndex++;
+            textInner.innerHTML = storySegments[currentSegmentIndex];
 
-                if (currentSegmentIndex === storySegments.length - 1) {
-                     nextBtn.textContent = "終焉";
-                     nextBtn.disabled = true;
-                } else {
-                    nextBtn.disabled = false;
-                }
-            }, 800);
+            // 3. 最後のページ判定
+            if (currentSegmentIndex === storySegments.length - 1) {
+                nextBtn.textContent = "（終）";
+                nextBtn.disabled = true;
+            }
         });
+
+        function startDraw(e) {
+            if (!isGameStarted) return;
+            isDrawing = true;
+            const t = e.touches ? e.touches[0] : e;
+            lastPoint = { x: t.clientX, y: t.clientY };
+            scratch(lastPoint.x, lastPoint.y);
+            if (!hasInteracted) {
+                hasInteracted = true;
+                setTimeout(() => { nextBtnContainer.classList.add('visible'); }, 2000);
+            }
+        }
+
+        function moveDraw(e) {
+            if (!isDrawing) return;
+            if (e.cancelable) e.preventDefault();
+            const t = e.touches ? e.touches[0] : e;
+            scratch(t.clientX, t.clientY);
+        }
+
+        function endDraw() { isDrawing = false; lastPoint = null; }
 
         window.addEventListener('mousedown', startDraw);
         window.addEventListener('mousemove', moveDraw);
