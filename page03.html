@@ -92,7 +92,8 @@
         }
 
         #text-inner {
-            color: #1a1a1a;
+            /* 文字を完全に見えなくするため、少しだけ明るいグレー(#444)に調整 */
+            color: #444; 
             font-size: 17px;
             line-height: 2.4;
             letter-spacing: 0.15em;
@@ -104,7 +105,7 @@
             #text-inner { font-size: 15px; line-height: 2.0; }
         }
 
-        /* 霧 */
+        /* 霧のキャンバス */
         #fog-canvas {
             position: absolute;
             top: 0;
@@ -118,7 +119,7 @@
             transition: opacity 2s;
         }
 
-        /* 「次へ」ボタン */
+        /* 操作ボタン */
         #next-btn-container {
             position: absolute;
             bottom: 40px;
@@ -137,11 +138,11 @@
         #next-btn {
             background: transparent;
             border: none;
-            border-bottom: 1px solid #ccc;
-            color: #aaa;
+            border-bottom: 1px solid #ddd;
+            color: #ccc;
             padding: 5px 10px;
             font-family: 'Shippori Mincho', serif;
-            font-size: 12px;
+            font-size: 11px;
             letter-spacing: 0.3em;
             cursor: pointer;
             transition: all 0.5s;
@@ -150,13 +151,8 @@
         }
         
         #next-btn:hover {
-            color: #666;
-            border-bottom: 1px solid #888;
-        }
-
-        #next-btn:active {
-            transform: translateY(2px);
-            color: #333;
+            color: #999;
+            border-bottom: 1px solid #aaa;
         }
 
     </style>
@@ -203,12 +199,12 @@
         const nextBtnContainer = document.getElementById('next-btn-container');
         const nextBtn = document.getElementById('next-btn');
 
-        const BASE_RECOVERY_SPEED = 0.07; // 通常時の霧が戻る速度
-        // ▼▼▼ 調整箇所: 一瞬表示時の速度（数値を上げるとより「短く」なります） ▼▼▼
-        const FLASH_RECOVERY_SPEED = 0.18; 
-        let recoverySpeed = BASE_RECOVERY_SPEED;
+        // ▼▼▼ 調整箇所 ▼▼▼
+        const BASE_RECOVERY_SPEED = 0.03; // さらにおだやかに（忘却の速度を遅く）
+        const FLASH_RECOVERY_SPEED = 0.12; // 次の項へ行った時の「濃い霧」が戻る速度
         const SCRATCH_RADIUS = 55;
 
+        let recoverySpeed = BASE_RECOVERY_SPEED;
         let isDrawing = false;
         let lastPoint = null;
         let isGameStarted = false;
@@ -240,6 +236,8 @@
         function loop() {
             if (!isGameStarted) return;
             requestAnimationFrame(loop);
+            
+            // 霧を重ねる。完全に見えないようにするために合成モードを調整
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = `rgba(255, 255, 255, ${recoverySpeed})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -263,27 +261,26 @@
             lastPoint = { x, y };
         }
 
-        // --- 「次の刻へ」ボタンの処理 ---
+        // --- 次の項へ ---
         nextBtn.addEventListener('click', () => {
             if (currentSegmentIndex >= storySegments.length - 1) return;
 
-            // 1. 霧を完全にクリアする（一瞬だけ濃く見せる）
+            // 1. 霧を完全にクリア（パッと見せる）
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. テキストを更新
+            // 2. 文字更新
             currentSegmentIndex++;
             textInner.innerHTML = storySegments[currentSegmentIndex];
 
-            // 3. 霧が戻る速度を一時的に速くする（短く見せる）
+            // 3. 演出：霧を「濃く・短く」戻す
             recoverySpeed = FLASH_RECOVERY_SPEED;
 
-            // 4. 少し経ったら元の速度に戻す
+            // 4. 一定時間後に通常のゆっくりした速度に戻す
             setTimeout(() => {
                 recoverySpeed = BASE_RECOVERY_SPEED;
-            }, 800); // 0.8秒後に戻る
+            }, 1000); // 1秒間だけ濃い霧が戻る演出
 
-            // 最後のページ判定
             if (currentSegmentIndex === storySegments.length - 1) {
                 nextBtn.textContent = "（終）";
                 nextBtn.disabled = true;
