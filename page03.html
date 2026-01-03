@@ -1,267 +1,297 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>揮発する記憶 - 注文の多い料理店</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>揮発する記憶</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
 
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100dvh; 
-            overflow: hidden;
-            background-color: #fff;
-            font-family: 'Shippori Mincho', serif;
-            user-select: none;
-            -webkit-touch-callout: none;
-            touch-action: none; 
-        }
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            /* スマホのアドレスバー対策 */
+            height: 100dvh; 
+            overflow: hidden;
+            background-color: #fff;
+            font-family: 'Shippori Mincho', serif;
+            cursor: default;
+            user-select: none;
+            /* スマホでの長押しメニューなどを無効化 */
+            -webkit-touch-callout: none;
+            /* スクロール等の動作をCSSレベルで禁止 */
+            touch-action: none; 
+        }
 
-        .back-link {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            text-decoration: none;
-            color: #aaa;
-            font-size: 11px;
-            z-index: 9999;
-            writing-mode: vertical-rl;
-            letter-spacing: 0.2em;
-            padding: 10px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 4px;
-        }
+        /* 戻るボタン */
+        .back-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            text-decoration: none;
+            color: #aaa;
+            font-size: 12px;
+            z-index: 9999;
+            writing-mode: vertical-rl;
+            letter-spacing: 0.2em;
+            padding: 10px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 4px;
+        }
 
-        #intro-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #fff;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 1.5s ease;
-        }
+        /* タイトル画面（オーバーレイ） */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.5s ease;
+        }
 
-        #intro-overlay h1 {
-            font-size: 22px;
-            letter-spacing: 0.3em;
-            margin-bottom: 30px;
-            font-weight: normal;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
-            color: #333;
-        }
+        #intro-overlay h1 {
+            font-size: 24px;
+            letter-spacing: 0.3em;
+            margin-bottom: 40px;
+            font-weight: normal;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+            color: #333;
+        }
 
-        .instruction-text {
-            font-size: 13px;
-            line-height: 2.2;
-            text-align: center;
-            color: #888;
-            margin-bottom: 40px;
-            letter-spacing: 0.15em;
-            width: 85%;
-        }
+        .instruction-text {
+            font-size: 13px;
+            line-height: 2.4;
+            text-align: center;
+            color: #888;
+            margin-bottom: 50px;
+            letter-spacing: 0.15em;
+            width: 80%; /* スマホで幅広になりすぎないように */
+        }
 
-        #start-btn {
-            padding: 12px 40px;
-            background: transparent;
-            border: 1px solid #ccc;
-            color: #555;
-            font-size: 13px;
-            letter-spacing: 0.2em;
-            cursor: pointer;
-            transition: all 0.4s;
-            border-radius: 2px;
-        }
+        #start-btn {
+            padding: 12px 40px;
+            background: transparent;
+            border: 1px solid #ccc;
+            color: #555;
+            font-family: 'Shippori Mincho', serif;
+            font-size: 13px;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: all 0.4s;
+            border-radius: 2px;
+            /* スマホでタップしやすく */
+            min-width: 120px; 
+            min-height: 44px;
+        }
 
-        #content-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 0;
-            color: #000;
-            /* 文字量が多いので、少し小さめに自動調整 */
-            font-size: clamp(13px, 3.2vw, 17px);
-            line-height: 2.3;
-            letter-spacing: 0.12em;
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            padding: 50px;
-            box-sizing: border-box;
-        }
+        #start-btn:active {
+            background: #f0f0f0;
+            color: #111;
+        }
 
-        #text-inner {
-            max-height: 100%;
-            overflow: hidden;
-        }
+        /* コンテンツレイヤー */
+        #content-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 0;
+            
+            color: #000;
+            /* 画面幅に応じて文字サイズを調整（最小16px〜最大22px） */
+            font-size: clamp(16px, 4vw, 22px);
+            line-height: 2.2;
+            letter-spacing: 0.15em;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
 
-        #fog-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            cursor: crosshair; 
-            touch-action: none;
-            opacity: 0;
-            transition: opacity 1.5s;
-        }
+        /* 霧のキャンバス */
+        #fog-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            /* カーソル指定（PC用） */
+            cursor: crosshair; 
+            /* タッチアクション無効化（JS制御のため） */
+            touch-action: none;
+            opacity: 0;
+            transition: opacity 1.5s;
+        }
 
-    </style>
+    </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">目次へ戻る</a>
+    <a href="index.html" class="back-link">目次へ戻る</a>
 
-    <div id="intro-overlay">
-        <h1>揮発する記憶</h1>
-        <div class="instruction-text">
-            二人の若い紳士が、<br>
-            ぎらぎらする鉄砲をかついで、<br>
-            山奥を歩いておりました。<br>
-            <br>
-            白い霧を指で拭い、<br>
-            彼らの足跡を辿ってください。
-        </div>
-        <button id="start-btn">記憶に触れる</button>
-    </div>
+    <div id="intro-overlay">
+        <h1>揮発する記憶</h1>
+        
+        <div class="instruction-text">
+            記憶は揮発性を帯びています。<br>
+            <br>
+            白い霧を指で拭うことで、<br>
+            一時的にその形を留めることができます。<br>
+            <br>
+            手を止めれば、<br>
+            即座に白へと還ります。
+        </div>
 
-    <div id="content-layer">
-        <div id="text-inner">
-            二人の若い紳士が、すっかりイギリスの兵隊のかたちをして、ぴかぴかする鉄砲をかついで、白熊のような犬を二匹つれて、だいぶ山の奥の方まで、歩いて来ました。<br>
-            「ぜんたい、ここらの山は怪しからんね。鳥も獣も一匹も居やがらん。なんでも構わないから、早くタンタアーンとやってみたいもんだなあ。」<br>
-            ところが、どうしたことか、さっきから、案内してきた猟師も、どこかへ行ってしまいました。おまけに、山がいっぱいなので、二匹の犬は、いっぺんに、めまいを起して、しばらくうなって、それから泡を吐いて死んでしまいました。<br>
-            「じつに僕は、二千四百円の損害だ。」と一人の紳士が、その犬のまぶたを、ちょっとかえしてみて言いました。「僕は二千八百円の損害だ。」ともう一人が、くやしそうに頭をまげました。<br>
-            二人は、風のどうどうと鳴る中で、草がざわざわ鳴る中で、木の葉がかさかさ鳴る中で、ふと見ると、立派な一軒の西洋造りの家がありました。そして玄関には「料理店　山猫軒」という札が出ていました。<br>
-            「君、あんなところに、家がある。ちょうどいい。あすこへ入って、何か食べようじゃないか。」二人は、すぐその玄関の前に立ちました。
-        </div>
-    </div>
+        <button id="start-btn">記憶に触れる</button>
+    </div>
 
-    <canvas id="fog-canvas"></canvas>
 
-    <script>
-        const canvas = document.getElementById('fog-canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const introOverlay = document.getElementById('intro-overlay');
-        const startBtn = document.getElementById('start-btn');
+    <div id="content-layer">
+        <div id="text-inner">
+            人は忘却に抗えない。<br>
+            <br>
+            この言葉もまた、<br>
+            あなたが手を離した瞬間に<br>
+            白い静寂の向こう側へと<br>
+            消え失せるだろう。<br>
+            <br>
+            ただ、今この瞬間だけ、<br>
+            その意味を焼き付ける。<br>
+        </div>
+    </div>
 
-        // パラメータ調整
-        const RECOVERY_SPEED = 0.04; // じっくり読める速度
-        const SCRATCH_RADIUS = 75;   // 文字量に合わせて少し太めに
+    <canvas id="fog-canvas"></canvas>
 
-        let isDrawing = false;
-        let lastPoint = null;
-        let isGameStarted = false;
+    <script>
+        const canvas = document.getElementById('fog-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const introOverlay = document.getElementById('intro-overlay');
+        const startBtn = document.getElementById('start-btn');
 
-        function init() {
-            resize();
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        // パラメータ調整
+        const RECOVERY_SPEED = 0.06; // 白く戻る速度
+        const SCRATCH_RADIUS = 60;   // 拭う太さ
 
-        startBtn.addEventListener('click', () => {
-            introOverlay.style.opacity = 0;
-            setTimeout(() => {
-                introOverlay.style.display = 'none';
-            }, 1500);
+        let isDrawing = false;
+        let lastPoint = null;
+        let isGameStarted = false;
 
-            canvas.style.opacity = 1;
-            isGameStarted = true;
-            loop();
-        });
+        function init() {
+            resize();
+            // 初期状態は真っ白
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        startBtn.addEventListener('click', () => {
+            introOverlay.style.opacity = 0;
+            setTimeout(() => {
+                introOverlay.style.display = 'none';
+            }, 1500);
 
-        function loop() {
-            if (!isGameStarted) return;
-            requestAnimationFrame(loop);
+            canvas.style.opacity = 1;
+            isGameStarted = true;
+            loop();
+        });
 
-            // 霧が戻る処理
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = `rgba(255, 255, 255, ${RECOVERY_SPEED})`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        // リサイズ対応（スマホの回転なども考慮）
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // リサイズするとキャンバスが消えるので白く塗り直す
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
-        function startDraw(e) {
-            if (!isGameStarted) return;
-            isDrawing = true;
-            const { x, y } = getPos(e);
-            lastPoint = { x, y };
-            scratch(x, y);
-        }
+        function loop() {
+            if (!isGameStarted) return;
+            requestAnimationFrame(loop);
 
-        function moveDraw(e) {
-            if (!isDrawing) return;
-            if (e.cancelable) e.preventDefault(); 
-            const { x, y } = getPos(e);
-            scratch(x, y);
-        }
+            // 霧を重ねる処理
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = `rgba(255, 255, 255, ${RECOVERY_SPEED})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
-        function endDraw() {
-            isDrawing = false;
-            lastPoint = null;
-        }
+        function startDraw(e) {
+            if (!isGameStarted) return;
+            isDrawing = true;
+            
+            const { x, y } = getPos(e);
+            lastPoint = { x, y };
+            scratch(x, y);
+        }
 
-        function scratch(x, y) {
-            // キャンバスを透明に削る処理
-            ctx.globalCompositeOperation = 'destination-out'; 
-            ctx.beginPath();
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = '#000';
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.lineWidth = SCRATCH_RADIUS;
-            
-            if (lastPoint) {
-                ctx.moveTo(lastPoint.x, lastPoint.y);
-                ctx.lineTo(x, y);
-            } else {
-                ctx.arc(x, y, SCRATCH_RADIUS / 2, 0, Math.PI * 2);
-            }
-            ctx.stroke();
-            
-            ctx.shadowBlur = 0;
-            lastPoint = { x, y };
-        }
+        function moveDraw(e) {
+            if (!isDrawing) return;
+            // スマホでのスクロールを防止
+            if (e.cancelable) e.preventDefault(); 
+            
+            const { x, y } = getPos(e);
+            scratch(x, y);
+        }
 
-        function getPos(e) {
-            if (e.touches && e.touches.length > 0) {
-                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            }
-            return { x: e.clientX, y: e.clientY };
-        }
+        function endDraw() {
+            isDrawing = false;
+            lastPoint = null;
+        }
 
-        window.addEventListener('mousedown', startDraw);
-        window.addEventListener('mousemove', moveDraw);
-        window.addEventListener('mouseup', endDraw);
-        window.addEventListener('touchstart', startDraw, { passive: false });
-        window.addEventListener('touchmove', moveDraw, { passive: false });
-        window.addEventListener('touchend', endDraw);
-        window.addEventListener('resize', resize);
+        function scratch(x, y) {
+            ctx.globalCompositeOperation = 'destination-out'; 
+            ctx.beginPath();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#000';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = SCRATCH_RADIUS;
+            
+            if (lastPoint) {
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(x, y);
+            } else {
+                ctx.arc(x, y, SCRATCH_RADIUS / 2, 0, Math.PI * 2);
+            }
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            lastPoint = { x, y };
+        }
 
-        init();
-    </script>
+        function getPos(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        // イベントリスナー
+        window.addEventListener('mousedown', startDraw);
+        window.addEventListener('mousemove', moveDraw);
+        window.addEventListener('mouseup', endDraw);
+        
+        // スマホ用イベント（passive: falseでpreventDefaultを有効化）
+        window.addEventListener('touchstart', startDraw, { passive: false });
+        window.addEventListener('touchmove', moveDraw, { passive: false });
+        window.addEventListener('touchend', endDraw);
+        
+        window.addEventListener('resize', resize);
+
+        init();
+
+    </script>
 </body>
 </html>
