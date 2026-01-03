@@ -16,7 +16,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* スクロール禁止 */
+            overflow: hidden;
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: "Hiragino Mincho ProN", "serif";
@@ -26,55 +26,54 @@
         }
 
         #app {
-            width: 80%;
+            width: 85%;
             max-width: 400px;
-            text-align: center;
-            line-height: 1.8;
-            letter-spacing: 0.05em;
+            text-align: left; /* 読みやすさのため左寄せ */
+            line-height: 2.2;
+            letter-spacing: 0.1em;
+            min-height: 10em; /* 表示エリアを固定 */
         }
 
-        /* テキスト表示エリア */
-        #text-content {
-            font-size: 1.2rem;
-            transition: opacity 0.8s ease;
+        /* 1文字ずつのアニメーション用 */
+        .char {
             opacity: 0;
+            display: inline-block;
+            animation: fadeIn 0.4s forwards;
         }
 
-        #text-content.visible {
-            opacity: 1;
+        @keyframes fadeIn {
+            to { opacity: 1; }
         }
 
-        /* 進行状況インジケーター */
         #progress-container {
             position: fixed;
-            bottom: 10%;
+            bottom: 12%;
             left: 50%;
             transform: translateX(-50%);
-            width: 100px;
-            height: 2px;
-            background: #eee;
+            width: 80px;
+            height: 1px;
+            background: #ddd;
         }
 
         #progress-bar {
             width: 0%;
             height: 100%;
-            background: var(--accent-color);
+            background: var(--text-color);
             transition: width linear;
         }
 
-        /* ガイドメッセージ */
         #guide {
             position: fixed;
-            bottom: 5%;
+            bottom: 6%;
             left: 0;
             width: 100%;
-            font-size: 0.8rem;
+            text-align: center;
+            font-size: 0.75rem;
             color: var(--accent-color);
             opacity: 0;
             transition: opacity 0.5s;
         }
 
-        /* スタート画面 */
         #overlay {
             position: fixed;
             top: 0;
@@ -87,24 +86,20 @@
             justify-content: center;
             align-items: center;
             z-index: 100;
-            padding: 20px;
         }
 
         button {
             background: none;
             border: 1px solid var(--text-color);
-            padding: 15px 30px;
+            padding: 12px 24px;
             font-family: inherit;
             cursor: pointer;
-            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <h2>読むために、手を動かす</h2>
-        <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">スマートフォンを振って進む体験です</p>
         <button id="start-btn">体験を始める</button>
     </div>
 
@@ -115,7 +110,7 @@
     <div id="progress-container">
         <div id="progress-bar"></div>
     </div>
-    <div id="guide">端末を軽く振ってください</div>
+    <div id="guide">スマホを軽く振る</div>
 
     <script>
         const texts = [
@@ -129,78 +124,94 @@
 
         let currentIndex = 0;
         let canShake = false;
-        const readTime = 3000; // 次へ進めるようになるまでの待機時間(ms)
-        const shakeThreshold = 15; // 振りの強さのしきい値
+        let isTyping = false;
+        const typingSpeed = 50; // 1文字あたりの表示速度(ms)
+        const readTimeBase = 1500; // 文字表示完了後の最低待機時間(ms)
+        const shakeThreshold = 12; // 感度：値を小さくするほど敏感になります（以前は15+10でした）
 
         const contentEl = document.getElementById('text-content');
         const progressBar = document.getElementById('progress-bar');
         const guideEl = document.getElementById('guide');
         const overlay = document.getElementById('overlay');
 
-        // テキストの更新
-        function updateText() {
+        // 文字を1文字ずつ表示する関数
+        function typeWriter(text) {
+            isTyping = true;
             canShake = false;
-            contentEl.classList.remove('visible');
+            contentEl.innerHTML = '';
             guideEl.style.opacity = 0;
-            
-            setTimeout(() => {
-                contentEl.innerText = texts[currentIndex];
-                contentEl.classList.add('visible');
-                
-                // プログレスバー開始
-                progressBar.style.transition = "none";
-                progressBar.style.width = "0%";
-                
-                setTimeout(() => {
-                    progressBar.style.transition = `width ${readTime}ms linear`;
-                    progressBar.style.width = "100%";
-                }, 50);
+            progressBar.style.transition = "none";
+            progressBar.style.width = "0%";
 
-                // 待機時間終了後の処理
-                setTimeout(() => {
-                    canShake = true;
-                    guideEl.style.opacity = 1;
-                }, readTime);
-            }, 800);
+            const chars = text.split("");
+            chars.forEach((char, i) => {
+                const span = document.createElement('span');
+                span.innerText = char;
+                span.className = 'char';
+                span.style.animationDelay = `${i * typingSpeed}ms`;
+                contentEl.appendChild(span);
+            });
+
+            // 全文字表示完了後の処理
+            const totalTypingTime = chars.length * typingSpeed;
+            setTimeout(() => {
+                isTyping = false;
+                startProgress();
+            }, totalTypingTime);
+        }
+
+        // 読み待ちプログレスバーの開始
+        function startProgress() {
+            progressBar.style.transition = `width ${readTimeBase}ms linear`;
+            progressBar.style.width = "100%";
+
+            setTimeout(() => {
+                canShake = true;
+                guideEl.style.opacity = 1;
+            }, readTimeBase);
+        }
+
+        // 振動フィードバック（可能なデバイスのみ）
+        function vibrate() {
+            if (navigator.vibrate) {
+                navigator.vibrate(10); 
+            }
         }
 
         // 加速度センサーの処理
+        let lastAcc = { x: 0, y: 0, z: 0 };
         function handleMotion(event) {
-            if (!canShake) return;
+            if (!canShake || isTyping) return;
 
             const acc = event.accelerationIncludingGravity;
-            const totalAcc = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
+            if (!acc) return;
 
-            if (totalAcc > shakeThreshold + 10) { // 静止時（約9.8）からの変化を検知
+            // 変化量を計算（より敏感に反応させるため）
+            const deltaX = Math.abs(acc.x - lastAcc.x);
+            const deltaY = Math.abs(acc.y - lastAcc.y);
+            const deltaZ = Math.abs(acc.z - lastAcc.z);
+            
+            if (deltaX > shakeThreshold || deltaY > shakeThreshold || deltaZ > shakeThreshold) {
+                vibrate();
                 currentIndex++;
-                if (currentIndex >= texts.length) {
-                    currentIndex = 0; // ループさせる（または終了画面へ）
-                }
-                updateText();
+                if (currentIndex >= texts.length) currentIndex = 0;
+                typeWriter(texts[currentIndex]);
             }
+
+            lastAcc = { x: acc.x, y: acc.y, z: acc.z };
         }
 
-        // 開始ボタン
         document.getElementById('start-btn').addEventListener('click', async () => {
-            // iOSの権限リクエスト
             if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                try {
-                    const permission = await DeviceMotionEvent.requestPermission();
-                    if (permission === 'granted') {
-                        window.addEventListener('devicemotion', handleMotion);
-                    } else {
-                        alert("センサーへのアクセスを許可してください。");
-                    }
-                } catch (e) {
-                    console.error(e);
+                const permission = await DeviceMotionEvent.requestPermission();
+                if (permission === 'granted') {
+                    window.addEventListener('devicemotion', handleMotion);
                 }
             } else {
-                // iOS以外
                 window.addEventListener('devicemotion', handleMotion);
             }
-
             overlay.style.display = 'none';
-            updateText();
+            typeWriter(texts[currentIndex]);
         });
     </script>
 </body>
