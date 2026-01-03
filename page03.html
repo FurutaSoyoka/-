@@ -118,7 +118,7 @@
             transition: opacity 2s;
         }
 
-        /* 「次へ」ボタン（主張を抑えたデザイン） */
+        /* 「次へ」ボタン */
         #next-btn-container {
             position: absolute;
             bottom: 40px;
@@ -137,7 +137,7 @@
         #next-btn {
             background: transparent;
             border: none;
-            border-bottom: 1px solid #ccc; /* 下線のみのシンプルなデザイン */
+            border-bottom: 1px solid #ccc;
             color: #aaa;
             padding: 5px 10px;
             font-family: 'Shippori Mincho', serif;
@@ -154,7 +154,6 @@
             border-bottom: 1px solid #888;
         }
 
-        /* ボタンを押した瞬間、少しだけ文字が沈む程度の演出 */
         #next-btn:active {
             transform: translateY(2px);
             color: #333;
@@ -204,8 +203,10 @@
         const nextBtnContainer = document.getElementById('next-btn-container');
         const nextBtn = document.getElementById('next-btn');
 
-        let recoverySpeed = 0.07;
-        const BASE_RECOVERY_SPEED = 0.07;
+        const BASE_RECOVERY_SPEED = 0.07; // 通常時の霧が戻る速度
+        // ▼▼▼ 調整箇所: 一瞬表示時の速度（数値を上げるとより「短く」なります） ▼▼▼
+        const FLASH_RECOVERY_SPEED = 0.18; 
+        let recoverySpeed = BASE_RECOVERY_SPEED;
         const SCRATCH_RADIUS = 55;
 
         let isDrawing = false;
@@ -266,7 +267,7 @@
         nextBtn.addEventListener('click', () => {
             if (currentSegmentIndex >= storySegments.length - 1) return;
 
-            // 1. 霧を完全にクリアする（物語を一瞬だけ見せる）
+            // 1. 霧を完全にクリアする（一瞬だけ濃く見せる）
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -274,7 +275,15 @@
             currentSegmentIndex++;
             textInner.innerHTML = storySegments[currentSegmentIndex];
 
-            // 3. 最後のページ判定
+            // 3. 霧が戻る速度を一時的に速くする（短く見せる）
+            recoverySpeed = FLASH_RECOVERY_SPEED;
+
+            // 4. 少し経ったら元の速度に戻す
+            setTimeout(() => {
+                recoverySpeed = BASE_RECOVERY_SPEED;
+            }, 800); // 0.8秒後に戻る
+
+            // 最後のページ判定
             if (currentSegmentIndex === storySegments.length - 1) {
                 nextBtn.textContent = "（終）";
                 nextBtn.disabled = true;
