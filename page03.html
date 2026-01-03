@@ -1,4 +1,16 @@
-/* ▼▼▼ 「次へ」ボタンの強化スタイル ▼▼▼ */
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>揮発する記憶 - 夢十夜</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+      /* ▼▼▼ 「次へ」ボタンの強化スタイル ▼▼▼ */
         #next-btn-container {
             position: absolute;
             bottom: 40px; /* 少し上に上げました */
@@ -64,3 +76,253 @@
             transform: none;
             box-shadow: none;
         }
+    </style>
+</head>
+<body>
+
+    <div id="intro-overlay">
+        <h1>揮発する記憶</h1>
+        <div class="instruction-text">
+            夏目漱石『夢十夜』より<br>
+            <br>
+            白い霧を指で拭うことで、<br>
+            文章を一時的に留めることができます。<br>
+            <br>
+            手を止めれば、<br>
+            即座に白へと還ります。
+        </div>
+        <button id="start-btn">物語に触れる</button>
+    </div>
+
+    <div id="content-layer">
+        <div id="text-container">
+            <div id="text-inner">
+                </div>
+        </div>
+    </div>
+
+    <div id="next-btn-container">
+        <button id="next-btn">次の刻へ</button>
+    </div>
+
+    <canvas id="fog-canvas"></canvas>
+
+    <script>
+        // ▼▼▼ 物語データ（夏目漱石『夢十夜』第一夜より抜粋・分割） ▼▼▼
+        // ※ 読みやすい長さに分割しています。改行は<br>ではなく、pタグで段落分けします。
+        const storySegments = [
+            // 1
+            `<p>こんな夢を見た。</p>
+             <p>腕組をして枕元に坐っていると、仰向に寝た女が、静かな声でもう死にますと云う。</p>
+             <p>女は長い髪を枕に敷いて、輪郭の柔らかな瓜実顔をその中に横たえている。</p>
+             <p>真白な頬の底に温かい血の色がほどよく差して、唇の色は無論赤い。</p>
+             <p>とうてい死にそうには見えない。</p>
+             <p>しかし女は静かな声で、もう死にますと判然（はっきり）云った。</p>
+             <p>自分も確にこれは死ぬなと思った。</p>`,
+            
+            // 2
+            `<p>そこで、そうかね、もう死ぬのかねと上から覗き込むようにして聞いて見た。</p>
+             <p>死にますとも、と云いながら、女はぱっちりと眼を開けた。</p>
+             <p>大きな潤のある眼で、長い睫に包まれた中は、只一面に真黒であった。</p>
+             <p>その真黒な眸の奥に、自分の姿が鮮に浮かんでいる。</p>`,
+            
+            // 3
+            `<p>自分は透き徹るほど深く見える此黒眼の色沢を眺めて、これでも死ぬのかと思った。</p>
+             <p>それで、ねんごろに枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうねとまた聞き返した。</p>
+             <p>すると女は黒い眼を眠そうに擡げて、やっぱり静かな声で、でも、死ぬんですもの、仕方がないわと云った。</p>`,
+            
+            // 4
+            `<p>じゃ、私の顔が見えるかいと一心に聞くと、見えるかいって、空に其様な星が出ているじゃありませんかと云った。</p>
+             <p>なるほど仰向いて見ると、空には星が出ている。</p>
+             <p>――百年待っていて下さい。</p>
+             <p>と思い切った声で云った。</p>
+             <p>「百年、私の墓の傍に坐って待っていて下さい。きっと逢いに来ますから」</p>`,
+
+            // 5 (最後)
+            `<p>自分はただ待っていると答えた。</p>
+             <p>すると、黒い眸の中に鮮に見えた自分の姿が、ぼうっと崩れて来た。</p>
+             <p>……静かな水が動いて写る影を乱すように、又流れ出す涙が菱に砕けるように、自分はもう死んだなと思った。</p>
+             <p>（第一夜 終）</p>`
+        ];
+
+
+        // ▼▼▼ システム設定・変数 ▼▼▼
+        const canvas = document.getElementById('fog-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const introOverlay = document.getElementById('intro-overlay');
+        const startBtn = document.getElementById('start-btn');
+        const textInner = document.getElementById('text-inner');
+        const nextBtnContainer = document.getElementById('next-btn-container');
+        const nextBtn = document.getElementById('next-btn');
+
+        // 霧が戻る基本速度
+        let recoverySpeed = 0.08;
+        const BASE_RECOVERY_SPEED = 0.08; 
+        const SCRATCH_RADIUS = 50; // 指の太さ（少し細くしました）
+
+        let isDrawing = false;
+        let lastPoint = null;
+        let isGameStarted = false;
+        let hasInteracted = false; // 一度でも触ったか判定用
+        let currentSegmentIndex = 0; // 現在の物語のインデックス
+
+        // ▼▼▼ 初期化処理 ▼▼▼
+        function init() {
+            resize();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // 最初のテキストをセット
+            textInner.innerHTML = storySegments[currentSegmentIndex];
+        }
+
+        // 開始ボタンクリック時
+        startBtn.addEventListener('click', () => {
+            introOverlay.style.opacity = 0;
+            setTimeout(() => {
+                introOverlay.style.display = 'none';
+            }, 1500);
+
+            canvas.style.opacity = 1;
+            isGameStarted = true;
+            loop();
+        });
+
+        // リサイズ対応
+        function resize() {
+            // スマホのアドレスバー考慮（innerHeightを使う）
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.fillStyle = '#ffffff';
+            // リサイズ時に一度真っ白に戻す（バグ防止）
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // ▼▼▼ メインループ（霧の再生） ▼▼▼
+        function loop() {
+            if (!isGameStarted) return;
+            requestAnimationFrame(loop);
+
+            // 霧を重ねる処理
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = `rgba(255, 255, 255, ${recoverySpeed})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // ▼▼▼ 描画（霧を晴らす）処理 ▼▼▼
+        function startDraw(e) {
+            if (!isGameStarted) return;
+            isDrawing = true;
+            const { x, y } = getPos(e);
+            lastPoint = { x, y };
+            scratch(x, y);
+
+            // 最初のインタラクション時に「次へ」ボタンを表示
+            if (!hasInteracted) {
+                hasInteracted = true;
+                // 少し遅らせてボタンを表示
+                setTimeout(() => {
+                    nextBtnContainer.classList.add('visible');
+                }, 2000);
+            }
+        }
+
+        function moveDraw(e) {
+            if (!isDrawing) return;
+            e.preventDefault(); // スクロール防止
+            const { x, y } = getPos(e);
+            scratch(x, y);
+        }
+
+        function endDraw() {
+            isDrawing = false;
+            lastPoint = null;
+        }
+
+        // 実際に霧を削る関数
+        function scratch(x, y) {
+            ctx.globalCompositeOperation = 'destination-out'; 
+            ctx.beginPath();
+            ctx.shadowBlur = 25; 
+            ctx.shadowColor = '#000';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = SCRATCH_RADIUS;
+            
+            if (lastPoint) {
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(x, y);
+            } else {
+                ctx.arc(x, y, SCRATCH_RADIUS / 2, 0, Math.PI * 2);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            lastPoint = { x, y };
+        }
+
+        // 座標取得（スマホ/PC対応）
+        function getPos(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        // ▼▼▼ 物語進行処理 ▼▼▼
+        nextBtn.addEventListener('click', () => {
+            // 最後のセグメントなら何もしない（または終了処理）
+            if (currentSegmentIndex >= storySegments.length - 1) {
+                nextBtn.textContent = "（終）";
+                nextBtn.disabled = true;
+                nextBtnContainer.style.opacity = 0.5;
+                return;
+            }
+
+            // 1. ボタンを一時的に無効化
+            nextBtn.disabled = true;
+            
+            // 2. テキストをフェードアウト
+            textInner.style.opacity = 0;
+
+            // 3. 霧を一気に濃くする（演出）
+            recoverySpeed = 0.3; 
+
+            // 4. フェードアウト完了後に次のテキストをセット
+            setTimeout(() => {
+                currentSegmentIndex++;
+                textInner.innerHTML = storySegments[currentSegmentIndex];
+                
+                // テキストをフェードイン
+                textInner.style.opacity = 1;
+                
+                // 霧の速度を元に戻す
+                recoverySpeed = BASE_RECOVERY_SPEED;
+                
+                // ボタンを再度有効化
+                nextBtn.disabled = false;
+
+                // 最後のページになったらボタンのテキストを変える
+                if (currentSegmentIndex === storySegments.length - 1) {
+                     nextBtn.textContent = "閉じる";
+                }
+
+            }, 800); // CSSのtransition時間と合わせる
+        });
+
+
+        // イベントリスナー登録
+        window.addEventListener('mousedown', startDraw);
+        window.addEventListener('mousemove', moveDraw);
+        window.addEventListener('mouseup', endDraw);
+        // スマホ操作のイベント（受動的イベントリスナーの警告を回避）
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', moveDraw, { passive: false });
+        canvas.addEventListener('touchend', endDraw, { passive: false });
+        
+        window.addEventListener('resize', resize);
+
+        // 開始
+        init();
+
+    </script>
+</body>
+</html>
