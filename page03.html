@@ -85,13 +85,21 @@
             justify-content: center;
             align-items: center;
             z-index: 0;
-            
-            color: #000;
-            font-size: 20px;
-            line-height: 2.2;
-            letter-spacing: 0.15em;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        #text-inner {
+            color: #1a1a1a;
+            font-size: 18px; /* 文字量に合わせて少し小さく調整 */
+            line-height: 2.8;
+            letter-spacing: 0.2em;
             writing-mode: vertical-rl;
             text-orientation: upright;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap; /* 長文が画面をはみ出さないように折り返し */
         }
 
         #fog-canvas {
@@ -130,15 +138,31 @@
 
     <div id="content-layer">
         <div id="text-inner">
-            人は忘却に抗えない。<br>
+            すべては、指の間をすり抜ける砂のように。<br>
+            記憶の輪郭は、朝露が陽光に解けるよりも早く、<br>
+            その確かな重みを失っていく。<br>
             <br>
-            この言葉もまた、<br>
-            あなたが手を離した瞬間に<br>
-            白い静寂の向こう側へと<br>
-            消え失せるだろう。<br>
+            かつて愛した誰かの声、<br>
+            夕暮れ時に漂っていた金木犀の香り、<br>
+            あるいは、幼い日に感じた名もなき不安。<br>
             <br>
-            ただ、今この瞬間だけ、<br>
-            その意味を焼き付ける。<br>
+            それらは今、この白い静寂の向こう側で、<br>
+            出口のない迷路を彷徨っている。<br>
+            <br>
+            私たちは、忘れることで生き長らえ、<br>
+            忘れることで、また新しい傷を刻む。<br>
+            <br>
+            あなたが今、この霧を拭ったその場所には、<br>
+            何が見えているだろうか。<br>
+            <br>
+            言葉を追い、意味を繋ぎ、<br>
+            必死に実在を確かめようとするその指先。<br>
+            しかし、ひとたび熱を遠ざければ、<br>
+            無情な白がすべてを塗り潰していく。<br>
+            <br>
+            記憶とは、保持することではなく、<br>
+            消えゆくものに手を伸ばし続ける<br>
+            その一瞬の抵抗そのものなのかもしれない。
         </div>
     </div>
 
@@ -151,10 +175,8 @@
         const startBtn = document.getElementById('start-btn');
 
         // ▼▼▼ 調整箇所 ▼▼▼
-        // 白く戻るスピード（数値を大きくすると速く消えます）
-        // 前回の 0.035 から 0.07 に上げました
-        const RECOVERY_SPEED = 0.1; 
-        
+        // 文字量が増えたため、少しだけ消える速度を遅く調整 (0.1 -> 0.08)
+        const RECOVERY_SPEED = 0.08; 
         const SCRATCH_RADIUS = 60;   
 
         let isDrawing = false;
@@ -189,7 +211,6 @@
             if (!isGameStarted) return;
             requestAnimationFrame(loop);
 
-            // 霧を重ねる処理
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = `rgba(255, 255, 255, ${RECOVERY_SPEED})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -218,7 +239,7 @@
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out'; 
             ctx.beginPath();
-            ctx.shadowBlur = 20;
+            ctx.shadowBlur = 25; // ぼかしを少し強めてより霧らしく
             ctx.shadowColor = '#000';
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
