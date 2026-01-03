@@ -10,31 +10,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
 
     <style>
-        /* --- 基本レイアウトとスマホ最適化 --- */
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
             font-family: 'Shippori Mincho', serif;
-            touch-action: none; /* スマホの意図しないズームやスクロールを防止 */
-            -webkit-user-select: none; /* 文字選択を防止して操作に集中 */
+            touch-action: none; /* スマホのズーム・スクロールを完全無効化 */
+            -webkit-user-select: none;
         }
 
         #container {
+            position: relative;
             width: 100%; height: 100%;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
         }
 
-        /* --- 黒い塊（テキスト本体） --- */
+        /* --- 文字の塊：画面の正中央に配置 --- */
         #text-block {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%); /* 常にど真ん中に固定 */
+            
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(16px, 4.2vw, 19px);
+            font-size: clamp(16px, 4vw, 19px);
             text-align: center;
+            white-space: nowrap;
             
-            /* 初期状態：完全に重ねて「黒い塊」にする */
+            /* 初期状態：極限まで凝縮した黒い塊 */
             line-height: 0; 
             letter-spacing: -1.2em; 
             opacity: 0;
@@ -42,53 +46,53 @@
             mix-blend-mode: multiply;
             color: #000;
             
-            /* 塊の配置位置（説明ボックスの上に距離を置く） */
-            margin-bottom: 8vh;
-            
             transition: line-height 0.8s cubic-bezier(0.16, 1, 0.3, 1),
                         letter-spacing 0.8s cubic-bezier(0.16, 1, 0.3, 1),
                         opacity 1.5s ease;
             z-index: 10;
         }
 
-        /* --- 白い説明ボックス（画像のデザインを再現） --- */
+        /* --- 説明ボックス：コンパクト化して塊の下に配置 --- */
+        #intro-wrapper {
+            position: absolute;
+            top: calc(50% + 100px); /* 塊の下、邪魔にならない位置 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            z-index: 5;
+        }
+
         #intro-card {
             background-color: #fff;
-            width: 80%;
-            max-width: 320px;
-            padding: 40px 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            padding: 20px 30px; /* 小さめに調整 */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             text-align: center;
             border: 1px solid rgba(0,0,0,0.02);
-            z-index: 5;
-            transition: opacity 0.8s ease, transform 0.8s ease;
         }
 
         #intro-card p {
             margin: 0;
-            color: #555;
-            font-size: 14px;
-            line-height: 2.5;
-            letter-spacing: 0.15em;
+            color: #777;
+            font-size: 12px; /* 小さく控えめに */
+            line-height: 2.2;
+            letter-spacing: 0.1em;
         }
 
-        /* --- 案内用矢印 --- */
         #intro-arrow {
-            margin-top: 30px;
+            margin-top: 15px;
             color: #ccc;
-            font-size: 20px;
+            font-size: 18px;
             transform: rotate(45deg);
-            transition: opacity 0.6s ease;
         }
 
-        /* --- 操作時のフェードアウト --- */
+        /* 操作時のフェードアウト用 */
         .fade-out {
             opacity: 0 !important;
             pointer-events: none;
             transform: translateY(10px);
         }
 
-        /* 読みやすくなった時の背景変化 */
         body.readable { background-color: #fff; }
     </style>
 </head>
@@ -108,43 +112,38 @@
             人が居そうなものであるが
         </div>
 
-        <div id="intro-card">
-            <p>言葉は凝縮されています。</p>
-            <p>余白を探り当て、</p>
-            <p>意味をほどいてください。</p>
+        <div id="intro-wrapper">
+            <div id="intro-card">
+                <p>言葉は凝縮されています。<br>二本の指で、余白をほどく。</p>
+            </div>
+            <div id="intro-arrow">→</div>
         </div>
-
-        <div id="intro-arrow">→</div>
     </div>
 
     <script>
         const textBlock = document.getElementById('text-block');
-        const introCard = document.getElementById('intro-card');
-        const introArrow = document.getElementById('intro-arrow');
+        const introWrapper = document.getElementById('intro-wrapper');
         const body = document.body;
 
         const CONFIG = {
             lh: { min: 0, max: 4.2 }, 
             ls: { min: -1.2, max: 1.3 },
-            baseDist: 30 // 二本指の距離がこれを超えると反応開始
+            baseDist: 30
         };
 
         window.onload = () => {
-            // ふわっと塊が出現
-            setTimeout(() => { textBlock.style.opacity = 1; }, 600);
+            // ページを開いた瞬間に塊を表示
+            setTimeout(() => { textBlock.style.opacity = 1; }, 400);
         };
 
-        // 二点間の距離 $d$ を求める: $$d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$$
         function getDistance(t1, t2) {
             return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         }
 
         function updateSpace(dist) {
-            // 案内を消す
-            introCard.classList.add('fade-out');
-            introArrow.classList.add('fade-out');
+            // 操作が始まったら説明を消す
+            introWrapper.classList.add('fade-out');
 
-            // 指の広げ具合を計算（200pxほど広げると最大になる設定）
             let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
             const intensity = Math.pow(Math.min(scale, 1.2), 1.3);
 
@@ -154,7 +153,6 @@
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            // 読める状態（背景を白く）
             if (intensity > 0.45) {
                 body.classList.add('readable');
             } else {
@@ -162,7 +160,7 @@
             }
         }
 
-        // スマホ用：二本指で触れた瞬間
+        // スマホ操作の検知
         window.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 const dist = getDistance(e.touches[0], e.touches[1]);
@@ -170,10 +168,9 @@
             }
         }, { passive: false });
 
-        // スマホ用：指を動かしている間
         window.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2) {
-                if (e.cancelable) e.preventDefault(); // スクロール等の無効化
+                if (e.cancelable) e.preventDefault();
                 const dist = getDistance(e.touches[0], e.touches[1]);
                 updateSpace(dist);
             }
