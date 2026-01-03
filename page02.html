@@ -16,7 +16,7 @@
             font-family: 'Shippori Mincho', serif;
             touch-action: none;
             -webkit-user-select: none;
-            transition: background-color 1.2s ease; /* 背景変化をより滑らかに */
+            transition: background-color 1.2s ease;
         }
 
         #container {
@@ -27,101 +27,119 @@
             align-items: center;
         }
 
+        /* --- 文字の塊 --- */
         #text-block {
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            
             writing-mode: vertical-rl;
             text-orientation: upright;
-            font-size: clamp(17px, 4.5vw, 20px);
+            font-size: clamp(16px, 4.2vw, 19px);
             text-align: center;
             white-space: nowrap;
-            
-            /* 初期状態：塊 */
             line-height: 0.1; 
             letter-spacing: -0.9em; 
             opacity: 1;
             color: #000;
-            
-            min-height: 20px;
-            min-width: 20px;
             mix-blend-mode: multiply;
-            
-            /* 戻る時（治る時）の速度。0.8s〜1.2sくらいが呼吸に近い */
             transition: line-height 1s cubic-bezier(0.16, 1, 0.3, 1),
-                        letter-spacing 1s cubic-bezier(0.16, 1, 0.3, 1);
+                        letter-spacing 1s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.8s ease;
             z-index: 10;
         }
 
-        #intro-wrapper {
+        /* --- 下部の操作エリア --- */
+        #ui-layer {
             position: absolute;
-            bottom: 15%;
+            bottom: 8%;
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            transition: opacity 1s ease;
-            z-index: 5;
+            z-index: 20;
+            pointer-events: none;
         }
 
+        /* 説明ボックス */
         #intro-card {
             background-color: #fff;
             padding: 15px 25px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.02);
             text-align: center;
             border: 1px solid rgba(0,0,0,0.01);
+            margin-bottom: 20px;
+            transition: opacity 0.8s ease;
+            pointer-events: auto;
         }
 
         #intro-card p {
-            margin: 0;
-            color: #999;
-            font-size: 11px;
-            line-height: 2.0;
-            letter-spacing: 0.05em;
+            margin: 0; color: #999; font-size: 11px;
+            line-height: 1.8; letter-spacing: 0.05em;
         }
 
-        #intro-arrow {
-            margin-top: 10px;
-            color: #eee;
-            font-size: 16px;
-            transform: rotate(45deg);
+        /* 次へボタン */
+        #next-btn {
+            background: none;
+            border: 1px solid #ddd;
+            color: #888;
+            padding: 10px 30px;
+            font-family: inherit;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            opacity: 0; /* 最初は隠しておく */
+            transform: translateY(10px);
+            transition: all 0.6s ease;
+            pointer-events: auto;
+            background-color: rgba(255,255,255,0.5);
         }
 
-        .fade-out {
-            opacity: 0 !important;
-            pointer-events: none;
+        #next-btn.show {
+            opacity: 1;
+            transform: translateY(0);
         }
 
+        #next-btn:active {
+            background-color: #eee;
+            transform: scale(0.95);
+        }
+
+        .fade-out { opacity: 0 !important; }
         body.readable { background-color: #fff; }
     </style>
 </head>
 <body>
 
     <div id="container">
-        <div id="text-block">
-            或る日の暮方の事である。<br>
-            一人の下人が羅生門の下で<br>
-            雨やみを待っていたのだ。<br>
-            広い門の下にはこの男の他<br>
-            誰もいない。ただ所々丹塗<br>
-            の剥げた大きな円柱に一匹<br>
-            蟋蟀がとまっているだけだ。<br>
-            羅生門が朱雀大路にある様<br>
-            この男の他にも雨やみする<br>
-            人が居そうなものであるが
-        </div>
+        <div id="text-block"></div>
 
-        <div id="intro-wrapper">
+        <div id="ui-layer">
             <div id="intro-card">
-                <p>言葉は凝縮されています。<br>二本の指で、余白をほどく。</p>
+                <p id="guide-text">言葉は凝縮されています。<br>二本の指で、余白をほどく。</p>
             </div>
-            <div id="intro-arrow">→</div>
+            <button id="next-btn">次へ進む</button>
         </div>
     </div>
 
     <script>
+        // --- 物語のデータ（10分割） ---
+        const STORY_PAGES = [
+            "或る日の暮方の事である。<br>一人の下人が羅生門の下で<br>雨やみを待っていたのだ。<br>広い門の下にはこの男の他<br>誰もいない。ただ所々丹塗<br>の剥げた大きな円柱に一匹<br>蟋蟀がとまっているだけだ。",
+            "羅生門が朱雀大路にある様<br>この男の他にも雨やみする<br>市女笠や揉烏帽子がもう、<br>二三人はありそうなものだ。<br>それがこの男の他には誰も<br>いない。何故かと云うと、<br>ここ数年京都には災がつづいた。",
+            "地震とか、辻風とか火事、<br>飢饉とか云う災変が続いて<br>洛中の衰微は一通りでない。<br>旧記によると仏像や仏具を<br>打ち砕いて、その薪にいた<br>燃料として売っていたのだ。<br>羅生門の修理など誰も見ない。",
+            "するとその荒れ果てたのを<br>よい事にして狐狸が棲む。<br>盗人が棲む。とうとう終い<br>には、引取り手のない死人<br>を、この門へ持って来ては<br>捨てていくという習慣さえ<br>出来てしまったのである。",
+            "下人は七日の前から主人に<br>暇を出されていた。今この<br>男は行き所のないままに、<br>羅生門の下で雨の止むのを<br>待っている。しかし雨が、<br>止んだ所でどうなるもので<br>もない。選ぶべき道はない。",
+            "下人は手段を選ばないという<br>意識を肯定しながらも、未だ<br>に「盗人になる」勇気が出ぬ。<br>男は雨を避けるために門の<br>上へ登る。そこには死骸が<br>転がっているはずだ。彼は<br>太刀を握り、楼の上を覗いた。",
+            "そこには火が灯っていた。<br>一人の老婆が、死骸の髪を<br>一本ずつ抜いているのだ。<br>下人は恐怖を忘れて、怒り<br>を燃やした。あらゆる悪を<br>憎む心が、老婆の行為を、<br>許しがたいものとして捉えた。",
+            "老婆は云う。抜いた髪で、<br>鬘を作ろうとしたのだと。<br>この女も、こうしなければ<br>餓死するのだから、自分の<br>している事は仕方がない。<br>死人もこれを許してくれる<br>だろう、と老婆は言い放つ。",
+            "下人の心からは、盗人への<br>躊躇が消えた。老婆の論理<br>を逆手に取り、彼は云う。<br>「では俺が着物を剥ごうと、<br>恨むまいな。俺もそうせねば<br>餓死する身なのだ」と。<br>下人は老婆を蹴り倒した。",
+            "下人は老婆の着物を剥ぎ、<br>素早く門の梯子を駆け下り<br>夜の闇の中へと消え去った。<br>老婆は裸のまま、門の下を<br>見下ろしていた。門の外は<br>ただ深い闇があるばかりで、<br>下人の行方は、誰も知らない。"
+        ];
+
+        let currentPage = 0;
         const textBlock = document.getElementById('text-block');
-        const introWrapper = document.getElementById('intro-wrapper');
+        const nextBtn = document.getElementById('next-btn');
+        const introCard = document.getElementById('intro-card');
         const body = document.body;
 
         const CONFIG = {
@@ -130,14 +148,27 @@
             baseDist: 30
         };
 
+        // --- 初期表示 ---
+        function loadPage(index) {
+            textBlock.style.opacity = 0;
+            setTimeout(() => {
+                textBlock.innerHTML = STORY_PAGES[index];
+                textBlock.style.opacity = 1;
+                updateSpace(CONFIG.baseDist); // 凝縮状態にリセット
+                nextBtn.classList.remove('show');
+            }, 800);
+        }
+
+        window.onload = () => loadPage(0);
+
+        // --- インタラクション ---
         function getDistance(t1, t2) {
             return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         }
 
         function updateSpace(dist) {
-            // 指が触れている間は案内を消す
-            if (dist > CONFIG.baseDist) {
-                introWrapper.classList.add('fade-out');
+            if (dist > CONFIG.baseDist + 20) {
+                introCard.classList.add('fade-out');
             }
 
             let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
@@ -149,15 +180,18 @@
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
-            if (intensity > 0.4) {
+            if (intensity > 0.45) {
                 body.classList.add('readable');
+                // 十分に広がったら「次へ」ボタンを表示
+                if (currentPage < STORY_PAGES.length - 1) {
+                    nextBtn.classList.add('show');
+                }
             } else {
                 body.classList.remove('readable');
             }
         }
 
-        // --- タッチイベントの制御 ---
-
+        // --- イベント登録 ---
         window.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 const dist = getDistance(e.touches[0], e.touches[1]);
@@ -173,13 +207,17 @@
             }
         }, { passive: false });
 
-        // 【追加】指を離した時の処理：初期状態の距離を渡して「治す」
-        window.addEventListener('touchend', (e) => {
-            // 指が1本以下になったら元の塊（baseDist）に戻す
+        window.addEventListener('touchend', () => {
             updateSpace(CONFIG.baseDist);
-            
-            // 案内を再び出したい場合は、以下のコメントを外してください
-            // introWrapper.classList.remove('fade-out');
+        });
+
+        // ボタンクリックで次へ
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentPage < STORY_PAGES.length - 1) {
+                currentPage++;
+                loadPage(currentPage);
+            }
         });
     </script>
 </body>
