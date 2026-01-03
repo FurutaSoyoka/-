@@ -1,447 +1,66 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>揮発する記憶 - 夢十夜</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
-
-    <style>
-        /* ▼▼▼ 基本設定 ▼▼▼ */
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden; /* スクロール禁止 */
-            background-color: #fff;
-            font-family: 'Shippori Mincho', serif;
-            cursor: default;
-            user-select: none;
-            /* iOSでのバウンススクロール防止 */
-            position: fixed; 
-        }
-
-        /* ▼▼▼ イントロ画面 ▼▼▼ */
-        #intro-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #fff;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 1.5s ease;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        #intro-overlay h1 {
-            font-size: 24px;
-            letter-spacing: 0.3em;
-            margin-bottom: 30px;
-            font-weight: 500;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
-            color: #333;
-            text-align: center;
-        }
-
-        .instruction-text {
-            font-size: 13px;
-            line-height: 2.2;
-            text-align: center;
-            color: #777;
-            margin-bottom: 40px;
-            letter-spacing: 0.1em;
-        }
-
-        #start-btn {
-            padding: 10px 30px;
-            background: transparent;
-            border: 1px solid #ccc;
-            color: #555;
-            font-family: 'Shippori Mincho', serif;
-            font-size: 13px;
-            letter-spacing: 0.2em;
-            cursor: pointer;
-            transition: all 0.4s;
-            border-radius: 2px;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        #start-btn:hover {
-            background: #f5f5f5;
-            color: #111;
-        }
-
-        /* ▼▼▼ コンテンツレイヤー（テキスト表示部） ▼▼▼ */
-        #content-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* 上下左右中央寄せ */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 0;
-            padding: 30px 20px; /* スマホでの余白調整 */
-            box-sizing: border-box;
-        }
-
-        #text-container {
-            position: relative;
-            /* 縦書き設定 */
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            /* 画面からはみ出さないための最大サイズ設定 */
-            max-height: 90vh; 
-            max-width: 90vw;
-            overflow: hidden; /* はみ出た分は隠す（または scroll にする） */
-        }
-
-        #text-inner {
-            color: #1a1a1a;
-            /* PC向けのデフォルトサイズ */
-            font-size: 18px; 
-            line-height: 2.4;
-            letter-spacing: 0.15em;
-            font-weight: 400;
-            transition: opacity 0.8s ease; /* テキスト切り替え時のフェード */
-            opacity: 1;
-        }
-        
-        /* 段落間の余白（縦書きなので横方向の余白になる） */
-        #text-inner p {
-            margin: 0 0 0 1.5em; 
-        }
-
-        /* ▼▼▼ スマホ向け最適化 (画面幅768px以下) ▼▼▼ */
-        @media (max-width: 768px) {
-            #text-inner {
-                /* スマホでは文字を小さく、行間を少し詰める */
-                font-size: 15px; 
-                line-height: 2.0;
-                letter-spacing: 0.1em;
-            }
-            #text-inner p {
-                margin: 0 0 0 1.2em;
-            }
-            #content-layer {
-                padding: 20px 15px;
-            }
-        }
-
-
-        /* ▼▼▼ 霧（キャンバス） ▼▼▼ */
-        #fog-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            cursor: crosshair;
-            touch-action: none;
-            opacity: 0;
-            transition: opacity 1.5s;
-        }
-
-        /* ▼▼▼ 「次へ」ボタン ▼▼▼ */
+/* ▼▼▼ 「次へ」ボタンの強化スタイル ▼▼▼ */
         #next-btn-container {
             position: absolute;
-            /* 縦書きの進行方向（左下）に配置 */
-            bottom: 30px;
-            left: 30px;
-            z-index: 20; /* 霧より手前に */
-            opacity: 0; /* 最初は隠す */
-            transition: opacity 1.0s ease;
-            pointer-events: none; /* 透明なときはクリック不可 */
+            bottom: 40px; /* 少し上に上げました */
+            left: 40px;
+            z-index: 20;
+            opacity: 0;
+            transform: translateY(10px); /* 最初は少し下に配置 */
+            transition: opacity 1.0s ease, transform 1.0s ease;
+            pointer-events: none;
         }
 
         #next-btn-container.visible {
             opacity: 1;
+            transform: translateY(0); /* ふわっと浮き上がって出現 */
             pointer-events: auto;
         }
 
         #next-btn {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid #ddd;
-            color: #666;
-            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #bbb; /* 少し線を濃く */
+            color: #444;
+            padding: 12px 28px; /* 少し大きく */
             font-family: 'Shippori Mincho', serif;
-            font-size: 12px;
-            letter-spacing: 0.15em;
+            font-size: 14px;
+            letter-spacing: 0.2em;
             cursor: pointer;
-            border-radius: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.3s;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* 影を付けてボタンらしく */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 動きを滑らかに */
             -webkit-tap-highlight-color: transparent;
             outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        #next-btn:hover {
-            background: #fff;
-            color: #333;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-        }
-
-    </style>
-</head>
-<body>
-
-    <div id="intro-overlay">
-        <h1>揮発する記憶</h1>
-        <div class="instruction-text">
-            夏目漱石『夢十夜』より<br>
-            <br>
-            白い霧を指で拭うことで、<br>
-            文章を一時的に留めることができます。<br>
-            <br>
-            手を止めれば、<br>
-            即座に白へと還ります。
-        </div>
-        <button id="start-btn">物語に触れる</button>
-    </div>
-
-    <div id="content-layer">
-        <div id="text-container">
-            <div id="text-inner">
-                </div>
-        </div>
-    </div>
-
-    <div id="next-btn-container">
-        <button id="next-btn">次の刻へ</button>
-    </div>
-
-    <canvas id="fog-canvas"></canvas>
-
-    <script>
-        // ▼▼▼ 物語データ（夏目漱石『夢十夜』第一夜より抜粋・分割） ▼▼▼
-        // ※ 読みやすい長さに分割しています。改行は<br>ではなく、pタグで段落分けします。
-        const storySegments = [
-            // 1
-            `<p>こんな夢を見た。</p>
-             <p>腕組をして枕元に坐っていると、仰向に寝た女が、静かな声でもう死にますと云う。</p>
-             <p>女は長い髪を枕に敷いて、輪郭の柔らかな瓜実顔をその中に横たえている。</p>
-             <p>真白な頬の底に温かい血の色がほどよく差して、唇の色は無論赤い。</p>
-             <p>とうてい死にそうには見えない。</p>
-             <p>しかし女は静かな声で、もう死にますと判然（はっきり）云った。</p>
-             <p>自分も確にこれは死ぬなと思った。</p>`,
-            
-            // 2
-            `<p>そこで、そうかね、もう死ぬのかねと上から覗き込むようにして聞いて見た。</p>
-             <p>死にますとも、と云いながら、女はぱっちりと眼を開けた。</p>
-             <p>大きな潤のある眼で、長い睫に包まれた中は、只一面に真黒であった。</p>
-             <p>その真黒な眸の奥に、自分の姿が鮮に浮かんでいる。</p>`,
-            
-            // 3
-            `<p>自分は透き徹るほど深く見える此黒眼の色沢を眺めて、これでも死ぬのかと思った。</p>
-             <p>それで、ねんごろに枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうねとまた聞き返した。</p>
-             <p>すると女は黒い眼を眠そうに擡げて、やっぱり静かな声で、でも、死ぬんですもの、仕方がないわと云った。</p>`,
-            
-            // 4
-            `<p>じゃ、私の顔が見えるかいと一心に聞くと、見えるかいって、空に其様な星が出ているじゃありませんかと云った。</p>
-             <p>なるほど仰向いて見ると、空には星が出ている。</p>
-             <p>――百年待っていて下さい。</p>
-             <p>と思い切った声で云った。</p>
-             <p>「百年、私の墓の傍に坐って待っていて下さい。きっと逢いに来ますから」</p>`,
-
-            // 5 (最後)
-            `<p>自分はただ待っていると答えた。</p>
-             <p>すると、黒い眸の中に鮮に見えた自分の姿が、ぼうっと崩れて来た。</p>
-             <p>……静かな水が動いて写る影を乱すように、又流れ出す涙が菱に砕けるように、自分はもう死んだなと思った。</p>
-             <p>（第一夜 終）</p>`
-        ];
-
-
-        // ▼▼▼ システム設定・変数 ▼▼▼
-        const canvas = document.getElementById('fog-canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const introOverlay = document.getElementById('intro-overlay');
-        const startBtn = document.getElementById('start-btn');
-        const textInner = document.getElementById('text-inner');
-        const nextBtnContainer = document.getElementById('next-btn-container');
-        const nextBtn = document.getElementById('next-btn');
-
-        // 霧が戻る基本速度
-        let recoverySpeed = 0.08;
-        const BASE_RECOVERY_SPEED = 0.08; 
-        const SCRATCH_RADIUS = 50; // 指の太さ（少し細くしました）
-
-        let isDrawing = false;
-        let lastPoint = null;
-        let isGameStarted = false;
-        let hasInteracted = false; // 一度でも触ったか判定用
-        let currentSegmentIndex = 0; // 現在の物語のインデックス
-
-        // ▼▼▼ 初期化処理 ▼▼▼
-        function init() {
-            resize();
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            // 最初のテキストをセット
-            textInner.innerHTML = storySegments[currentSegmentIndex];
-        }
-
-        // 開始ボタンクリック時
-        startBtn.addEventListener('click', () => {
-            introOverlay.style.opacity = 0;
-            setTimeout(() => {
-                introOverlay.style.display = 'none';
-            }, 1500);
-
-            canvas.style.opacity = 1;
-            isGameStarted = true;
-            loop();
-        });
-
-        // リサイズ対応
-        function resize() {
-            // スマホのアドレスバー考慮（innerHeightを使う）
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            ctx.fillStyle = '#ffffff';
-            // リサイズ時に一度真っ白に戻す（バグ防止）
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        // ▼▼▼ メインループ（霧の再生） ▼▼▼
-        function loop() {
-            if (!isGameStarted) return;
-            requestAnimationFrame(loop);
-
-            // 霧を重ねる処理
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = `rgba(255, 255, 255, ${recoverySpeed})`;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        // ▼▼▼ 描画（霧を晴らす）処理 ▼▼▼
-        function startDraw(e) {
-            if (!isGameStarted) return;
-            isDrawing = true;
-            const { x, y } = getPos(e);
-            lastPoint = { x, y };
-            scratch(x, y);
-
-            // 最初のインタラクション時に「次へ」ボタンを表示
-            if (!hasInteracted) {
-                hasInteracted = true;
-                // 少し遅らせてボタンを表示
-                setTimeout(() => {
-                    nextBtnContainer.classList.add('visible');
-                }, 2000);
+        /* マウスを乗せた時（PC） */
+        @media (hover: hover) {
+            #next-btn:hover {
+                background: #333; /* 背景を黒く */
+                color: #fff;      /* 文字を白く */
+                border-color: #333;
+                transform: translateY(-2px); /* 少し浮く */
+                box-shadow: 0 6px 20px rgba(0,0,0,0.15);
             }
         }
 
-        function moveDraw(e) {
-            if (!isDrawing) return;
-            e.preventDefault(); // スクロール防止
-            const { x, y } = getPos(e);
-            scratch(x, y);
+        /* 押した瞬間（PC・スマホ共通） */
+        #next-btn:active {
+            transform: scale(0.92); /* ぐにゅっと押し込まれる感覚 */
+            background: #111;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.1s; /* 反応を速く */
         }
 
-        function endDraw() {
-            isDrawing = false;
-            lastPoint = null;
+        /* 無効化状態（最後） */
+        #next-btn:disabled {
+            background: #eee;
+            border-color: #ddd;
+            color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-
-        // 実際に霧を削る関数
-        function scratch(x, y) {
-            ctx.globalCompositeOperation = 'destination-out'; 
-            ctx.beginPath();
-            ctx.shadowBlur = 25; 
-            ctx.shadowColor = '#000';
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.lineWidth = SCRATCH_RADIUS;
-            
-            if (lastPoint) {
-                ctx.moveTo(lastPoint.x, lastPoint.y);
-                ctx.lineTo(x, y);
-            } else {
-                ctx.arc(x, y, SCRATCH_RADIUS / 2, 0, Math.PI * 2);
-            }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-            lastPoint = { x, y };
-        }
-
-        // 座標取得（スマホ/PC対応）
-        function getPos(e) {
-            if (e.touches && e.touches.length > 0) {
-                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            }
-            return { x: e.clientX, y: e.clientY };
-        }
-
-        // ▼▼▼ 物語進行処理 ▼▼▼
-        nextBtn.addEventListener('click', () => {
-            // 最後のセグメントなら何もしない（または終了処理）
-            if (currentSegmentIndex >= storySegments.length - 1) {
-                nextBtn.textContent = "（終）";
-                nextBtn.disabled = true;
-                nextBtnContainer.style.opacity = 0.5;
-                return;
-            }
-
-            // 1. ボタンを一時的に無効化
-            nextBtn.disabled = true;
-            
-            // 2. テキストをフェードアウト
-            textInner.style.opacity = 0;
-
-            // 3. 霧を一気に濃くする（演出）
-            recoverySpeed = 0.3; 
-
-            // 4. フェードアウト完了後に次のテキストをセット
-            setTimeout(() => {
-                currentSegmentIndex++;
-                textInner.innerHTML = storySegments[currentSegmentIndex];
-                
-                // テキストをフェードイン
-                textInner.style.opacity = 1;
-                
-                // 霧の速度を元に戻す
-                recoverySpeed = BASE_RECOVERY_SPEED;
-                
-                // ボタンを再度有効化
-                nextBtn.disabled = false;
-
-                // 最後のページになったらボタンのテキストを変える
-                if (currentSegmentIndex === storySegments.length - 1) {
-                     nextBtn.textContent = "閉じる";
-                }
-
-            }, 800); // CSSのtransition時間と合わせる
-        });
-
-
-        // イベントリスナー登録
-        window.addEventListener('mousedown', startDraw);
-        window.addEventListener('mousemove', moveDraw);
-        window.addEventListener('mouseup', endDraw);
-        // スマホ操作のイベント（受動的イベントリスナーの警告を回避）
-        canvas.addEventListener('touchstart', startDraw, { passive: false });
-        canvas.addEventListener('touchmove', moveDraw, { passive: false });
-        canvas.addEventListener('touchend', endDraw, { passive: false });
-        
-        window.addEventListener('resize', resize);
-
-        // 開始
-        init();
-
-    </script>
-</body>
-</html>
