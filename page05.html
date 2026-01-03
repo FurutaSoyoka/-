@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Breathing Space - Gray Rain</title>
+    <title>Breathing Space - Minimalist</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,11 +11,10 @@
 
     <style>
         :root {
-            /* ▼▼▼ 色設定を変更 ▼▼▼ */
-            --bg-top: #4b5563;   /* 上部：落ち着いた暗めのグレー */
-            --bg-bottom: #e5e7eb;/* 下部：明るいグレー（ほぼ白） */
-            --text-main: #1f2937;/* メインテキスト：深い炭黒系グレー */
-            --accent: #d93a3a;   /* アクセントカラー（赤）は維持 */
+            --bg-top: #4b5563;
+            --bg-bottom: #e5e7eb;
+            --text-main: #1f2937;
+            --accent: #d93a3a;
             --catcher-pos-bottom: 100px;
         }
 
@@ -25,7 +24,6 @@
             width: 100%;
             height: 100dvh; 
             overflow: hidden;
-            /* 背景グラデーション（指定されたグレー系変数を使用） */
             background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 90%);
             color: var(--text-main);
             font-family: 'Shippori Mincho', serif;
@@ -35,7 +33,7 @@
             cursor: ew-resize;
         }
 
-        /* 文字が落ちる専用レイヤー（マスク適用） */
+        /* 文字が落ちるコンテナ（マスク適用） */
         #rain-container {
             position: absolute;
             top: 0;
@@ -44,55 +42,51 @@
             height: 100%;
             pointer-events: none;
             z-index: 5;
-            --mask-start: calc(100% - var(--catcher-pos-bottom) - 20px);
+            --mask-start: calc(100% - var(--catcher-pos-bottom) - 10px);
             --mask-end: calc(100% - 20px);
             mask-image: linear-gradient(to bottom, black var(--mask-start), transparent var(--mask-end));
             -webkit-mask-image: linear-gradient(to bottom, black var(--mask-start), transparent var(--mask-end));
         }
 
-        /* 落ちてくる文字 */
+        /* 落ちてくる文字：小さく、光らせない */
         .rain-char {
             position: absolute;
-            font-size: 26px;
-            color: #ffffff; /* 白 */
+            font-size: 18px; /* 小さめに設定 */
+            color: #ffffff;
             will-change: top;
-            /* グレー背景に合わせて影を少し調整 */
-            text-shadow: 0 0 8px rgba(255,255,255,0.5), 0 0 15px rgba(255,255,255,0.2);
+            text-shadow: none; /* 光彩を削除 */
         }
 
-        /* プレイヤーの受け皿 */
+        /* 受け皿：よりミニマルに */
         #catcher {
             position: absolute;
             bottom: var(--catcher-pos-bottom);
             left: 50%;
             transform: translateX(-50%);
-            width: 140px;
-            height: 40px;
-            border-bottom: 1.5px solid var(--text-main);
-            border-left: 1.5px solid var(--text-main);
-            border-right: 1.5px solid var(--text-main);
-            /* 背景色に合わせて少し調整 */
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(5px);
+            width: 120px;
+            height: 35px;
+            border-bottom: 1px solid var(--text-main);
+            border-left: 1px solid var(--text-main);
+            border-right: 1px solid var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(2px);
             z-index: 10;
         }
 
-        /* キャッチした瞬間に表示される文字 */
+        /* キャッチした瞬間の文字 */
         #caught-text {
             position: absolute;
-            top: -45px;
+            top: -40px;
             width: 100%;
             text-align: center;
-            font-size: 24px;
+            font-size: 20px;
             color: var(--text-main);
-            font-weight: bold;
+            font-weight: 500;
             opacity: 0;
-            transition: all 0.4s ease;
-            text-shadow: none;
+            transition: opacity 0.3s;
         }
         #caught-text.active {
             opacity: 1;
-            transform: scale(1.1);
         }
 
         #guide {
@@ -100,14 +94,14 @@
             top: 40%;
             width: 100%;
             text-align: center;
-            color: rgba(255,255,255,0.5); /* ガイドの文字色も少し調整 */
-            font-size: 14px;
-            letter-spacing: 0.3em;
+            color: rgba(255,255,255,0.4);
+            font-size: 13px;
+            letter-spacing: 0.4em;
             transition: opacity 1s;
             z-index: 1;
         }
 
-        /* 結果表示エリア */
+        /* 結果表示エリア：すっきりと1行（または適切な折り返し）に */
         #result-layer {
             position: fixed;
             top: 0;
@@ -119,46 +113,43 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: var(--bg-bottom); /* 結果画面は明るいグレー */
+            background: var(--bg-bottom);
         }
 
         #result-container {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            max-height: 70vh;
+            height: 60vh; /* 高さを固定して、不必要な行の分散を防ぐ */
             display: flex;
-            flex-wrap: wrap;
-            gap: 1em;
+            justify-content: flex-start;
+            align-items: center;
+            font-size: 22px;
+            line-height: 1.5;
+            letter-spacing: 0.1em;
         }
 
         .res-char {
-            font-size: clamp(18px, 4vw, 28px);
-            color: var(--text-main);
             opacity: 0;
-            animation: fadeInLetter 0.8s ease forwards;
-        }
-
-        @keyframes fadeInLetter {
-            to { opacity: 1; }
+            transition: opacity 0.5s;
         }
 
         #footer-info {
-            margin-top: 50px;
+            margin-top: 60px;
             text-align: center;
         }
 
         #end-mark {
             display: inline-block;
-            padding: 5px 15px;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            font-size: 12px;
+            padding: 4px 12px;
+            border: 1px solid var(--text-main);
+            color: var(--text-main);
+            font-size: 11px;
             letter-spacing: 0.2em;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         #score {
-            font-size: 12px;
+            font-size: 11px;
             color: #888;
         }
 
@@ -176,7 +167,7 @@
     <div id="result-layer">
         <div id="result-container"></div>
         <div id="footer-info">
-            <div id="end-mark">綴り終え</div>
+            <div id="end-mark">収集完了</div>
             <div id="score"></div>
         </div>
     </div>
@@ -199,8 +190,8 @@
         let isFinished = false;
         let collectedChars = [];
 
-        const FALL_SPEED = 3.5; 
-        const SPAWN_RATE = 50; 
+        const FALL_SPEED = 3.2; 
+        const SPAWN_RATE = 55; 
         let frameCount = 0;
 
         function init() {
@@ -246,8 +237,8 @@
             el.textContent = char;
             el.classList.add('rain-char');
             
-            const x = Math.random() * (window.innerWidth - 80) + 40;
-            const y = -50;
+            const x = Math.random() * (window.innerWidth - 60) + 30;
+            const y = -30;
 
             rainContainer.appendChild(el);
 
@@ -256,7 +247,7 @@
                 char: char,
                 x: x,
                 y: y,
-                speed: FALL_SPEED + Math.random() * 1.5,
+                speed: FALL_SPEED + Math.random() * 1.2,
                 isCaught: false
             });
         }
@@ -266,7 +257,7 @@
             requestAnimationFrame(loop);
 
             if (gameActive && charIndex >= textSource.length && fallingChars.length === 0) {
-                setTimeout(finishGame, 1000);
+                setTimeout(finishGame, 800);
                 return;
             }
 
@@ -284,7 +275,6 @@
                 p.el.style.top = p.y + 'px';
                 p.el.style.left = p.x + 'px';
 
-                // キャッチ判定
                 if (!p.isCaught && p.y >= catcherRect.top && p.y <= catcherRect.bottom) {
                     if (p.x >= catcherRect.left && p.x <= catcherRect.right) {
                         catchChar(p, i);
@@ -305,27 +295,34 @@
             fallingChars.splice(index, 1);
             collectedChars.push(p.char);
 
+            // 一文字ずつ表示を切り替え
             caughtTextDisplay.textContent = p.char;
             caughtTextDisplay.classList.remove('active');
             void caughtTextDisplay.offsetWidth; 
             caughtTextDisplay.classList.add('active');
 
-            catcher.style.borderColor = "var(--accent)";
+            // 収集時の繊細な反応
+            catcher.style.background = "rgba(255, 255, 255, 0.2)";
             setTimeout(() => {
-                catcher.style.borderColor = "var(--text-main)";
-            }, 200);
+                catcher.style.background = "rgba(255, 255, 255, 0.05)";
+            }, 100);
         }
 
         function finishGame() {
             isFinished = true;
             resultLayer.style.display = 'flex';
             
+            // 全ての文字を一つのスパンとして追加し、美しく並べる
             collectedChars.forEach((char, i) => {
-                const span = document.createElement('div');
+                const span = document.createElement('span');
                 span.textContent = char;
                 span.classList.add('res-char');
-                span.style.animationDelay = `${i * 0.1}s`;
                 resultContainer.appendChild(span);
+                
+                // 順次フェードイン
+                setTimeout(() => {
+                    span.style.opacity = '1';
+                }, i * 60);
             });
 
             scoreDisplay.textContent = `${collectedChars.length} / ${textSource.length}`;
