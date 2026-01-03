@@ -3,364 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>堆積する筋書き</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
-
+    <title>読むために、手を動かす</title>
     <style>
-        /* ▼▼▼ 変更点1：スクロール設定 ▼▼▼ */
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --accent-color: #888;
+        }
+
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
-            /* コンテンツに合わせて伸びるように設定 */
-            min-height: 100%; 
-            height: auto; 
-            
-            background-color: #f2f2f2;
-            font-family: 'Shippori Mincho', serif;
-            user-select: none;
-            
-            /* 縦スクロールは許可、横スクロールは禁止 */
-            overflow-y: auto; 
-            overflow-x: hidden;
-            /* スマホでの文字サイズ自動調整を防ぐ */
-            -webkit-text-size-adjust: 100%; 
+            height: 100%;
+            overflow: hidden; /* スクロール禁止 */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: "Hiragino Mincho ProN", "serif";
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* 戻るボタン */
-        .back-link {
+        #app {
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+        }
+
+        /* テキスト表示エリア */
+        #text-content {
+            font-size: 1.2rem;
+            transition: opacity 0.8s ease;
+            opacity: 0;
+        }
+
+        #text-content.visible {
+            opacity: 1;
+        }
+
+        /* 進行状況インジケーター */
+        #progress-container {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            text-decoration: none;
-            color: #aaa;
-            font-size: 12px;
-            z-index: 9999;
-            writing-mode: vertical-rl;
-            letter-spacing: 0.2em;
-            padding: 10px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 4px;
-        }
-
-        /* ▼▼▼ 変更点2：背骨を画面に固定(fixed) ▼▼▼ */
-        #spine {
-            position: fixed; 
-            top: 5%;
-            bottom: 5%;
+            bottom: 10%;
             left: 50%;
-            width: 1px;
-            background: #ccc;
             transform: translateX(-50%);
-            z-index: 0;
-            transition: all 0.3s;
-        }
-        
-        #spine::after {
-            content: '檸檬の断片をここに編む';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            font-size: 11px;
-            color: #bbb;
-            letter-spacing: 0.3em;
-            white-space: nowrap;
+            width: 100px;
+            height: 2px;
+            background: #eee;
         }
 
-        /* 断片ブロック */
-        .chapter-block {
-            position: absolute;
-            width: 240px;
-            /* ▼ スマホ対応：画面幅の85%を超えないようにする ▼ */
-            max-width: 85vw; 
-            height: auto;
-            min-height: 100px;
-            background: #fff;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border-radius: 2px;
-            cursor: grab;
-            z-index: 10;
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent-color);
+            transition: width linear;
+        }
+
+        /* ガイドメッセージ */
+        #guide {
+            position: fixed;
+            bottom: 5%;
+            left: 0;
+            width: 100%;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* スタート画面 */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 15px 20px;
-            transition: box-shadow 0.3s, transform 0.3s; 
-            
-            /* スマホでドラッグしやすくする（ブラウザのスクロール干渉を防ぐ） */
-            touch-action: none; 
-        }
-
-        .chapter-block:active {
-            cursor: grabbing;
-            transform: scale(1.05);
             z-index: 100;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            padding: 20px;
         }
 
-        /* ナンバリング */
-        .chapter-number {
-            font-size: 11px;
-            color: #d9a62e; 
-            margin-bottom: 10px;
-            opacity: 0; 
-            transform: translateY(8px);
-            transition: all 0.5s 0.1s;
-            letter-spacing: 0.1em;
-            font-weight: bold;
+        button {
+            background: none;
+            border: 1px solid var(--text-color);
+            padding: 15px 30px;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 20px;
         }
-
-        /* リード文 */
-        .fragment-text {
-            font-size: 15px;
-            line-height: 1.7;
-            color: #333;
-            text-align: center;
-            font-weight: bold;
-            transition: all 0.5s;
-        }
-
-        /* 本文 */
-        .full-text {
-            height: 0;
-            overflow: hidden;
-            opacity: 0;
-            font-size: 13px;
-            line-height: 2.1;
-            color: #555;
-            text-align: justify;
-            margin-top: 0;
-            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        /* 接続済み（Snapped） */
-        .chapter-block.snapped {
-            cursor: default;
-            box-shadow: none;
-            background: transparent;
-            border-left: 3px solid #d9a62e; 
-            border-radius: 0;
-            padding: 15px 25px;
-            width: 280px;
-            /* スマホで接続後にはみ出さないよう調整 */
-            max-width: 90vw;
-        }
-        
-        .chapter-block.snapped .chapter-number {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .chapter-block.snapped .fragment-text {
-            font-size: 17px;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
-            width: 100%;
-            text-align: left;
-            color: #000;
-        }
-
-        .chapter-block.snapped .full-text {
-            height: auto;
-            opacity: 1;
-            margin-top: 5px;
-        }
-        
-        /* コンテナの高さ確保用（フッター的余白） */
-        #container {
-            position: relative;
-            width: 100%;
-            height: 100%; 
-            padding-bottom: 200px; /* 下に余白を持たせてスクロールしやすくする */
-        }
-
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">目次へ戻る</a>
+    <div id="overlay">
+        <h2>読むために、手を動かす</h2>
+        <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">スマートフォンを振って進む体験です</p>
+        <button id="start-btn">体験を始める</button>
+    </div>
 
-    <div id="spine"></div>
-    <div id="container"></div>
+    <div id="app">
+        <div id="text-content"></div>
+    </div>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    <div id="guide">端末を軽く振ってください</div>
 
     <script>
-        const stories = [
-            {
-                number: "第一の断片：憂鬱",
-                fragment: "えたいの知れない不吉な塊が、私の心を始終圧えつけていた。",
-                full: "焦燥と言おうか、嫌悪と言おうか……。私は当所もなく街を歩き回った。何故だかその頃私は見すぼらしくて美しいものに強く引き付けられたのだ。"
-            },
-            {
-                number: "第二の断片：果実",
-                fragment: "その果物屋で、私は珍しいことに檸檬を見つけた。",
-                full: "檸檬の黄色い色は、私の憂鬱な心に一点の鮮やかな色彩を投げかけた。その冷たさと、鼻を撲つような香気。私は幸福だった。"
-            },
-            {
-                number: "第三の断片：圧迫",
-                fragment: "私はいつものように丸善に入ったが、そこはもう以前の私を惹きつける場所ではなかった。",
-                full: "香水瓶も、キセルも、何もかもが私を圧迫した。私は憂鬱になり、そこから逃げ出したい衝動に駆られた。"
-            },
-            {
-                number: "終章の断片：爆弾",
-                fragment: "私は画本の棚の前に立ち、檸檬を一つ、その上に置いた。",
-                full: "それは黄金色に輝く爆弾のようだった。私はそれを残したまま、何食わぬ顔をして外へ出た。あの丸善が木端微塵に粉砕される様を想像しながら。"
-            }
+        const texts = [
+            "本作品は、スマートフォンにおける無意識なスクロール行為によって、文章が読まれなくなっている現状に対し、",
+            "「振る」という身体的動作を、読む行為のトリガーとして設計した。",
+            "文章はスクロールでは進まない。",
+            "一定時間表示された後に、端末を振ることでのみ、次の文章が現れる。",
+            "これにより、読むことに区切りと意識的な動作を与え、",
+            "情報を単に消費するのではなく、「読む体験」へと変換することを目的とする。"
         ];
 
-        const container = document.getElementById('container');
-        const spine = document.getElementById('spine');
-        
-        let currentStackHeight = 100; 
+        let currentIndex = 0;
+        let canShake = false;
+        const readTime = 3000; // 次へ進めるようになるまでの待機時間(ms)
+        const shakeThreshold = 15; // 振りの強さのしきい値
 
-        function init() {
-            const shuffled = [...stories].sort(() => Math.random() - 0.5);
+        const contentEl = document.getElementById('text-content');
+        const progressBar = document.getElementById('progress-bar');
+        const guideEl = document.getElementById('guide');
+        const overlay = document.getElementById('overlay');
 
-            shuffled.forEach((story) => {
-                createBlock(story);
-            });
+        // テキストの更新
+        function updateText() {
+            canShake = false;
+            contentEl.classList.remove('visible');
+            guideEl.style.opacity = 0;
             
-            // 初期の高さを確保
-            container.style.height = window.innerHeight + 'px';
+            setTimeout(() => {
+                contentEl.innerText = texts[currentIndex];
+                contentEl.classList.add('visible');
+                
+                // プログレスバー開始
+                progressBar.style.transition = "none";
+                progressBar.style.width = "0%";
+                
+                setTimeout(() => {
+                    progressBar.style.transition = `width ${readTime}ms linear`;
+                    progressBar.style.width = "100%";
+                }, 50);
+
+                // 待機時間終了後の処理
+                setTimeout(() => {
+                    canShake = true;
+                    guideEl.style.opacity = 1;
+                }, readTime);
+            }, 800);
         }
 
-        function createBlock(data) {
-            const el = document.createElement('div');
-            el.classList.add('chapter-block');
-            
-            el.innerHTML = `
-                <div class="chapter-number">${data.number}</div>
-                <div class="fragment-text">${data.fragment}</div>
-                <div class="full-text">${data.full}</div>
-            `;
+        // 加速度センサーの処理
+        function handleMotion(event) {
+            if (!canShake) return;
 
-            // ▼▼▼ スマホ対応：配置計算の修正 ▼▼▼
-            // ブロックの想定幅（最大240pxだが、スマホでは画面幅による）
-            const blockWidth = Math.min(240, window.innerWidth * 0.85);
-            
-            // 画面幅からブロック幅を引いた「安全圏」の中でランダム配置
-            // これで絶対に画面外にはみ出さない
-            const safeWidth = window.innerWidth - blockWidth - 20; // 20pxは余白
-            
-            // 0 から safeWidth の間でランダム (最低限左端10pxは空ける)
-            const randomX = Math.random() * safeWidth + 10; 
-            
-            // 縦位置は上の方（10%〜70%）
-            const randomY = (Math.random() * 60 + 10) + '%'; 
-            
-            el.style.left = randomX + 'px';
-            el.style.top = randomY;
-            
-            addDragEvents(el);
-            container.appendChild(el);
-        }
+            const acc = event.accelerationIncludingGravity;
+            const totalAcc = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
 
-        function addDragEvents(el) {
-            let isDragging = false;
-            let startX, startY, initialLeft, initialTop;
-
-            const start = (e) => {
-                if (el.classList.contains('snapped')) return;
-
-                isDragging = true;
-                el.style.zIndex = 100;
-                
-                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-                
-                startX = clientX;
-                startY = clientY;
-                
-                initialLeft = el.offsetLeft;
-                initialTop = el.offsetTop;
-                
-                el.style.transition = 'none';
-            };
-
-            const move = (e) => {
-                if (!isDragging) return;
-                
-                // ★重要：ブロックをドラッグしている間は、画面スクロールを防ぐ
-                if(e.cancelable) e.preventDefault(); 
-
-                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-                const dx = clientX - startX;
-                const dy = clientY - startY;
-
-                el.style.left = (initialLeft + dx) + 'px';
-                el.style.top = (initialTop + dy) + 'px';
-                
-                // 吸着ガイド
-                const rect = el.getBoundingClientRect();
-                const centerX = window.innerWidth / 2;
-                
-                if (Math.abs((rect.left + rect.width/2) - centerX) < 60) {
-                    spine.style.background = '#aaa';
-                    spine.style.width = '3px';
-                } else {
-                    spine.style.background = '#ccc';
-                    spine.style.width = '1px';
+            if (totalAcc > shakeThreshold + 10) { // 静止時（約9.8）からの変化を検知
+                currentIndex++;
+                if (currentIndex >= texts.length) {
+                    currentIndex = 0; // ループさせる（または終了画面へ）
                 }
-            };
-
-            const end = () => {
-                if (!isDragging) return;
-                isDragging = false;
-                
-                el.style.transition = 'all 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
-                el.style.zIndex = 10;
-                spine.style.background = '#ccc';
-                spine.style.width = '1px';
-
-                const rect = el.getBoundingClientRect();
-                const centerX = window.innerWidth / 2;
-
-                if (Math.abs((rect.left + rect.width/2) - centerX) < 60) {
-                    snapToSpine(el);
-                }
-            };
-
-            el.addEventListener('mousedown', start);
-            window.addEventListener('mousemove', move);
-            window.addEventListener('mouseup', end);
-            
-            // passive: false でスクロール防止を有効化
-            el.addEventListener('touchstart', start, {passive: false});
-            window.addEventListener('touchmove', move, {passive: false});
-            window.addEventListener('touchend', end);
-        }
-
-        function snapToSpine(el) {
-            el.classList.add('snapped');
-            
-            const centerX = window.innerWidth / 2;
-            // 要素の幅を取得してセンター合わせ
-            const rect = el.getBoundingClientRect();
-            const elWidth = rect.width;
-            
-            el.style.left = (centerX - elWidth / 2) + 'px';
-            el.style.top = currentStackHeight + 'px';
-            
-            // 高さを更新（展開後の予想高さ）
-            const estimatedHeight = 250; 
-            currentStackHeight += estimatedHeight;
-            
-            // コンテナ拡張
-            if (currentStackHeight > container.offsetHeight - 100) {
-                container.style.height = (currentStackHeight + 300) + 'px';
+                updateText();
             }
         }
 
-        init();
+        // 開始ボタン
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            // iOSの権限リクエスト
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceMotionEvent.requestPermission();
+                    if (permission === 'granted') {
+                        window.addEventListener('devicemotion', handleMotion);
+                    } else {
+                        alert("センサーへのアクセスを許可してください。");
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            } else {
+                // iOS以外
+                window.addEventListener('devicemotion', handleMotion);
+            }
 
+            overlay.style.display = 'none';
+            updateText();
+        });
     </script>
 </body>
 </html>
