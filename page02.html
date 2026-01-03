@@ -14,7 +14,7 @@
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background-color: #f7f6f3;
             font-family: 'Shippori Mincho', serif;
-            touch-action: none; /* スマホのズーム・スクロールを完全無効化 */
+            touch-action: none; /* スマホのズーム等を防止 */
             -webkit-user-select: none;
         }
 
@@ -26,11 +26,11 @@
             align-items: center;
         }
 
-        /* --- 文字の塊：画面の正中央に配置 --- */
+        /* --- 文字の塊：最初から表示される「黒いインク」 --- */
         #text-block {
             position: absolute;
             top: 50%; left: 50%;
-            transform: translate(-50%, -50%); /* 常にど真ん中に固定 */
+            transform: translate(-50%, -50%); /* 画面の正中央 */
             
             writing-mode: vertical-rl;
             text-orientation: upright;
@@ -38,24 +38,25 @@
             text-align: center;
             white-space: nowrap;
             
-            /* 初期状態：極限まで凝縮した黒い塊 */
+            /* 【重要】最初から凝縮させておく */
             line-height: 0; 
-            letter-spacing: -1.2em; 
-            opacity: 0;
+            letter-spacing: -1.25em; 
+            opacity: 1; /* 最初から表示 */
             
             mix-blend-mode: multiply;
             color: #000;
             
+            /* 広がる時の挙動（0.8秒かけて滑らかに） */
             transition: line-height 0.8s cubic-bezier(0.16, 1, 0.3, 1),
                         letter-spacing 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                        opacity 1.5s ease;
+                        background-color 1s ease;
             z-index: 10;
         }
 
-        /* --- 説明ボックス：コンパクト化して塊の下に配置 --- */
+        /* --- 説明エリア：より小さく、控えめに --- */
         #intro-wrapper {
             position: absolute;
-            top: calc(50% + 100px); /* 塊の下、邪魔にならない位置 */
+            top: calc(50% + 120px); /* 塊の少し下に配置 */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -65,34 +66,35 @@
 
         #intro-card {
             background-color: #fff;
-            padding: 20px 30px; /* 小さめに調整 */
+            padding: 15px 25px; /* サイズをさらに小さく */
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             text-align: center;
-            border: 1px solid rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.01);
         }
 
         #intro-card p {
             margin: 0;
-            color: #777;
-            font-size: 12px; /* 小さく控えめに */
-            line-height: 2.2;
-            letter-spacing: 0.1em;
+            color: #888;
+            font-size: 11px; /* 小さな文字 */
+            line-height: 2.0;
+            letter-spacing: 0.08em;
         }
 
         #intro-arrow {
-            margin-top: 15px;
-            color: #ccc;
-            font-size: 18px;
-            transform: rotate(45deg);
+            margin-top: 12px;
+            color: #ddd;
+            font-size: 16px;
+            transform: rotate(45deg); /* 画像のような斜め矢印 */
         }
 
-        /* 操作時のフェードアウト用 */
+        /* 操作時に消える演出 */
         .fade-out {
             opacity: 0 !important;
             pointer-events: none;
             transform: translateY(10px);
         }
 
+        /* 読みやすくなった時の背景色（白） */
         body.readable { background-color: #fff; }
     </style>
 </head>
@@ -125,34 +127,34 @@
         const introWrapper = document.getElementById('intro-wrapper');
         const body = document.body;
 
+        // 設定：凝縮状態から展開状態への変化幅
         const CONFIG = {
             lh: { min: 0, max: 4.2 }, 
-            ls: { min: -1.2, max: 1.3 },
-            baseDist: 30
+            ls: { min: -1.25, max: 1.35 },
+            baseDist: 20 // 反応し始める指の間隔
         };
 
-        window.onload = () => {
-            // ページを開いた瞬間に塊を表示
-            setTimeout(() => { textBlock.style.opacity = 1; }, 400);
-        };
-
+        // 二点間の距離を計算
         function getDistance(t1, t2) {
             return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         }
 
         function updateSpace(dist) {
-            // 操作が始まったら説明を消す
+            // 操作が開始されたら説明をフェードアウト
             introWrapper.classList.add('fade-out');
 
+            // 指を広げた量に応じて広がり具合（intensity）を計算
             let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
             const intensity = Math.pow(Math.min(scale, 1.2), 1.3);
 
             const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * intensity;
             const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * intensity;
 
+            // スタイルに反映
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
+            // 一定以上広がったら背景を白にする
             if (intensity > 0.45) {
                 body.classList.add('readable');
             } else {
@@ -160,7 +162,7 @@
             }
         }
 
-        // スマホ操作の検知
+        // スマホのタッチイベント登録
         window.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 const dist = getDistance(e.touches[0], e.touches[1]);
@@ -170,7 +172,7 @@
 
         window.addEventListener('touchmove', (e) => {
             if (e.touches.length === 2) {
-                if (e.cancelable) e.preventDefault();
+                if (e.cancelable) e.preventDefault(); // スクロール等の無効化
                 const dist = getDistance(e.touches[0], e.touches[1]);
                 updateSpace(dist);
             }
