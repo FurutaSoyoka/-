@@ -3,122 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Raining Words - Mobile Ready</title>
+    <title>Breathing Space - Raining Words</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --bg-top: #2c3e50; /* 暗いグレー */
+            --bg-bottom: #ffffff; /* 白 */
+            --text-main: #34495e;
+            --accent: #d93a3a;
+        }
+
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%;
-            /* スマホのアドレスバー対策（100dvh） */
             height: 100dvh; 
             overflow: hidden;
-            background-color: #1a2a3a;
-            color: #fff;
+            /* 上から暗いグレー→白のグラデーション */
+            background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+            color: var(--text-main);
             font-family: 'Shippori Mincho', serif;
             user-select: none;
-            /* スマホでの長押しメニューなどを禁止 */
             -webkit-touch-callout: none;
             touch-action: none;
             cursor: ew-resize;
-            transition: background-color 2s ease;
-        }
-
-        body.finished {
-            background-color: #f7f6f2; 
-            cursor: default;
         }
 
         /* 落ちてくる文字 */
         .rain-char {
             position: absolute;
-            font-size: 24px; /* スマホでも見やすいサイズ */
-            color: rgba(255, 255, 255, 0.9);
+            font-size: 26px;
+            color: rgba(255, 255, 255, 0.9); /* 最初は白（暗い背景用） */
             pointer-events: none;
-            will-change: top;
-            text-shadow: 0 0 8px rgba(255,255,255,0.6);
+            will-change: top, opacity;
+            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+            transition: color 0.5s ease;
         }
 
-        /* プレイヤーの器 */
+        /* プレイヤーの受け皿（スタイリッシュに） */
         #catcher {
             position: absolute;
-            bottom: 80px; /* 指で隠れないよう少し上に配置 */
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            /* スマホ用に少し幅広にする */
-            width: 160px;
-            max-width: 30vw; /* 画面幅の30%を上限 */
-            height: 60px;
-            border-bottom: 3px solid #fff;
-            border-left: 3px solid #fff;
-            border-right: 3px solid #fff;
-            border-radius: 0 0 20px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 140px;
+            height: 40px;
+            border-bottom: 1.5px solid var(--text-main);
+            border-left: 1.5px solid var(--text-main);
+            border-right: 1.5px solid var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
             z-index: 10;
-            box-shadow: 0 0 25px rgba(255,255,255,0.1);
-            transition: opacity 1s;
+            transition: border-color 0.3s, background 0.3s;
         }
 
+        /* キャッチした瞬間に表示される文字 */
         #caught-text {
             position: absolute;
-            bottom: 20px;
+            top: -40px;
             width: 100%;
             text-align: center;
-            font-size: 18px;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(255,255,255,0.8);
-            white-space: nowrap;
+            font-size: 20px;
+            color: var(--text-main);
+            font-weight: bold;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
         }
-
-        #archive {
-            position: absolute;
-            top: 40px;
-            left: 20px;
-            right: 20px;
-            bottom: 160px;
-            font-size: 14px;
-            line-height: 1.8;
-            color: rgba(255,255,255,0.2);
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            pointer-events: none;
-            transition: opacity 1s;
-        }
-        
-        .archive-span {
-            animation: fadeIn 0.5s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        #caught-text.active {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         #guide {
             position: absolute;
-            top: 45%;
+            top: 40%;
             width: 100%;
             text-align: center;
-            color: rgba(255,255,255,0.6);
+            color: rgba(255,255,255,0.4);
             font-size: 14px;
-            pointer-events: none;
-            letter-spacing: 0.2em;
-            transition: opacity 0.5s;
-            line-height: 2;
+            letter-spacing: 0.3em;
+            transition: opacity 1s;
         }
 
-        /* ▼▼▼ 結果表示デザイン（スマホ対応） ▼▼▼ */
+        /* 結果表示エリア */
         #result-layer {
             position: fixed;
             top: 0;
@@ -126,102 +98,67 @@
             width: 100%;
             height: 100%;
             z-index: 100;
-            display: flex;
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 2s ease 0.5s;
+            background: var(--bg-bottom);
         }
 
         #result-container {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            max-height: 75vh; /* 画面内に収まる高さ */
-            max-width: 90vw;
+            max-height: 70vh;
             display: flex;
-            flex-wrap: wrap; 
-            align-content: center;
-            gap: 0.8em; /* 行間調整 */
+            flex-wrap: wrap;
+            gap: 1em;
         }
 
-        /* 文字サイズを画面幅に合わせて可変にする */
         .res-char {
-            /* 最小18px, 画面幅の5%, 最大32px */
-            font-size: clamp(18px, 5vw, 32px);
-            color: #222;
+            font-size: clamp(18px, 4vw, 28px);
+            color: var(--text-main);
             opacity: 0;
-            animation: popIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation: fadeInLetter 0.8s ease forwards;
         }
 
-        @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
+        @keyframes fadeInLetter {
+            to { opacity: 1; transform: translateY(0); }
         }
 
         #footer-info {
-            margin-top: 40px; 
-            display: flex;
-            flex-direction: column; 
-            align-items: center;
-            gap: 15px;
-            opacity: 0;
-            animation: fadeInSimple 1s ease forwards;
+            margin-top: 50px;
+            text-align: center;
         }
 
         #end-mark {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #d93a3a;
-            color: #d93a3a;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: inline-block;
+            padding: 5px 15px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
             font-size: 12px;
-            font-weight: bold;
-            writing-mode: horizontal-tb;
-            transform: rotate(-5deg);
+            letter-spacing: 0.2em;
+            margin-bottom: 10px;
         }
 
         #score {
-            font-size: 11px;
-            color: #888;
-            letter-spacing: 0.1em;
-            writing-mode: horizontal-tb;
-        }
-
-        @keyframes fadeInSimple {
-            to { opacity: 1; }
-        }
-
-        body.finished #result-layer {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        body.finished #catcher,
-        body.finished #archive {
-            opacity: 0;
+            font-size: 12px;
+            color: #999;
         }
 
     </style>
 </head>
 <body>
 
-    <div id="archive"></div>
-    <div id="guide">画面をなぞって<br>言葉を受け止める</div>
+    <div id="guide">言葉を掬い取る</div>
 
     <div id="catcher">
         <div id="caught-text"></div>
     </div>
 
     <div id="result-layer">
-        <div id="result-container">
-            </div>
-        
-        <div id="footer-info" style="display:none;">
-            <div id="end-mark">収集<br>完了</div>
+        <div id="result-container"></div>
+        <div id="footer-info">
+            <div id="end-mark">綴り終え</div>
             <div id="score"></div>
         </div>
     </div>
@@ -231,10 +168,9 @@
         
         const catcher = document.getElementById('catcher');
         const caughtTextDisplay = document.getElementById('caught-text');
-        const archive = document.getElementById('archive');
         const guide = document.getElementById('guide');
+        const resultLayer = document.getElementById('result-layer');
         const resultContainer = document.getElementById('result-container');
-        const footerInfo = document.getElementById('footer-info');
         const scoreDisplay = document.getElementById('score');
 
         let catcherX = window.innerWidth / 2;
@@ -244,33 +180,28 @@
         let isFinished = false;
         let collectedChars = [];
 
-        const FALL_SPEED_BASE = 4.5; 
-        const SPAWN_RATE = 40; 
+        const FALL_SPEED = 3.8; 
+        const SPAWN_RATE = 45; 
         let frameCount = 0;
 
         function init() {
-            // マウス操作
-            window.addEventListener('mousemove', (e) => {
-                updateCatcherPos(e.clientX);
-                if (!gameActive && !isFinished) startGame();
-            });
-            
-            // スマホ（タッチ）操作
+            window.addEventListener('mousemove', (e) => handleMove(e.clientX));
             window.addEventListener('touchmove', (e) => {
-                // スマホのスクロールを完全に無効化
-                e.preventDefault(); 
-                updateCatcherPos(e.touches[0].clientX);
-                if (!gameActive && !isFinished) startGame();
+                e.preventDefault();
+                handleMove(e.touches[0].clientX);
             }, { passive: false });
-
-            // タッチ開始時にもスタート判定を入れる（タップだけで反応するように）
             window.addEventListener('touchstart', (e) => {
                 if (!gameActive && !isFinished) startGame();
-                updateCatcherPos(e.touches[0].clientX);
+                handleMove(e.touches[0].clientX);
             }, { passive: false });
 
             updateCatcherPos(window.innerWidth / 2);
             loop();
+        }
+
+        function handleMove(x) {
+            updateCatcherPos(x);
+            if (!gameActive && !isFinished) startGame();
         }
 
         function startGame() {
@@ -283,7 +214,6 @@
             const limit = catcher.offsetWidth / 2;
             if (catcherX < limit) catcherX = limit;
             if (catcherX > window.innerWidth - limit) catcherX = window.innerWidth - limit;
-            
             catcher.style.left = catcherX + 'px';
         }
 
@@ -297,10 +227,8 @@
             el.textContent = char;
             el.classList.add('rain-char');
             
-            // 画面の端すぎるとキャッチしにくいのでマージンをとる
-            const x = Math.random() * (window.innerWidth - 60) + 30;
-            const y = -40;
-            const speed = FALL_SPEED_BASE + Math.random() * 2;
+            const x = Math.random() * (window.innerWidth - 80) + 40;
+            const y = -50;
 
             document.body.appendChild(el);
 
@@ -309,8 +237,9 @@
                 char: char,
                 x: x,
                 y: y,
-                speed: speed,
-                isCaught: false
+                speed: FALL_SPEED + Math.random() * 1.5,
+                opacity: 1,
+                fading: false
             });
         }
 
@@ -319,37 +248,47 @@
             requestAnimationFrame(loop);
 
             if (gameActive && charIndex >= textSource.length && fallingChars.length === 0) {
-                finishGame();
+                setTimeout(finishGame, 1000);
                 return;
             }
 
             if (!gameActive) return;
 
             frameCount++;
-            if (frameCount % SPAWN_RATE === 0) {
-                spawnChar();
-            }
+            if (frameCount % SPAWN_RATE === 0) spawnChar();
 
             const catcherRect = catcher.getBoundingClientRect();
-            const hitTop = catcherRect.top;
-            const hitBottom = catcherRect.top + 30;
-            const hitLeft = catcherRect.left;
-            const hitRight = catcherRect.right;
+            const fadeLine = catcherRect.top + 20; // 消え始めるライン
 
             for (let i = fallingChars.length - 1; i >= 0; i--) {
                 const p = fallingChars[i];
                 p.y += p.speed;
+                
+                // キャッチャーより下に行ったら自然に消えていく
+                if (p.y > fadeLine) {
+                    p.fading = true;
+                    p.opacity -= 0.04; // 徐々に透明に
+                }
+
+                // 背景が白くなるにつれて文字色を暗くする（視認性確保）
+                if (p.y > window.innerHeight * 0.4) {
+                    p.el.style.color = 'var(--text-main)';
+                }
+
                 p.el.style.top = p.y + 'px';
                 p.el.style.left = p.x + 'px';
+                p.el.style.opacity = p.opacity;
 
-                if (!p.isCaught && p.y >= hitTop && p.y <= hitBottom) {
-                    if (p.x >= hitLeft && p.x <= hitRight) {
+                // キャッチ判定
+                if (!p.fading && p.y >= catcherRect.top && p.y <= catcherRect.top + 30) {
+                    if (p.x >= catcherRect.left && p.x <= catcherRect.right) {
                         catchChar(p, i);
                         continue;
                     }
                 }
 
-                if (p.y > window.innerHeight) {
+                // 完全に透明になったら削除
+                if (p.opacity <= 0) {
                     p.el.remove();
                     fallingChars.splice(i, 1);
                 }
@@ -357,45 +296,39 @@
         }
 
         function catchChar(p, index) {
-            p.isCaught = true;
             p.el.remove();
             fallingChars.splice(index, 1);
-
-            const span = document.createElement('span');
-            span.textContent = p.char;
-            span.classList.add('archive-span');
-            archive.appendChild(span);
-            
-            caughtTextDisplay.textContent = p.char;
             collectedChars.push(p.char);
 
-            catcher.style.background = "rgba(255,255,255,0.6)";
+            // 一文字ずつ表示を更新
+            caughtTextDisplay.textContent = p.char;
+            caughtTextDisplay.classList.remove('active');
+            void caughtTextDisplay.offsetWidth; // リフロー
+            caughtTextDisplay.classList.add('active');
+
+            // キャッチャーの一時的な強調
+            catcher.style.background = "rgba(52, 73, 94, 0.1)";
             setTimeout(() => {
-                catcher.style.background = "rgba(255,255,255,0.1)";
-            }, 100);
+                catcher.style.background = "rgba(255, 255, 255, 0.05)";
+            }, 150);
         }
 
         function finishGame() {
             isFinished = true;
-            document.body.classList.add('finished');
-
+            resultLayer.style.display = 'flex';
+            
             collectedChars.forEach((char, i) => {
                 const span = document.createElement('div');
                 span.textContent = char;
                 span.classList.add('res-char');
-                span.style.animationDelay = `${i * 0.1 + 1.0}s`;
+                span.style.animationDelay = `${i * 0.08}s`;
                 resultContainer.appendChild(span);
             });
 
-            const totalDelay = collectedChars.length * 0.1 + 2.0;
-            footerInfo.style.display = 'flex';
-            footerInfo.style.animationDelay = `${totalDelay}s`;
-            
-            scoreDisplay.textContent = `${textSource.length}文字中 ${collectedChars.length}文字を収集`;
+            scoreDisplay.textContent = `${collectedChars.length} / ${textSource.length}`;
         }
 
         init();
-
     </script>
 </body>
 </html>
