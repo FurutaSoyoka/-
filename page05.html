@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Breathing Space - Responsive Minimal</title>
+    <title>Breathing Space - Random Rain</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,7 +33,6 @@
             cursor: ew-resize;
         }
 
-        /* 落下コンテナ（マスク適用） */
         #rain-container {
             position: absolute;
             top: 0;
@@ -56,7 +55,6 @@
             text-shadow: none;
         }
 
-        /* 受け皿 */
         #catcher {
             position: absolute;
             bottom: var(--catcher-pos-bottom);
@@ -99,7 +97,6 @@
             z-index: 1;
         }
 
-        /* 結果表示エリア：縦書き・自動折り返し */
         #result-layer {
             position: fixed;
             top: 0;
@@ -119,17 +116,16 @@
         #result-container {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            /* スマホの画面高さに合わせて調整（見切れ防止） */
             max-height: 65dvh; 
             max-width: 90vw;
             display: flex;
             flex-direction: column;
-            flex-wrap: wrap; /* 高さを超えたら左へ折り返し */
-            align-content: center; /* 中央寄せ */
-            gap: 0.2em 1.2em; /* 文字間と行間（カラム間） */
+            flex-wrap: wrap; 
+            align-content: center; 
+            gap: 0.2em 1.2em; 
             font-size: clamp(18px, 5vw, 24px);
             line-height: 1.5;
-            overflow-x: auto; /* 万が一の時の横スクロール */
+            overflow-x: auto; 
         }
 
         .res-char {
@@ -156,7 +152,6 @@
             font-size: 11px;
             color: #888;
         }
-
     </style>
 </head>
 <body>
@@ -194,8 +189,10 @@
         let isFinished = false;
         let collectedChars = [];
 
-        const FALL_SPEED = 3.2; 
-        const SPAWN_RATE = 55; 
+        // 速度のベースをあえて広めに設定
+        const BASE_SPEED_MIN = 1.8;
+        const BASE_SPEED_MAX = 5.0;
+        const SPAWN_RATE = 50; 
         let frameCount = 0;
 
         function init() {
@@ -242,7 +239,8 @@
             el.classList.add('rain-char');
             
             const x = Math.random() * (window.innerWidth - 60) + 30;
-            const y = -30;
+            // 開始位置もランダムにバラつかせる (-30 ～ -100)
+            const y = -30 - Math.random() * 70;
 
             rainContainer.appendChild(el);
 
@@ -251,7 +249,8 @@
                 char: char,
                 x: x,
                 y: y,
-                speed: FALL_SPEED + Math.random() * 1.2,
+                // 一文字ごとに全く異なる速度を与える
+                speed: BASE_SPEED_MIN + Math.random() * (BASE_SPEED_MAX - BASE_SPEED_MIN),
                 isCaught: false
             });
         }
@@ -285,7 +284,7 @@
                     }
                 }
 
-                if (p.y > window.innerHeight + 50) {
+                if (p.y > window.innerHeight + 100) {
                     p.el.remove();
                     fallingChars.splice(i, 1);
                 }
