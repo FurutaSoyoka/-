@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Breathing Space - Random Rain</title>
+    <title>Breathing Space - Reflection</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,7 +52,6 @@
             font-size: 18px;
             color: #ffffff;
             will-change: top;
-            text-shadow: none;
         }
 
         #catcher {
@@ -94,9 +93,9 @@
             font-size: 13px;
             letter-spacing: 0.4em;
             transition: opacity 1s;
-            z-index: 1;
         }
 
+        /* 結果表示エリア */
         #result-layer {
             position: fixed;
             top: 0;
@@ -116,26 +115,36 @@
         #result-container {
             writing-mode: vertical-rl;
             text-orientation: upright;
-            max-height: 65dvh; 
+            max-height: 60dvh; 
             max-width: 90vw;
             display: flex;
             flex-direction: column;
             flex-wrap: wrap; 
             align-content: center; 
-            gap: 0.2em 1.2em; 
-            font-size: clamp(18px, 5vw, 24px);
-            line-height: 1.5;
+            gap: 0.1em 1.2em; 
+            font-size: clamp(18px, 5vw, 22px);
+            line-height: 1.6;
             overflow-x: auto; 
         }
 
         .res-char {
             opacity: 0;
-            transition: opacity 0.5s;
+            transition: opacity 0.4s;
+        }
+
+        /* 空白文字のスタイル（デバッグ用ではなく、空間を維持するため） */
+        .res-space {
+            color: transparent;
+            display: inline-block;
         }
 
         #footer-info {
             margin-top: 40px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
 
         #end-mark {
@@ -145,11 +154,27 @@
             color: var(--text-main);
             font-size: 11px;
             letter-spacing: 0.2em;
-            margin-bottom: 8px;
+        }
+
+        #btn-back {
+            margin-top: 10px;
+            padding: 10px 30px;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            color: var(--text-main);
+            border: 0.5px solid rgba(0,0,0,0.2);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        #btn-back:active {
+            background: rgba(0,0,0,0.05);
         }
 
         #score {
-            font-size: 11px;
+            font-size: 10px;
             color: #888;
         }
     </style>
@@ -166,8 +191,9 @@
     <div id="result-layer">
         <div id="result-container"></div>
         <div id="footer-info">
-            <div id="end-mark">収集完了</div>
+            <div id="end-mark">綴り終え</div>
             <div id="score"></div>
+            <button id="btn-back" onclick="location.reload()">目次へ戻る</button>
         </div>
     </div>
 
@@ -187,11 +213,12 @@
         let fallingChars = [];
         let gameActive = false;
         let isFinished = false;
-        let collectedChars = [];
+        
+        // 何文字目を捕まえたかを記録するセット
+        let caughtIndices = new Set();
 
-        // 速度のベースをあえて広めに設定
-        const BASE_SPEED_MIN = 1.8;
-        const BASE_SPEED_MAX = 5.0;
+        const BASE_SPEED_MIN = 1.6;
+        const BASE_SPEED_MAX = 4.8;
         const SPAWN_RATE = 50; 
         let frameCount = 0;
 
@@ -231,6 +258,7 @@
         function spawnChar() {
             if (charIndex >= textSource.length) return; 
 
+            const index = charIndex; // 現在の文字位置を保存
             const char = textSource[charIndex];
             charIndex++;
 
@@ -239,7 +267,6 @@
             el.classList.add('rain-char');
             
             const x = Math.random() * (window.innerWidth - 60) + 30;
-            // 開始位置もランダムにバラつかせる (-30 ～ -100)
             const y = -30 - Math.random() * 70;
 
             rainContainer.appendChild(el);
@@ -247,9 +274,9 @@
             fallingChars.push({
                 el: el,
                 char: char,
+                index: index, // インデックスを持たせる
                 x: x,
                 y: y,
-                // 一文字ごとに全く異なる速度を与える
                 speed: BASE_SPEED_MIN + Math.random() * (BASE_SPEED_MAX - BASE_SPEED_MIN),
                 isCaught: false
             });
@@ -295,7 +322,9 @@
             p.isCaught = true;
             p.el.remove();
             fallingChars.splice(index, 1);
-            collectedChars.push(p.char);
+            
+            // 捕まえた文字のインデックスを保存
+            caughtIndices.add(p.index);
 
             caughtTextDisplay.textContent = p.char;
             caughtTextDisplay.classList.remove('active');
@@ -312,18 +341,29 @@
             isFinished = true;
             resultLayer.style.display = 'flex';
             
-            collectedChars.forEach((char, i) => {
+            // 元の文章を一文字ずつループ
+            for (let i = 0; i < textSource.length; i++) {
                 const span = document.createElement('span');
-                span.textContent = char;
-                span.classList.add('res-char');
+                
+                if (caughtIndices.has(i)) {
+                    // 捕まえた文字
+                    span.textContent = textSource[i];
+                    span.classList.add('res-char');
+                } else {
+                    // 逃した文字は空白（全角スペース）にする
+                    span.textContent = "　"; 
+                    span.classList.add('res-char', 'res-space');
+                }
+                
                 resultContainer.appendChild(span);
                 
+                // アニメーション表示
                 setTimeout(() => {
                     span.style.opacity = '1';
-                }, i * 50);
-            });
+                }, i * 40);
+            }
 
-            scoreDisplay.textContent = `${collectedChars.length} / ${textSource.length}`;
+            scoreDisplay.textContent = `${caughtIndices.size} / ${textSource.length} 文字を収集`;
         }
 
         init();
