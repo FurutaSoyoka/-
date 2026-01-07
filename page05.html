@@ -95,7 +95,7 @@
             transition: opacity 1s;
         }
 
-        /* 結果表示エリア：ここが永続的に表示されます */
+        /* --- 修正箇所：結果表示レイヤー --- */
         #result-layer {
             position: fixed;
             top: 0;
@@ -103,52 +103,50 @@
             width: 100%;
             height: 100%;
             z-index: 100;
-            display: none; /* ゲーム終了時に flex に切り替え */
+            display: none; 
             flex-direction: column;
             justify-content: center;
             align-items: center;
             background: var(--bg-bottom);
-            padding: 20px;
+            padding: 30px;
             box-sizing: border-box;
         }
 
         #result-container {
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            max-height: 60dvh; 
-            max-width: 90vw;
-            display: flex;
-            flex-direction: column;
-            flex-wrap: wrap; 
-            align-content: center; 
-            gap: 0.1em 1.2em; 
-            font-size: clamp(18px, 5vw, 22px);
-            line-height: 1.6;
-            overflow-x: auto; 
+            /* 横書きに変更し、中央寄せにする */
+            writing-mode: horizontal-tb; 
+            text-align: center;
+            max-width: 100%;
+            display: block; /* blockに戻して自然な改行を許容 */
+            font-size: clamp(18px, 6vw, 24px);
+            line-height: 2; /* 行間を広げてゆったりさせる */
+            letter-spacing: 0.15em;
+            word-break: break-all; /* どこでも折り返せるように */
         }
 
-        /* 文字のフェードイン：1秒かけてじっくり表示 */
         .res-char {
+            display: inline-block;
             opacity: 0;
-            transition: opacity 1s ease-in-out;
+            /* 出現時間を少し長め（1.5秒）にして余韻を出す */
+            transition: opacity 1.5s ease-in-out; 
             will-change: opacity;
         }
 
         .res-space {
             color: transparent;
             display: inline-block;
+            width: 1em; /* 空白の幅を固定 */
         }
 
         #footer-info {
-            margin-top: 50px;
+            margin-top: 40px;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
-            /* フッターも文字が出揃う頃に表示 */
             opacity: 0;
-            transition: opacity 1.5s ease;
+            transition: opacity 2s ease;
         }
 
         #end-mark {
@@ -170,10 +168,6 @@
             cursor: pointer;
             transition: all 0.3s;
             font-family: 'Shippori Mincho', serif;
-        }
-
-        #btn-back:active {
-            background: rgba(0,0,0,0.1);
         }
 
         #score {
@@ -337,10 +331,14 @@
             }, 100);
         }
 
+        /* --- 修正箇所：終了時のスピード調整 --- */
         function finishGame() {
             isFinished = true;
             resultLayer.style.display = 'flex';
             
+            // 文字の出現スピード（ミリ秒）。ここを大きくすると遅くなります。
+            const appearanceInterval = 150; 
+
             for (let i = 0; i < textSource.length; i++) {
                 const span = document.createElement('span');
                 
@@ -354,19 +352,18 @@
                 
                 resultContainer.appendChild(span);
                 
-                // 少しゆっくりめに表示を開始
+                // i * 150ms ごとに1文字ずつ表示
                 setTimeout(() => {
                     span.style.opacity = '1';
-                }, i * 80);
+                }, i * appearanceInterval);
             }
 
-            // スコア表示
             scoreDisplay.textContent = `${caughtIndices.size} / ${textSource.length} 文字を収集`;
 
-            // 文字が全て出揃う頃にフッター（ボタン）をふわっと出す
+            // 全ての文字が出揃った少し後にボタンを表示
             setTimeout(() => {
                 footerInfo.style.opacity = '1';
-            }, textSource.length * 80 + 500);
+            }, textSource.length * appearanceInterval + 1000);
         }
 
         init();
