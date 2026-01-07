@@ -33,6 +33,8 @@
             scroll-behavior: smooth;
             scroll-snap-type: y mandatory;
             
+            /* モバイルでの反応を速める */
+            touch-action: manipulation;
             -webkit-overflow-scrolling: touch;
             user-select: none;
             -webkit-touch-callout: none;
@@ -113,13 +115,13 @@
                 filter 1s cubic-bezier(0.19, 1, 0.22, 1),
                 transform 1s cubic-bezier(0.19, 1, 0.22, 1);
             
-            /* 初期状態：モザイク（ぼかし） */
-            opacity: 0.35;
+            /* 初期状態：モザイク（ぼかし3px） */
+            opacity: 0.6;
             filter: blur(3px);
-            transform: translateY(15px) scale(0.99);
+            transform: translateY(10px) scale(0.99);
         }
 
-        /* アクティブ（タップされた時）にモザイク解除 */
+        /* アクティブ（1タップ目）にモザイク解除 */
         .project-link.is-active .project-content {
             opacity: 1;
             filter: blur(0);
@@ -225,21 +227,21 @@
 
         links.forEach(link => {
             link.addEventListener('click', function(e) {
-                // すでにモザイク解除状態（is-active）でない場合
+                // すでにアクティブ（モザイク解除済み）でない場合
                 if (!this.classList.contains('is-active')) {
-                    // 1回目のタップ：ページ遷移を止めてモザイクを消す
+                    // 1回目のタップ：遷移を止めて、モザイクを消す
                     e.preventDefault();
                     
-                    // 他の項目のアクティブ状態をすべてリセット
+                    // 他の項目のアクティブ状態を解除
                     links.forEach(l => l.classList.remove('is-active'));
                     
                     // 自分をアクティブ化
                     this.classList.add('is-active');
                     
-                    // 中央へスムーズに移動
+                    // 中央へスムーズにスクロールさせる（スナップを補助）
                     this.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-                // すでにアクティブなら、2回目のタップとしてそのまま遷移する
+                // すでにアクティブな場合は、2回目のタップとしてそのまま遷移する
             });
         });
 
@@ -251,7 +253,7 @@
                 }
             });
         }, { 
-            threshold: 0.1 // ほとんど見えなくなったらリセット
+            threshold: 0.1 
         });
 
         links.forEach(link => observer.observe(link));
