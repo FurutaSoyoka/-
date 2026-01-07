@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Breathing Space - Reflection</title>
+    <title>Breathing Space - Permanent Record</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -95,7 +95,7 @@
             transition: opacity 1s;
         }
 
-        /* 結果表示エリア */
+        /* 結果表示エリア：ここが永続的に表示されます */
         #result-layer {
             position: fixed;
             top: 0;
@@ -103,7 +103,7 @@
             width: 100%;
             height: 100%;
             z-index: 100;
-            display: none;
+            display: none; /* ゲーム終了時に flex に切り替え */
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -127,24 +127,28 @@
             overflow-x: auto; 
         }
 
+        /* 文字のフェードイン：1秒かけてじっくり表示 */
         .res-char {
             opacity: 0;
-            transition: opacity 0.4s;
+            transition: opacity 1s ease-in-out;
+            will-change: opacity;
         }
 
-        /* 空白文字のスタイル（デバッグ用ではなく、空間を維持するため） */
         .res-space {
             color: transparent;
             display: inline-block;
         }
 
         #footer-info {
-            margin-top: 40px;
+            margin-top: 50px;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
+            /* フッターも文字が出揃う頃に表示 */
+            opacity: 0;
+            transition: opacity 1.5s ease;
         }
 
         #end-mark {
@@ -157,20 +161,19 @@
         }
 
         #btn-back {
-            margin-top: 10px;
-            padding: 10px 30px;
+            padding: 12px 35px;
             font-size: 12px;
             letter-spacing: 0.1em;
             color: var(--text-main);
-            border: 0.5px solid rgba(0,0,0,0.2);
+            border: 1px solid var(--text-main);
             background: transparent;
             cursor: pointer;
             transition: all 0.3s;
-            text-decoration: none;
+            font-family: 'Shippori Mincho', serif;
         }
 
         #btn-back:active {
-            background: rgba(0,0,0,0.05);
+            background: rgba(0,0,0,0.1);
         }
 
         #score {
@@ -207,14 +210,13 @@
         const resultLayer = document.getElementById('result-layer');
         const resultContainer = document.getElementById('result-container');
         const scoreDisplay = document.getElementById('score');
+        const footerInfo = document.getElementById('footer-info');
 
         let catcherX = window.innerWidth / 2;
         let charIndex = 0;
         let fallingChars = [];
         let gameActive = false;
         let isFinished = false;
-        
-        // 何文字目を捕まえたかを記録するセット
         let caughtIndices = new Set();
 
         const BASE_SPEED_MIN = 1.6;
@@ -258,7 +260,7 @@
         function spawnChar() {
             if (charIndex >= textSource.length) return; 
 
-            const index = charIndex; // 現在の文字位置を保存
+            const index = charIndex;
             const char = textSource[charIndex];
             charIndex++;
 
@@ -274,7 +276,7 @@
             fallingChars.push({
                 el: el,
                 char: char,
-                index: index, // インデックスを持たせる
+                index: index,
                 x: x,
                 y: y,
                 speed: BASE_SPEED_MIN + Math.random() * (BASE_SPEED_MAX - BASE_SPEED_MIN),
@@ -322,8 +324,6 @@
             p.isCaught = true;
             p.el.remove();
             fallingChars.splice(index, 1);
-            
-            // 捕まえた文字のインデックスを保存
             caughtIndices.add(p.index);
 
             caughtTextDisplay.textContent = p.char;
@@ -341,29 +341,32 @@
             isFinished = true;
             resultLayer.style.display = 'flex';
             
-            // 元の文章を一文字ずつループ
             for (let i = 0; i < textSource.length; i++) {
                 const span = document.createElement('span');
                 
                 if (caughtIndices.has(i)) {
-                    // 捕まえた文字
                     span.textContent = textSource[i];
                     span.classList.add('res-char');
                 } else {
-                    // 逃した文字は空白（全角スペース）にする
                     span.textContent = "　"; 
                     span.classList.add('res-char', 'res-space');
                 }
                 
                 resultContainer.appendChild(span);
                 
-                // アニメーション表示
+                // 少しゆっくりめに表示を開始
                 setTimeout(() => {
                     span.style.opacity = '1';
-                }, i * 40);
+                }, i * 80);
             }
 
+            // スコア表示
             scoreDisplay.textContent = `${caughtIndices.size} / ${textSource.length} 文字を収集`;
+
+            // 文字が全て出揃う頃にフッター（ボタン）をふわっと出す
+            setTimeout(() => {
+                footerInfo.style.opacity = '1';
+            }, textSource.length * 80 + 500);
         }
 
         init();
