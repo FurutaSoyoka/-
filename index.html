@@ -72,12 +72,12 @@
         h1 {
             font-size: 32px;
             letter-spacing: 0.8em;
-            border-left: 1px solid var(--border-color);
-            padding-left: 40px;
-            margin-left: 0.8em;
+            border-left: none;
+            padding-left: 0;
             font-weight: 600;
             line-height: 1;
             text-align: center;
+            margin: 0;
         }
 
         #menu-list {
@@ -109,17 +109,17 @@
             text-align: center;
             
             transition: 
-                opacity 1.2s cubic-bezier(0.19, 1, 0.22, 1),
-                filter 1.2s cubic-bezier(0.19, 1, 0.22, 1),
-                transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+                opacity 1s cubic-bezier(0.19, 1, 0.22, 1),
+                filter 1s cubic-bezier(0.19, 1, 0.22, 1),
+                transform 1s cubic-bezier(0.19, 1, 0.22, 1);
             
-            /* 初期状態：モザイク（ぼかし） */
+            /* 初期状態：モザイク（ぼかし）がかかった状態 */
             opacity: 0.35;
             filter: blur(3px);
             transform: translateY(15px) scale(0.99);
         }
 
-        /* 1タップ目：アクティブ化（モザイク解除） */
+        /* 1タップ目で is-active クラスが付与され、モザイクが消える */
         .project-link.is-active .project-content {
             opacity: 1;
             filter: blur(0);
@@ -164,7 +164,7 @@
         }
 
         @media (max-width: 768px) {
-            h1 { font-size: 24px; letter-spacing: 0.6em; padding-left: 20px; }
+            h1 { font-size: 24px; letter-spacing: 0.6em; }
             .project-title { font-size: 22px; }
             .project-desc { font-size: 13px; max-width: 24em; }
         }
@@ -225,17 +225,25 @@
 
         links.forEach(link => {
             link.addEventListener('click', function(e) {
+                // まだモザイクがかかっている（is-activeでない）場合
                 if (!this.classList.contains('is-active')) {
+                    // 1回目のタップ：遷移をキャンセルし、モザイクを消す
                     e.preventDefault();
                     
+                    // 他の項目のモザイクを戻す
                     links.forEach(l => l.classList.remove('is-active'));
+                    
+                    // タップされた項目をアクティブ化
                     this.classList.add('is-active');
+                    
+                    // 中心に合わせる
                     this.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    return;
                 }
+                // 2回目のタップ（is-activeの状態）では、通常の href 遷移が行われます
             });
         });
 
+        // 画面外にスクロールした際にモザイク状態にリセットする
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (!entry.isIntersecting) {
@@ -243,7 +251,7 @@
                 }
             });
         }, { 
-            threshold: 0.5
+            threshold: 0.1 
         });
 
         links.forEach(link => observer.observe(link));
