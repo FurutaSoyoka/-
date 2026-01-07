@@ -113,13 +113,13 @@
                 filter 1s cubic-bezier(0.19, 1, 0.22, 1),
                 transform 1s cubic-bezier(0.19, 1, 0.22, 1);
             
-            /* 初期状態：モザイク（ぼかし）がかかった状態 */
+            /* 初期状態：モザイク（ぼかし） */
             opacity: 0.35;
-            filter: blur(3px);
+            filter: blur(8px);
             transform: translateY(15px) scale(0.99);
         }
 
-        /* 1タップ目で is-active クラスが付与され、モザイクが消える */
+        /* アクティブ（タップされた時）にモザイク解除 */
         .project-link.is-active .project-content {
             opacity: 1;
             filter: blur(0);
@@ -225,25 +225,25 @@
 
         links.forEach(link => {
             link.addEventListener('click', function(e) {
-                // まだモザイクがかかっている（is-activeでない）場合
+                // すでにモザイク解除状態（is-active）でない場合
                 if (!this.classList.contains('is-active')) {
-                    // 1回目のタップ：遷移をキャンセルし、モザイクを消す
+                    // 1回目のタップ：ページ遷移を止めてモザイクを消す
                     e.preventDefault();
                     
-                    // 他の項目のモザイクを戻す
+                    // 他の項目のアクティブ状態をすべてリセット
                     links.forEach(l => l.classList.remove('is-active'));
                     
-                    // タップされた項目をアクティブ化
+                    // 自分をアクティブ化
                     this.classList.add('is-active');
                     
-                    // 中心に合わせる
+                    // 中央へスムーズに移動
                     this.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-                // 2回目のタップ（is-activeの状態）では、通常の href 遷移が行われます
+                // すでにアクティブなら、2回目のタップとしてそのまま遷移する
             });
         });
 
-        // 画面外にスクロールした際にモザイク状態にリセットする
+        // スクロールで画面外に出たらモザイク状態に戻すリセット機能
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (!entry.isIntersecting) {
@@ -251,7 +251,7 @@
                 }
             });
         }, { 
-            threshold: 0.1 
+            threshold: 0.1 // ほとんど見えなくなったらリセット
         });
 
         links.forEach(link => observer.observe(link));
