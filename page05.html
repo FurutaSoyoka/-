@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Breathing Space - Permanent Record</title>
+    <title>Breathing Space - Vertical</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,6 @@
             --bg-top: #4b5563;
             --bg-bottom: #e5e7eb;
             --text-main: #1f2937;
-            --accent: #d93a3a;
             --catcher-pos-bottom: 100px;
         }
 
@@ -28,25 +27,16 @@
             color: var(--text-main);
             font-family: 'Shippori Mincho', serif;
             user-select: none;
-            -webkit-touch-callout: none;
             touch-action: none;
-            cursor: ew-resize;
         }
 
+        /* 落ちてくる文字のスタイル */
         #rain-container {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: 5;
-            --mask-start: calc(100% - var(--catcher-pos-bottom) - 10px);
-            --mask-end: calc(100% - 20px);
-            mask-image: linear-gradient(to bottom, black var(--mask-start), transparent var(--mask-end));
-            -webkit-mask-image: linear-gradient(to bottom, black var(--mask-start), transparent var(--mask-end));
         }
-
         .rain-char {
             position: absolute;
             font-size: 18px;
@@ -54,6 +44,7 @@
             will-change: top;
         }
 
+        /* 掬い取る器 */
         #catcher {
             position: absolute;
             bottom: var(--catcher-pos-bottom);
@@ -71,108 +62,77 @@
 
         #caught-text {
             position: absolute;
-            top: -40px;
-            width: 100%;
-            text-align: center;
-            font-size: 20px;
-            color: var(--text-main);
-            font-weight: 500;
-            opacity: 0;
-            transition: opacity 0.3s;
+            top: -40px; width: 100%; text-align: center;
+            font-size: 20px; opacity: 0; transition: opacity 0.3s;
         }
-        #caught-text.active {
-            opacity: 1;
-        }
+        #caught-text.active { opacity: 1; }
 
         #guide {
             position: absolute;
-            top: 40%;
-            width: 100%;
-            text-align: center;
+            top: 40%; width: 100%; text-align: center;
             color: rgba(255,255,255,0.4);
-            font-size: 13px;
-            letter-spacing: 0.4em;
-            transition: opacity 1s;
+            font-size: 13px; letter-spacing: 0.4em;
         }
 
-        /* --- 修正箇所：結果表示レイヤー --- */
+        /* --- 結果表示レイヤー（縦書き設定） --- */
         #result-layer {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: 100;
             display: none; 
             flex-direction: column;
             justify-content: center;
             align-items: center;
             background: var(--bg-bottom);
-            padding: 30px;
+            padding: 20px;
             box-sizing: border-box;
         }
 
         #result-container {
-            /* 横書きに変更し、中央寄せにする */
-            writing-mode: horizontal-tb; 
-            text-align: center;
-            max-width: 100%;
-            display: block; /* blockに戻して自然な改行を許容 */
-            font-size: clamp(18px, 6vw, 24px);
-            line-height: 2; /* 行間を広げてゆったりさせる */
-            letter-spacing: 0.15em;
-            word-break: break-all; /* どこでも折り返せるように */
+            writing-mode: vertical-rl; /* 縦書き */
+            text-orientation: upright;
+            height: 60dvh; /* 画面の高さの60%に制限してスマホに収める */
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap; /* 高さが足りない場合、左に新しい行を作る */
+            justify-content: flex-start;
+            align-content: center; /* 行を画面中央に寄せる */
+            gap: 1.5em; /* 行間 */
+            font-size: clamp(16px, 4vh, 22px); /* 画面の高さに合わせて文字サイズ調整 */
+            letter-spacing: 0.3em; /* 縦の文字間隔 */
+            margin-bottom: 40px;
         }
 
         .res-char {
             display: inline-block;
             opacity: 0;
-            /* 出現時間を少し長め（1.5秒）にして余韻を出す */
-            transition: opacity 1.5s ease-in-out; 
-            will-change: opacity;
-        }
-
-        .res-space {
-            color: transparent;
-            display: inline-block;
-            width: 1em; /* 空白の幅を固定 */
+            transition: opacity 2s ease-in-out; /* じわっと出る */
         }
 
         #footer-info {
-            margin-top: 40px;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
             opacity: 0;
-            transition: opacity 2s ease;
+            transition: opacity 1.5s ease;
         }
 
-        #end-mark {
-            display: inline-block;
-            padding: 4px 12px;
-            border: 1px solid var(--text-main);
-            color: var(--text-main);
-            font-size: 11px;
-            letter-spacing: 0.2em;
+        #score {
+            font-size: 14px;
+            color: #666;
+            letter-spacing: 0.1em;
         }
 
         #btn-back {
             padding: 12px 35px;
             font-size: 12px;
-            letter-spacing: 0.1em;
             color: var(--text-main);
             border: 1px solid var(--text-main);
             background: transparent;
             cursor: pointer;
-            transition: all 0.3s;
             font-family: 'Shippori Mincho', serif;
-        }
-
-        #score {
-            font-size: 10px;
-            color: #888;
         }
     </style>
 </head>
@@ -188,7 +148,6 @@
     <div id="result-layer">
         <div id="result-container"></div>
         <div id="footer-info">
-            <div id="end-mark">綴り終え</div>
             <div id="score"></div>
             <button id="btn-back" onclick="location.reload()">目次へ戻る</button>
         </div>
@@ -206,45 +165,34 @@
         const scoreDisplay = document.getElementById('score');
         const footerInfo = document.getElementById('footer-info');
 
-        let catcherX = window.innerWidth / 2;
         let charIndex = 0;
         let fallingChars = [];
         let gameActive = false;
         let isFinished = false;
         let caughtIndices = new Set();
 
-        const BASE_SPEED_MIN = 1.6;
-        const BASE_SPEED_MAX = 4.8;
-        const SPAWN_RATE = 50; 
-        let frameCount = 0;
-
         function init() {
-            window.addEventListener('mousemove', (e) => handleMove(e.clientX));
+            const startHandler = () => {
+                if (!gameActive && !isFinished) {
+                    gameActive = true;
+                    guide.style.opacity = 0;
+                }
+            };
+            window.addEventListener('mousemove', (e) => updateCatcherPos(e.clientX));
+            window.addEventListener('touchstart', (e) => {
+                startHandler();
+                updateCatcherPos(e.touches[0].clientX);
+            }, { passive: false });
             window.addEventListener('touchmove', (e) => {
                 e.preventDefault();
-                handleMove(e.touches[0].clientX);
-            }, { passive: false });
-            window.addEventListener('touchstart', (e) => {
-                if (!gameActive && !isFinished) startGame();
-                handleMove(e.touches[0].clientX);
+                updateCatcherPos(e.touches[0].clientX);
             }, { passive: false });
 
-            updateCatcherPos(window.innerWidth / 2);
             loop();
         }
 
-        function handleMove(x) {
-            updateCatcherPos(x);
-            if (!gameActive && !isFinished) startGame();
-        }
-
-        function startGame() {
-            gameActive = true;
-            guide.style.opacity = 0;
-        }
-
         function updateCatcherPos(x) {
-            catcherX = x;
+            let catcherX = x;
             const limit = catcher.offsetWidth / 2;
             if (catcherX < limit) catcherX = limit;
             if (catcherX > window.innerWidth - limit) catcherX = window.innerWidth - limit;
@@ -253,117 +201,74 @@
 
         function spawnChar() {
             if (charIndex >= textSource.length) return; 
-
-            const index = charIndex;
             const char = textSource[charIndex];
-            charIndex++;
-
             const el = document.createElement('div');
             el.textContent = char;
             el.classList.add('rain-char');
-            
             const x = Math.random() * (window.innerWidth - 60) + 30;
-            const y = -30 - Math.random() * 70;
-
             rainContainer.appendChild(el);
-
-            fallingChars.push({
-                el: el,
-                char: char,
-                index: index,
-                x: x,
-                y: y,
-                speed: BASE_SPEED_MIN + Math.random() * (BASE_SPEED_MAX - BASE_SPEED_MIN),
-                isCaught: false
-            });
+            fallingChars.push({ el, char, index: charIndex, x, y: -30, speed: 2 + Math.random() * 2.5 });
+            charIndex++;
         }
 
         function loop() {
             if (isFinished) return;
             requestAnimationFrame(loop);
-
             if (gameActive && charIndex >= textSource.length && fallingChars.length === 0) {
-                setTimeout(finishGame, 800);
+                setTimeout(finishGame, 1000);
                 return;
             }
-
             if (!gameActive) return;
-
-            frameCount++;
-            if (frameCount % SPAWN_RATE === 0) spawnChar();
+            if (Math.random() < 0.035) spawnChar();
 
             const catcherRect = catcher.getBoundingClientRect();
-            
             for (let i = fallingChars.length - 1; i >= 0; i--) {
                 const p = fallingChars[i];
                 p.y += p.speed;
                 p.el.style.top = p.y + 'px';
                 p.el.style.left = p.x + 'px';
 
-                if (!p.isCaught && p.y >= catcherRect.top && p.y <= catcherRect.bottom) {
-                    if (p.x >= catcherRect.left && p.x <= catcherRect.right) {
-                        catchChar(p, i);
-                        continue;
-                    }
-                }
-
-                if (p.y > window.innerHeight + 100) {
+                if (p.y >= catcherRect.top && p.y <= catcherRect.bottom && p.x >= catcherRect.left && p.x <= catcherRect.right) {
+                    caughtIndices.add(p.index);
+                    caughtTextDisplay.textContent = p.char;
+                    caughtTextDisplay.classList.add('active');
+                    setTimeout(() => caughtTextDisplay.classList.remove('active'), 300);
+                    p.el.remove();
+                    fallingChars.splice(i, 1);
+                } else if (p.y > window.innerHeight) {
                     p.el.remove();
                     fallingChars.splice(i, 1);
                 }
             }
         }
 
-        function catchChar(p, index) {
-            p.isCaught = true;
-            p.el.remove();
-            fallingChars.splice(index, 1);
-            caughtIndices.add(p.index);
-
-            caughtTextDisplay.textContent = p.char;
-            caughtTextDisplay.classList.remove('active');
-            void caughtTextDisplay.offsetWidth; 
-            caughtTextDisplay.classList.add('active');
-
-            catcher.style.background = "rgba(255, 255, 255, 0.2)";
-            setTimeout(() => {
-                catcher.style.background = "rgba(255, 255, 255, 0.05)";
-            }, 100);
-        }
-
-        /* --- 修正箇所：終了時のスピード調整 --- */
         function finishGame() {
             isFinished = true;
             resultLayer.style.display = 'flex';
+            resultContainer.innerHTML = ''; 
             
-            // 文字の出現スピード（ミリ秒）。ここを大きくすると遅くなります。
-            const appearanceInterval = 150; 
+            // --- スピード調整：1文字出す間隔（ミリ秒） ---
+            const appearanceInterval = 220; 
 
             for (let i = 0; i < textSource.length; i++) {
                 const span = document.createElement('span');
-                
-                if (caughtIndices.has(i)) {
-                    span.textContent = textSource[i];
-                    span.classList.add('res-char');
-                } else {
-                    span.textContent = "　"; 
-                    span.classList.add('res-char', 'res-space');
-                }
-                
+                // 収集できなかった文字は空白にする
+                span.textContent = caughtIndices.has(i) ? textSource[i] : "　";
+                span.classList.add('res-char');
                 resultContainer.appendChild(span);
                 
-                // i * 150ms ごとに1文字ずつ表示
                 setTimeout(() => {
                     span.style.opacity = '1';
                 }, i * appearanceInterval);
             }
 
+            // スコア表示
             scoreDisplay.textContent = `${caughtIndices.size} / ${textSource.length} 文字を収集`;
 
-            // 全ての文字が出揃った少し後にボタンを表示
+            // すべて表示された後にフッターを表示
             setTimeout(() => {
                 footerInfo.style.opacity = '1';
-            }, textSource.length * appearanceInterval + 1000);
+            }, textSource.length * appearanceInterval + 800);
         }
 
         init();
