@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>抗うスクロール - 檸檬</title>
+    <title>抗うスクロール - 檸檬（一文表示版）</title>
     <style>
-        /* 基本設定：余計なバウンスなどを消す */
+        /* 基本設定 */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* ブラウザ標準のスクロールを完全に無効化 */
-            overscroll-behavior: none; /* スマホのスワイプバック等を無効化 */
-            background-color: #fcfcfc; /* 紙っぽい白 */
-            color: #1a1a1a; /* 墨っぽい黒 */
-            font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", serif; /* 明朝体 */
-            line-height: 2.4; /* ゆったりとした行間 */
+            overflow: hidden; /* 標準スクロール無効化 */
+            overscroll-behavior: none;
+            background-color: #fcfcfc;
+            color: #111;
+            font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", serif;
             font-feature-settings: "palt";
             letter-spacing: 0.05em;
         }
 
-        /* コンテンツ全体を包むラッパー */
+        /* 全体コンテナ */
         #scroll-container {
             position: fixed;
             top: 0;
@@ -29,43 +28,53 @@
             width: 100%;
             transform: translateY(0); 
             will-change: transform;
+            padding-bottom: 50vh; /* 最後の文が真ん中に来るように */
         }
 
-        /* 記事のレイアウト */
+        /* 記事エリア */
         .article {
-            max-width: 600px; /* 文庫本のような幅 */
+            max-width: 600px;
             margin: 0 auto;
-            padding: 15vh 24px 40vh; /* 余白をたっぷりとる */
+            padding: 40vh 24px 0; /* 最初の一文がいきなり真ん中に来るように */
         }
 
         h1 {
             font-size: 1.8rem;
-            margin-bottom: 5rem;
+            margin-bottom: 10rem; /* タイトルと本文の間を大きく空ける */
             font-weight: normal;
             text-align: center;
+            opacity: 0.3;
+            transition: opacity 0.5s;
+        }
+        
+        /* 焦点が合ったときだけ濃くするクラス */
+        .active-text {
+            opacity: 1 !important;
+            filter: blur(0) !important;
+            transform: scale(1.05); /* 少しだけ大きくなる */
+            color: #000;
         }
 
-        h1 span {
-            display: block;
-            margin-top: 1rem;
-            font-size: 1rem;
-            color: #555;
-        }
-
-        p {
-            margin-bottom: 3.5rem;
+        /* 文ごとのスタイル */
+        .sentence {
+            display: block; /* 改行させる */
+            margin-bottom: 6rem; /* 一文ごとの間隔（ここを広げるとより「重労働」になる） */
+            line-height: 2.0;
+            font-size: 1.1rem;
+            opacity: 0.05; /* デフォルトはほぼ見えない */
+            filter: blur(3px); /* ぼかして読めなくする */
+            transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s ease, color 0.6s ease;
             text-align: justify;
-            font-size: 1.0rem;
         }
 
-        /* プログレスバー（赤から、檸檬色に変更しました） */
+        /* プログレスバー */
         #progress-bar {
             position: fixed;
             right: 0;
             top: 0;
             width: 4px;
             height: 0; 
-            background-color: #e6c527; /* 檸檬色 */
+            background-color: #e6c527;
             z-index: 100;
             opacity: 0.8;
         }
@@ -77,111 +86,83 @@
 
     <div id="scroll-container">
         <div class="article">
-            <h1>檸檬<br><span>梶井基次郎</span></h1>
+            <h1 id="main-title">檸檬<br><span style="font-size:0.9rem; margin-top:1rem; display:block;">梶井基次郎</span></h1>
             
-            <p>
-                えたいの知れない不吉な塊が私の心を始終抑えつけていた。焦躁と言おうか、嫌悪と言おうか――酒を飲んだあとに二日酔いがあるように、酒を毎日飲んでいると二日酔いに相当した時期がやって来る。それが来たのだ。これはちょっといけなかった。
-            </p>
-            <p>
-                結果したはいせんカタルや神経衰弱がいけないのではない。また背を焼くような借金などがいけないのではない。いけないのはその不吉な塊だ。以前私を喜ばせたどんな美しい音楽も、どんな美しい詩の一節も辛抱がならなくなった。蓄音器を聴かせてもらいにわざわざ出かけて行っても、最初の二三小節で不意に立ち上がってしまいたくなる。何かが私をいたたまらずさせるのだ。それで始終私は街から街へ浮浪し続けていた。
-            </p>
-            <p>
+            <div id="content-source">
+                えたいの知れない不吉な塊が私の心を始終圧えつけていた。焦躁と言おうか、嫌悪と言おうか――酒を飲んだあとに宿酔があるように、酒を毎日飲んでいると宿酔に相当した時期がやって来る。それが来たのだ。これはちょっといけなかった。
+                結果した肺尖カタルや神経衰弱がいけないのではない。また背を焼くような借金などがいけないのではない。いけないのはその不吉な塊だ。以前私を喜ばせたどんな美しい音楽も、どんな美しい詩の一節も辛抱がならなくなった。蓄音器を聴かせてもらいにわざわざ出かけて行っても、最初の二三小節で不意に立ち上がってしまいたくなる。何かが私を居堪らずさせるのだ。それで始終私は街から街へ浮浪し続けていた。
                 何故だかその頃私は見すぼらしくて美しいものに惹きつけられた。風景にしても壊れかかった街だとか、その街にしてもよそよそしい表通りよりも、どこか親しみのある、汚い洗濯物が干してあったり、がらくたが転がしてあったり、むさくるしい部屋が覗いていたりする裏通りが好きであった。
-            </p>
-            <p>
-                雨風にむしばまれてやがて土に帰ろうとしている土塀や、家並の傾きかかったりしている勢い、――そういったなかに植物が、時とするとびっくりするような向日葵があったり、カンナが咲いていたりする。
-            </p>
-            <p>
+                雨風に蝕まれてやがて土に帰ろうとしている土塀や、家並の傾きかかったりしている勢い、――そういったなかに植物が、時とするとびっくりするような向日葵があったり、カンナが咲いていたりする。
                 時折私はそんな路を歩きながら、ふと、そこが京都ではなくて京都から何百里も離れた仙台とか長崎とか、そのような市へ今自分が来ているのだ――という錯覚を起こそうと努める。私は、できることなら京都から逃げ出してしまいたかった。誰一人を知るもののないところで安らかにありたかった。
-            </p>
-            <p>
                 錯覚がようやく成功しはじめると私はそれからそれへ空想の絵具を塗りたくってゆく。なんのことはない、私の錯覚と壊れかかった街との二重写しである。そして私はその中に現実の私自身を見失うのを楽しんだ。
-            </p>
-            <p>
-                私はまたあの花火というやつが好きになった。花火そのものは第二段として、あの安っぽい絵具で赤や紫や黄や青や、様々の縞模様を持った花火の束、中山寺の星下り、花合戦、枯れすすき。それから鼠花火というのは一つずつ輪になって箱に詰めてある。そういうものが変に私の心を唆るのだ。
-            </p>
-            <p>
-                それからまた、びいどろという色硝子で鯛や花を打ち出してあるおはじきが好きになったし、南京玉が好きになった。またそれをなめてみるのが私にとってなんともいえない享楽だった。あのびいどろの味ほどかすかな涼しい味があるものだろうか。
-            </p>
-            <p>
-                私は幼い時よくそれを口に入れては父母に叱られたものだが、その幼時のあまい記憶が大きくなって落ちぶれた私に蘇ってくる故だろうか、全くあの味にはかすかな爽やかななんとなく詩美と言ったような味がある。
-            </p>
-            <p>
+                私はまたあの花火というやつが好きになった。花火そのものは第二段として、あの安っぽい絵具で赤や紫や黄や青や、様々の縞模様を持った花火の束、中山寺の星下り、花合戦、枯れ薄。それから鼠花火というのは一つずつ輪になって箱に詰めてある。そういうものが変に私の心を唆るのだ。
+                それからまた、びいどろという色硝子で鯛や花を打ち出してあるおはじきが好きになったし、南京玉が好きになった。またそれを嘗めてみるのが私にとってなんともいえない享楽だった。あのびいどろの味ほど幽かな涼しい味があるものだろうか。
+                私は幼い時よくそれを口に入れては父母に叱られたものだが、その幼時のあまい記憶が大きくなって落ち魄れた私に蘇ってくる故だろうか、全くあの味には幽かな爽やかななんとなく詩美と言ったような味がある。
                 しかし少し重苦しいほど私の心を抑えつけていたある気持、――それがそもそも始終私をこの気違いじみた放浪に駆り立てていた正体なのだが、――それはこれらで一時紛らわせることはできても、決して癒やされることはなかった。
-            </p>
-            <p>
-                ある朝、――その頃私は甲斐の友達から送ってきた友禅のじゅばんを着ていた。その襟の派手な線が気になったのと、それから少し懐が温かかった故もあって、私は寺町二条の角にある八百屋へ立ち寄って果物を買った。
-            </p>
-            <p>
+                ある朝、――その頃私は甲斐の友達から送ってきた友禅の襦袢を著ていた。その襟の派手な線が気になったのと、それから少し懐が温かかった故もあって、私は寺町二条の角にある八百卯へ立ち寄って果物を買った。
                 その店は八百屋兼果物屋で、ことに果物はずいぶん上等なのを置いていた。その日私は檸檬を買った。檸檬は元来各地でできるが、その店にあるのはカリフォルニヤ産で、名産地として知られているだけに、見れば見るほど美しかった。私はその檸檬を一つだけ買った。
-            </p>
-            <p>
-                それからの私はどこへどう歩いたのだろう。私は長い間街を歩いていた。始終私の心を圧えつけていた不吉な塊がそれを握った瞬間からいくらかゆるんで来たとみえて、私は街の上で非常に幸福であった。あんなに執拗かった憂鬱が、そんなものの一課で紛らされる――あるいは不審なことが、逆説的なほんとうであった。
-            </p>
-            <p>
+                それからの私はどこへどう歩いたのだろう。私は長い間街を歩いていた。始終私の心を圧えつけていた不吉な塊がそれを握った瞬間からいくらか弛んで来たとみえて、私は街の上で非常に幸福であった。あんなに執拗かった憂鬱が、そんなものの一顆で紛らされる――あるいは不審なことが、逆説的なほんとうであった。
                 私は何度も鼻に持って行って嗅いだ。それ産地がカリフォルニヤだとかいうことはどうでもいいことだった。その檸檬の冷たさは、肺尖カタルで始終熱っぽい私の身体に、心地よい冷たさを浸透させてくれた。
-            </p>
-            <p>
                 実際あんな単純な冷覚や、触覚や、嗅覚や、視覚が、ずっと昔からこればかり探していたのだと言いたくなるほど私にしっくりしたなんて私は不思議に思える――それがあの頃のことなんだから。
-            </p>
-            <p>
-                私はもう往来を軽やかな興奮に弾んで、一種誇りかな気持さえ感じながら、美的装束をして街を闊歩した詩人のことなど思い浮かべては歩いていた。汚れた手拭いの上へ載せてみたり、マントの上へあてがってみたりして色の反映を量ったり、またこんなことを思ったり、
-            </p>
-            <p>
-                ――つまりはこの重さなんだな。――<br>
-                その重さこそ常識で計算する重さではなく、その時のこの憂鬱な私が、ようやく探しあてたものとしての重さであった。私はその重さが全ての善いもの全ての美しいものを重量に換算して来た重さであるような気がした。
-            </p>
-            <p>
-                私はどこをどう歩いたのか、不意に丸善の前に出た。丸善。……ああ、そこはかつて私が私の憂鬱を慰めるために浪費しに来た場所であった。しかし今の私にはその場所が重苦しい場所に変っていた。
-            </p>
-            <p>
+                私はもう往来を軽やかな昂奮に弾んで、一種誇りかな気持さえ感じながら、美的装束をして街を闊歩した詩人のことなど思い浮かべては歩いていた。汚れた手拭の上へ載せてみたり、マントの上へあてがってみたりして色の反映を量ったり、またこんなことを思ったり、
+                ――つまりはこの重さなんだな。――その重さこそ常識で計算する重さではなく、その時のこの憂鬱な私が、ようやく探しあてたものとしての重さであった。私はその重さが全ての善いもの全ての美しいものを重量に換算して来た重さであるような気がした。
+                私はどこをどう歩いたのか、不意に丸善の前に出た。丸善。……ああ、其処はかつて私が私の憂鬱を慰めるために浪費しに来た場所であった。しかし今の私にはその場所が重苦しい場所に変っていた。
                 書籍、学生、勘定台、――これらはみな借金取りの亡霊のように私には見えるのだった。
-            </p>
-            <p>
                 しかし私は何気なく入って行った。そうして高い本棚の下に立った。しかしそこでも私は幸福ではなかった。画本の棚へ行ってみた。画集の重たいのを取り出した。しかし私は更にそれを開こうという気力を持たなかった。
-            </p>
-            <p>
                 私は度々それを棚へ返してはまた抜き出した。何故だか一冊ずつ抜き出してはみるのだが、それを開いてみる気になれないのだった。
-            </p>
-            <p>
-                私は手に持っていた檸檬を、そっとその画集の積み重ねの上に置いた。それを黄色い絵具の塊と見なして、美術書の豪華な背表紙が並んでいる前へ置いてみたのである。
-            </p>
-            <p>
+                私は手に持っていた檸檬を、そっとその画集の積み重ねの上に置いた。それを黄色い絵具の塊と見做して、美術書の豪華な背表紙が並んでいる前へ置いてみたのである。
                 「あ、しまっ……」
-            </p>
-            <p>
                 私は深く深呼吸をした。そうだ。私はその檸檬を爆弾に見立てていたのだ。
-            </p>
-            <p>
-                私は不意に第二のアイデアを思いついた。その時奇妙に企むような微笑みが私の唇に浮んだ。私はその檸檬をそのままにしておいて、何食わぬ顔をして外へ出る。
-            </p>
-            <p>
+                私は不意に第二のアイデアを思いついた。その時奇妙に企むような微笑が私の唇に浮んだ。私はその檸檬をそのままにしておいて、何喰わぬ顔をして外へ出る。
                 私は変にくすぐったい気持がした。「出て行こう」私はスタスタ急ぎ足で出口の方へ歩き出した。
-            </p>
-            <p>
                 私はそのまま街を横切って歩いた。私には丸善の中の光景が眼に見えるような気がした。あの本棚の前に黄金色に輝く恐ろしい爆弾を仕掛けて来た奇怪な悪漢が私で、もう十分後にはあの丸善が美術の棚を中心として大爆発をするのだったらどんなに面白いだろう。
-            </p>
-            <p>
-                私はこの想像を熱心に追求した。「そうしたらあの気詰まりな丸善も木端微塵だろう」
-            </p>
-            <p>
+                私はこの想像を熱心に追求した。「そうしたらあの気詰まりな丸善も木っ端微塵だろう」
                 そして私は活動写真の看板画が奇体な趣きで街を彩っている京極を下って行った。
-            </p>
+            </div>
         </div>
     </div>
 
     <script>
-        // ★重さの調整（0.1 = かなり重い）
+        // 設定：重さ（小さいほど重い）
         const FRICTION = 0.12; 
 
         const container = document.getElementById('scroll-container');
         const progressBar = document.getElementById('progress-bar');
+        const contentSource = document.getElementById('content-source');
+        const mainTitle = document.getElementById('main-title');
         
+        // テキストを一文ごとに分割してHTMLを再構築する処理
+        function splitTextIntoSentences() {
+            const text = contentSource.innerText;
+            // 「。」または改行で分割（空文字は除去）
+            const sentences = text.split(/(?<=。)|(?<=\n)/).filter(s => s.trim().length > 0);
+            
+            let html = "";
+            sentences.forEach(s => {
+                // 文末の改行などは整理
+                const cleanText = s.trim();
+                if(cleanText) {
+                    html += `<span class="sentence">${cleanText}</span>`;
+                }
+            });
+            
+            // HTMLを置き換え
+            contentSource.innerHTML = html;
+            // クラスを付与してレイアウト調整（pタグのようなブロック要素にする）
+            contentSource.style.display = 'block';
+        }
+
+        // 実行
+        splitTextIntoSentences();
+
+        // 構築された要素たちを取得
+        const sentenceElements = document.querySelectorAll('.sentence');
+
+        // スクロール変数
         let currentY = 0;
         let startY = 0;
-        
-        let containerHeight = container.offsetHeight;
-        let windowHeight = window.innerHeight;
+        let containerHeight = 0;
+        let windowHeight = 0;
         let maxScroll = 0;
 
         function updateDimensions() {
@@ -190,21 +171,56 @@
             maxScroll = containerHeight - windowHeight;
             if (maxScroll < 0) maxScroll = 0;
         }
+
         window.addEventListener('resize', updateDimensions);
-        // 画像読み込み等で高さが変わる可能性があるので、load時にも呼ぶ
         window.addEventListener('load', updateDimensions);
         updateDimensions();
 
+        // 描画ループ
         function render() {
+            // コンテナ移動
             container.style.transform = `translateY(${currentY}px)`;
-            // プログレスバー更新
+            
+            // プログレスバー
             if(maxScroll > 0){
                 const progress = Math.abs(currentY) / maxScroll;
                 progressBar.style.height = `${progress * 100}%`;
             }
+
+            // --- 焦点（フォーカス）ロジック ---
+            // 画面の中央
+            const centerLine = windowHeight * 0.45; // 少し上寄りの方が読みやすい
+
+            // タイトルの処理
+            const titleRect = mainTitle.getBoundingClientRect();
+            // タイトルが画面内かつ中央付近なら表示
+            if(titleRect.top < windowHeight && titleRect.bottom > 0) {
+                 const dist = Math.abs((titleRect.top + titleRect.height/2) - centerLine);
+                 if(dist < 150) mainTitle.classList.add('active-text');
+                 else mainTitle.classList.remove('active-text');
+            }
+
+            // 各文の処理
+            sentenceElements.forEach(el => {
+                // 現在の要素の位置（getBoundingClientRectは重いので、計算で出す手もあるが、今回は精度重視）
+                const rect = el.getBoundingClientRect();
+                
+                // 要素の中心
+                const elCenter = rect.top + (rect.height / 2);
+                
+                // 画面中央との距離
+                const distance = Math.abs(elCenter - centerLine);
+
+                // 距離が近い（例: 120px以内）ならアクティブ
+                if (distance < 120) {
+                    el.classList.add('active-text');
+                } else {
+                    el.classList.remove('active-text');
+                }
+            });
         }
 
-        // --- タッチ操作（スマホ） ---
+        // --- タッチ操作 ---
         document.addEventListener('touchstart', (e) => {
             startY = e.touches[0].clientY;
         }, { passive: false });
@@ -214,10 +230,8 @@
             const touchY = e.touches[0].clientY;
             const deltaY = touchY - startY;
 
-            // 抵抗（摩擦）を適用
             currentY += deltaY * FRICTION;
 
-            // 境界チェック
             if (currentY > 0) currentY = 0;
             if (currentY < -maxScroll) currentY = -maxScroll;
 
@@ -225,7 +239,7 @@
             startY = touchY;
         }, { passive: false });
 
-        // --- マウスホイール（PC） ---
+        // --- PCホイール操作 ---
         document.addEventListener('wheel', (e) => {
             e.preventDefault();
             const delta = e.deltaY * FRICTION; 
@@ -235,8 +249,13 @@
             render();
         }, { passive: false });
 
-        // 初期描画
-        render();
+        // 初期実行
+        // 最初のレイアウト計算のために少し待つ
+        setTimeout(() => {
+            updateDimensions();
+            render();
+        }, 100);
+
     </script>
 </body>
 </html>
