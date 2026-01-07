@@ -35,7 +35,10 @@
             writing-mode: vertical-rl;
             text-orientation: upright;
             font-size: clamp(16px, 4.2vw, 19px);
-            text-align: center;
+            
+            /* 【修正箇所】中央揃え(center)から均等/上揃え(justify)に変更 */
+            text-align: justify; 
+            
             white-space: nowrap;
             line-height: 0.1; 
             letter-spacing: -0.9em; 
