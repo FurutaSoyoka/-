@@ -3,194 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>一文字ずつ、手繰り寄せる</title>
+    <title>抗うスクロール - 檸檬</title>
     <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --text-color: #333;
-            --accent-color: #bbb;
-        }
-
+        /* 基本設定：余計なバウンスなどを消す */
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: "Hiragino Mincho ProN", "serif";
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            overflow: hidden; /* ブラウザ標準のスクロールを完全に無効化 */
+            overscroll-behavior: none; /* スマホのスワイプバック等を無効化 */
+            background-color: #fcfcfc; /* 紙っぽい白 */
+            color: #1a1a1a; /* 墨っぽい黒 */
+            font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", serif; /* 明朝体 */
+            line-height: 2.4; /* ゆったりとした行間 */
+            font-feature-settings: "palt";
+            letter-spacing: 0.05em;
         }
 
-        #app {
-            width: 85%;
-            max-width: 400px;
-            min-height: 12em;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        #text-display {
-            font-size: 1.25rem;
-            line-height: 2.2;
-            letter-spacing: 0.15em;
-            word-break: break-all;
-        }
-
-        /* 出てきた文字のアニメーション */
-        .char {
-            opacity: 0;
-            transform: translateX(-5px);
-            display: inline-block;
-            animation: charAppear 0.2s forwards ease-out;
-        }
-
-        @keyframes charAppear {
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* 状況ガイド */
-        #status-guide {
-            position: fixed;
-            bottom: 8%;
-            width: 100%;
-            text-align: center;
-            font-size: 0.7rem;
-            color: var(--accent-color);
-            letter-spacing: 0.2em;
-        }
-
-        #overlay {
+        /* コンテンツ全体を包むラッパー */
+        #scroll-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background: var(--bg-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+            transform: translateY(0); 
+            will-change: transform;
         }
 
-        button {
-            background: none;
-            border: 1px solid var(--text-color);
-            padding: 15px 30px;
-            font-family: inherit;
-            letter-spacing: 0.1em;
+        /* 記事のレイアウト */
+        .article {
+            max-width: 600px; /* 文庫本のような幅 */
+            margin: 0 auto;
+            padding: 15vh 24px 40vh; /* 余白をたっぷりとる */
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5rem;
+            font-weight: normal;
+            text-align: center;
+        }
+
+        h1 span {
+            display: block;
+            margin-top: 1rem;
+            font-size: 1rem;
+            color: #555;
+        }
+
+        p {
+            margin-bottom: 3.5rem;
+            text-align: justify;
+            font-size: 1.0rem;
+        }
+
+        /* プログレスバー（赤から、檸檬色に変更しました） */
+        #progress-bar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 4px;
+            height: 0; 
+            background-color: #e6c527; /* 檸檬色 */
+            z-index: 100;
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <button id="start-btn">体験を始める</button>
-    </div>
+    <div id="progress-bar"></div>
 
-    <div id="app">
-        <div id="text-display"></div>
+    <div id="scroll-container">
+        <div class="article">
+            <h1>檸檬<br><span>梶井基次郎</span></h1>
+            
+            <p>
+                えたいの知れない不吉な塊が私の心を始終圧（おさ）えつけていた。焦躁（しょうそう）と言おうか、嫌悪と言おうか――酒を飲んだあとに宿酔（ふつかよい）があるように、酒を毎日飲んでいると宿酔に相当した時期がやって来る。それが来たのだ。これはちょっといけなかった。
+            </p>
+            <p>
+                結果した肺尖（はいせん）カタルや神経衰弱がいけないのではない。また背を焼くような借金などがいけないのではない。いけないのはその不吉な塊だ。以前私を喜ばせたどんな美しい音楽も、どんな美しい詩の一節も辛抱がならなくなった。蓄音器を聴かせてもらいにわざわざ出かけて行っても、最初の二三小節で不意に立ち上がってしまいたくなる。何かが私を居堪（いたた）まらずさせるのだ。それで始終私は街から街へ浮浪し続けていた。
+            </p>
+            <p>
+                何故（なぜ）だかその頃私は見すぼらしくて美しいものに惹（ひ）きつけられた。風景にしても壊れかかった街だとか、その街にしてもよそよそしい表通りよりも、どこか親しみのある、汚い洗濯物が干してあったり、がらくたが転がしてあったり、むさくるしい部屋が覗（のぞ）いていたりする裏通りが好きであった。
+            </p>
+            <p>
+                雨風に蝕（むしば）まれてやがて土に帰ろうとしている土塀（どべい）や、家並の傾きかかったりしている勢い、――そういったなかに植物が、時とするとびっくりするような向日葵（ひまわり）があったり、カンナが咲いていたりする。
+            </p>
+            <p>
+                時折私はそんな路（みち）を歩きながら、ふと、そこが京都ではなくて京都から何百里も離れた仙台とか長崎とか、そのような市へ今自分が来ているのだ――という錯覚を起こそうと努める。私は、できることなら京都から逃げ出してしまいたかった。誰一人を知るもののないところで安らかにありたかった。
+            </p>
+            <p>
+                錯覚がようやく成功しはじめると私はそれからそれへ空想の絵具を塗りたくってゆく。なんのことはない、私の錯覚と壊れかかった街との二重写しである。そして私はその中に現実の私自身を見失うのを楽しんだ。
+            </p>
+            <p>
+                私はまたあの花火というやつが好きになった。花火そのものは第二段として、あの安っぽい絵具で赤や紫や黄や青や、様々の縞模様（しまもよう）を持った花火の束、中山寺の星下り、花合戦、枯れ薄（すすき）。それから鼠花火（ねずみはなび）というのは一つずつ輪になって箱に詰めてある。そういうものが変に私の心を唆（そそ）るのだ。
+            </p>
+            <p>
+                それからまた、びいどろという色硝子（いろガラス）で鯛（たい）や花を打ち出してあるおはじきが好きになったし、南京玉（なんきんだま）が好きになった。またそれを嘗（な）めてみるのが私にとってなんともいえない享楽だった。あのびいどろの味ほど幽（かす）かな涼しい味があるものだろうか。
+            </p>
+            <p>
+                私は幼い時よくそれを口に入れては父母に叱（しか）られたものだが、その幼時のあまい記憶が大きくなって落ち魄（ぶ）れた私に蘇（よみがえ）ってくる故（せい）だろうか、全くあの味には幽かな爽（さわ）やかななんとなく詩美と言ったような味がある。
+            </p>
+            <p>
+                しかし少し重苦しいほど私の心を抑えつけていたある気持、――それがそもそも始終私をこの気違いじみた放浪に駆り立てていた正体なのだが、――それはこれらで一時紛らわせることはできても、決して癒（い）やされることはなかった。
+            </p>
+            <p>
+                ある朝、――その頃私は甲斐（かい）の友達から送ってきた友禅（ゆうぜん）の襦袢（じゅばん）を著（き）ていた。その襟（えり）の派手な線が気になったのと、それから少し懐（ふところ）が温かかった故もあって、私は寺町二条の角（かど）にある八百卯（やおう）へ立ち寄って果物を買った。
+            </p>
+            <p>
+                その店は八百屋（やおや）兼果物屋で、ことに果物はずいぶん上等なのを置いていた。その日私は檸檬（レモン）を買った。檸檬は元来各地でできるが、その店にあるのはカリフォルニヤ産で、名産地として知られているだけに、見れば見るほど美しかった。私はその檸檬を一つだけ買った。
+            </p>
+            <p>
+                それからの私はどこへどう歩いたのだろう。私は長い間街を歩いていた。始終私の心を圧えつけていた不吉な塊がそれを握った瞬間からいくらか弛（ゆる）んで来たとみえて、私は街の上で非常に幸福であった。あんなに執拗（しつよう）かった憂鬱（ゆううつ）が、そんなものの一顆（いっか）で紛らされる――あるいは不審なことが、逆説的なほんとうであった。
+            </p>
+            <p>
+                私は何度も鼻に持って行って嗅（か）いだ。それ産地がカリフォルニヤだとかいうことはどうでもいいことだった。その檸檬の冷たさは、肺尖カタルで始終熱っぽい私の身体（からだ）に、心地（ここち）よい冷たさを浸透させてくれた。
+            </p>
+            <p>
+                実際あんな単純な冷覚や、触覚や、嗅覚や、視覚が、ずっと昔からこればかり探していたのだと言いたくなるほど私にしっくりしたなんて私は不思議に思える――それがあの頃のことなんだから。
+            </p>
+            <p>
+                私はもう往来を軽やかな昂奮（こうふん）に弾（はず）んで、一種誇りかな気持さえ感じながら、美的装束をして街を闊歩（かっぽ）した詩人のことなど思い浮かべては歩いていた。汚れた手拭（てぬぐい）の上へ載せてみたり、マントの上へあてがってみたりして色の反映を量ったり、またこんなことを思ったり、
+            </p>
+            <p>
+                ――つまりはこの重さなんだな。――<br>
+                その重さこそ常識で計算する重さではなく、その時のこの憂鬱な私が、ようやく探しあてたものとしての重さであった。私はその重さが全ての善いもの全ての美しいものを重量に換算して来た重さであるような気がした。
+            </p>
+            <p>
+                私はどこをどう歩いたのか、不意に丸善（まるぜん）の前に出た。丸善。……ああ、其処（そこ）はかつて私が私の憂鬱を慰めるために浪費しに来た場所であった。しかし今の私にはその場所が重苦しい場所に変っていた。
+            </p>
+            <p>
+                書籍、学生、勘定台、――これらはみな借金取りの亡霊のように私には見えるのだった。
+            </p>
+            <p>
+                しかし私は何気なく入って行った。そうして高い本棚の下に立った。しかしそこでも私は幸福ではなかった。画本（がほん）の棚へ行ってみた。画集の重たいのを取り出した。しかし私は更にそれを開こうという気力を持たなかった。
+            </p>
+            <p>
+                私は度々それを棚へ返してはまた抜き出した。何故だか一冊ずつ抜き出してはみるのだが、それを開いてみる気になれないのだった。
+            </p>
+            <p>
+                私は手に持っていた檸檬を、そっとその画集の積み重ねの上に置いた。それを黄色い絵具の塊と見做（みな）して、美術書の豪華な背表紙が並んでいる前へ置いてみたのである。
+            </p>
+            <p>
+                「あ、しまっ……」
+            </p>
+            <p>
+                私は深く深呼吸をした。そうだ。私はその檸檬を爆弾に見立てていたのだ。
+            </p>
+            <p>
+                私は不意に第二のアイデアを思いついた。その時奇妙に企（たくら）むような微笑（ほほえみ）が私の唇に浮んだ。私はその檸檬をそのままにしておいて、何喰（にく）わぬ顔をして外へ出る。
+            </p>
+            <p>
+                私は変にくすぐったい気持がした。「出て行こう」私はスタスタ急ぎ足で出口の方へ歩き出した。
+            </p>
+            <p>
+                私はそのまま街を横切って歩いた。私には丸善の中の光景が眼（め）に見えるような気がした。あの本棚の前に黄金色（こがねいろ）に輝く恐ろしい爆弾を仕掛けて来た奇怪な悪漢が私で、もう十分後にはあの丸善が美術の棚を中心として大爆発をするのだったらどんなに面白いだろう。
+            </p>
+            <p>
+                私はこの想像を熱心に追求した。「そうしたらあの気詰まりな丸善も木っ端微塵（こっぱみじん）だろう」
+            </p>
+            <p>
+                そして私は活動写真の看板画が奇体な趣きで街を彩（いろど）っている京極（きょうごく）を下って行った。
+            </p>
+        </div>
     </div>
-
-    <div id="status-guide">左右に軽く振って読み進める</div>
 
     <script>
-        const sentences = [
-            "本作品は、スマートフォンにおける無意識なスクロール行為によって、",
-            "文章が読まれなくなっている現状に対し、",
-            "「振る」という身体的動作を、読む行為のトリガーとして設計した。",
-            "文章はスクロールでは進まず、振ることで一文字ずつ現れる。",
-            "一文字ずつ、その手で手繰り寄せるように。",
-            "情報を消費するのではなく、「読む体験」へと変換するために。"
-        ];
+        // ★重さの調整（0.1 = かなり重い）
+        const FRICTION = 0.12; 
 
-        let currentSentenceIdx = 0;
-        let currentCharIdx = 0;
-        let isWaitingNextSentence = false;
-        let lastShakeTime = 0;
-        const shakeCooldown = 150; // 次の文字が出るまでの最短時間(ms)
-        const shakeThreshold = 8;  // X軸の加速度の変化量のしきい値（小さいほど敏感）
+        const container = document.getElementById('scroll-container');
+        const progressBar = document.getElementById('progress-bar');
+        
+        let currentY = 0;
+        let startY = 0;
+        
+        let containerHeight = container.offsetHeight;
+        let windowHeight = window.innerHeight;
+        let maxScroll = 0;
 
-        const displayEl = document.getElementById('text-display');
-        const statusEl = document.getElementById('status-guide');
+        function updateDimensions() {
+            containerHeight = container.offsetHeight;
+            windowHeight = window.innerHeight;
+            maxScroll = containerHeight - windowHeight;
+            if (maxScroll < 0) maxScroll = 0;
+        }
+        window.addEventListener('resize', updateDimensions);
+        // 画像読み込み等で高さが変わる可能性があるので、load時にも呼ぶ
+        window.addEventListener('load', updateDimensions);
+        updateDimensions();
 
-        // 文字を追加表示する
-        function showNextChar() {
-            const now = Date.now();
-            if (now - lastShakeTime < shakeCooldown) return;
-
-            const currentSentence = sentences[currentSentenceIdx];
-
-            // 新しい文章の開始時
-            if (currentCharIdx === 0 && !isWaitingNextSentence) {
-                displayEl.innerHTML = '';
-            }
-
-            if (currentCharIdx < currentSentence.length) {
-                const span = document.createElement('span');
-                span.innerText = currentSentence[currentCharIdx];
-                span.className = 'char';
-                displayEl.appendChild(span);
-                
-                currentCharIdx++;
-                lastShakeTime = now;
-                vibrate(15); // 軽い手応え
-
-                // 文章がすべて出揃ったか
-                if (currentCharIdx === currentSentence.length) {
-                    isWaitingNextSentence = true;
-                    statusEl.innerText = "大きく振って次の行へ";
-                } else {
-                    statusEl.innerText = "振って読み進める";
-                }
-            } else if (isWaitingNextSentence) {
-                // 文章が終わった状態で振られたら次へ
-                vibrate(40); // 少し強めの手応え
-                currentSentenceIdx++;
-                if (currentSentenceIdx >= sentences.length) currentSentenceIdx = 0;
-                currentCharIdx = 0;
-                isWaitingNextSentence = false;
-                displayEl.innerHTML = '';
-                statusEl.innerText = "振って読み進める";
+        function render() {
+            container.style.transform = `translateY(${currentY}px)`;
+            // プログレスバー更新
+            if(maxScroll > 0){
+                const progress = Math.abs(currentY) / maxScroll;
+                progressBar.style.height = `${progress * 100}%`;
             }
         }
 
-        function vibrate(ms) {
-            if (navigator.vibrate) navigator.vibrate(ms);
-        }
+        // --- タッチ操作（スマホ） ---
+        document.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+        }, { passive: false });
 
-        let lastX = 0;
-        function handleMotion(event) {
-            const acc = event.acceleration; // 重力を除いた加速度
-            if (!acc || acc.x === null) return;
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchY - startY;
 
-            // X軸（左右）の動きの強さを計算
-            const deltaX = Math.abs(acc.x - lastX);
-            
-            if (deltaX > shakeThreshold) {
-                showNextChar();
-            }
-            lastX = acc.x;
-        }
+            // 抵抗（摩擦）を適用
+            currentY += deltaY * FRICTION;
 
-        document.getElementById('start-btn').addEventListener('click', async () => {
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                const permission = await DeviceMotionEvent.requestPermission();
-                if (permission === 'granted') {
-                    window.addEventListener('devicemotion', handleMotion);
-                }
-            } else {
-                window.addEventListener('devicemotion', handleMotion);
-            }
-            document.getElementById('overlay').style.display = 'none';
-        });
+            // 境界チェック
+            if (currentY > 0) currentY = 0;
+            if (currentY < -maxScroll) currentY = -maxScroll;
+
+            render();
+            startY = touchY;
+        }, { passive: false });
+
+        // --- マウスホイール（PC） ---
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * FRICTION; 
+            currentY -= delta;
+            if (currentY > 0) currentY = 0;
+            if (currentY < -maxScroll) currentY = -maxScroll;
+            render();
+        }, { passive: false });
+
+        // 初期描画
+        render();
     </script>
 </body>
 </html>
