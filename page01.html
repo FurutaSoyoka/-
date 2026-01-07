@@ -33,6 +33,8 @@
             border-radius: 50%;
             z-index: 0;
             pointer-events: none;
+            /* ガイドとして薄く円を表示したい場合は border を追加してください */
+            border: 1px dashed rgba(0,0,0,0.05);
         }
 
         @media (max-width: 600px) {
@@ -82,26 +84,22 @@
             z-index: 0;
         }
 
-        /* 題名と著者名 */
         #finale-container {
             position: absolute;
-            /* ★変更：中央揃え(50%)をやめて、上揃え(20%)に変更 */
             top: 18%; 
-            right: 8%; /* ★変更：右端の余白を少し広めに */
+            right: 8%;
             writing-mode: vertical-rl;
             opacity: 0;
             transition: opacity 3s ease-in-out;
             z-index: 5;
             display: flex;
-            gap: 1.5rem; /* 題名と著者名の間隔 */
+            gap: 1.5rem;
             pointer-events: none;
-            /* transform: translateY(-50%); これを削除して上固定にする */
         }
         .title-text { font-size: 1.8rem; color: #111; letter-spacing: 0.2em; }
         .author-text { font-size: 1rem; color: #444; letter-spacing: 0.2em; margin-top: 3rem; }
 
         @media (max-width: 600px) {
-            /* スマホ時の調整 */
             #finale-container { 
                 top: 18%;
                 right: 5%; 
@@ -120,17 +118,15 @@
             touch-action: none;
             z-index: 10;
             font-weight: 500;
-            
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            
             transition: top 1s cubic-bezier(0.16, 1, 0.3, 1), left 1s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s, transform 0.5s;
         }
 
         @media (max-width: 600px) {
             .char { 
-                font-size: 1.1rem; 
+                font-size: 1.2rem; 
                 padding: 15px; 
             }
         }
@@ -238,45 +234,29 @@
             const centerY = window.innerHeight / 2;
             const _isMobile = isMobile();
 
-            const lineHeight = _isMobile ? 32 : 60; 
-            const charHeight = _isMobile ? 30 : 50;
+            // 文字の間隔設定
+            const charHeight = _isMobile ? 35 : 55;
 
-            const totalWidth = story.length * lineHeight;
-            
-            // ★変更：本文ブロックを全体的に左へシフトする（題名との隙間を作るため）
-            // スマホなら少し、PCなら多めにシフト
-            const shiftLeft = _isMobile ? 30 : 80; 
-            const blockStartX = (centerX + (totalWidth / 2) - (lineHeight / 2)) - shiftLeft;
+            // ★修正ポイント：表示位置を常に画面中央(centerX)に固定
+            const targetX = centerX;
 
-            const startX = blockStartX - (lineIndex * lineHeight); 
-            
-            // ★変更：上揃え（Top Align）に変更
-            // 画面上部から18%の位置を開始点とする
-            const topMargin = window.innerHeight * 0.18;
-            
-            // 縦書きなので、文字のY座標は「開始位置 + 文字のインデックス * 文字高さ」
-            // 文字の中心ではなく、頭を揃える
-            const startY = topMargin + (text.length * charHeight) / 2; 
-            // ※ transform(-50%, -50%)がかかっているため、中心座標を渡す必要がある
-            //   本来の「上端」は topMargin。
-            //   0文字目の中心 = topMargin + (charHeight/2)
-            //   i文字目の中心 = topMargin + (charHeight * i) + (charHeight/2)
-            //   ただ、前のコードのロジックを活かすなら、下記のように個別に計算します。
+            // ★修正ポイント：その行の文字数に合わせて、上下中央になるように開始Y座標を計算
+            // 画面中央から、(文字列の総高さの半分)を引いた位置を開始点にする
+            const lineTotalHeight = text.length * charHeight;
+            const startY = centerY - (lineTotalHeight / 2) + (charHeight / 2);
 
             text.split('').forEach((char, i) => {
                 const span = document.createElement('div');
                 span.textContent = char;
                 span.classList.add('char');
+                
+                // 初期位置は中央
                 span.style.top = '50%';
                 span.style.left = '50%';
                 
-                span.dataset.targetX = startX;
-                
-                // ★上揃えのY座標計算
-                // 上のマージン + (何文字目か * 文字の高さ)
-                // transformのズレ補正はCSS任せで、ここでは「その文字の中心が来るべきY」を指定
-                const exactY = topMargin + (i * charHeight);
-                span.dataset.targetY = exactY;
+                // 集まるべき座標をデータセットに保存
+                span.dataset.targetX = targetX;
+                span.dataset.targetY = startY + (i * charHeight);
                 
                 container.appendChild(span);
                 currentLineChars.push(span);
@@ -295,14 +275,43 @@
                 finaleContainer.style.opacity = 1;
             }, 500);
 
+            // 最後にすべての文字を本来の「詩のレイアウト（縦書き整列）」に戻す
+            const _isMobile = isMobile();
+            const lineHeight = _isMobile ? 35 : 65;
+            const charHeight = _isMobile ? 32 : 55;
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            // 最終表示用の座標再計算（全行を並べる）
+            const totalPoemWidth = story.length * lineHeight;
+            const poemBaseX = centerX + (totalPoemWidth / 2) - (lineHeight / 2) - (_isMobile ? 20 : 60);
+
+            let charCounter = 0;
+            story.forEach((line, lIdx) => {
+                const lineX = poemBaseX - (lIdx * lineHeight);
+                const lineTotalH = line.length * charHeight;
+                const lineStartY = centerY - (lineTotalH / 2) + (charHeight / 2);
+
+                line.split('').forEach((c, cIdx) => {
+                    const charEl = allLockedChars[charCounter];
+                    if (charEl) {
+                        charEl.dataset.finalX = lineX;
+                        charEl.dataset.finalY = lineStartY + (cIdx * charHeight);
+                    }
+                    charCounter++;
+                });
+            });
+
             let shuffledChars = [...allLockedChars];
             shuffledChars.sort(() => Math.random() - 0.5);
 
             shuffledChars.forEach((char, index) => {
                 setTimeout(() => {
+                    char.style.left = char.dataset.finalX + 'px';
+                    char.style.top = char.dataset.finalY + 'px';
                     char.classList.remove('invisible-line');
                     char.classList.add('clarified');
-                }, index * 10);
+                }, index * 20);
             });
         }
 
@@ -313,14 +322,12 @@
             let randomX, randomY;
             const centerX = window.innerWidth / 2;
             const centerY = window.innerHeight / 2;
-            const targetX = parseFloat(el.dataset.targetX);
 
             do {
                 randomX = Math.random() * (window.innerWidth - border*2) + border;
                 randomY = Math.random() * (window.innerHeight - border*2) + border;
             } while (
-                Math.hypot(randomX - centerX, randomY - centerY) < (isMobile() ? 80 : 120) ||
-                Math.abs(randomX - targetX) < (isMobile() ? 30 : 60)
+                Math.hypot(randomX - centerX, randomY - centerY) < (isMobile() ? 80 : 150)
             );
 
             el.style.left = randomX + 'px';
@@ -329,8 +336,8 @@
             el.posX = randomX;
             el.posY = randomY;
             
-            const speedBase = isMobile() ? 0.15 : 0.2;
-            const speed = speedBase + Math.random() * 0.3; 
+            const speedBase = isMobile() ? 0.2 : 0.3;
+            const speed = speedBase + Math.random() * 0.4; 
             
             const angle = Math.random() * Math.PI * 2;
             el.vx = Math.cos(angle) * speed;
@@ -350,7 +357,7 @@
         function animateFrame() {
             const winW = window.innerWidth;
             const winH = window.innerHeight;
-            const margin = isMobile() ? 20 : 40; 
+            const margin = isMobile() ? 10 : 30; 
 
             floatingChars.forEach(el => {
                 if (el.classList.contains('dragging') || el.classList.contains('locked')) return;
@@ -427,7 +434,7 @@
                 const centerX = window.innerWidth / 2;
                 const centerY = window.innerHeight / 2;
                 
-                const snapDistance = isMobile() ? 100 : 150; 
+                const snapDistance = isMobile() ? 80 : 120; 
                 
                 if (Math.hypot(currentX - centerX, currentY - centerY) < snapDistance) { 
                     snapToTarget(el);
@@ -458,7 +465,6 @@
             el.style.left = el.dataset.targetX + 'px';
             el.style.top = el.dataset.targetY + 'px';
             el.style.transform = 'translate(-50%, -50%) rotate(0deg)';
-            el.style.writingMode = 'vertical-rl';
             el.classList.add('locked');
             allLockedChars.push(el);
             lockedCountInLine++;
@@ -468,10 +474,13 @@
         }
 
         function completeLine() {
-            currentLineChars.forEach(char => char.classList.add('invisible-line'));
-            currentLineIndex++;
+            // 一定時間見せた後に消す
             setTimeout(() => {
-                spawnLine(currentLineIndex);
+                currentLineChars.forEach(char => char.classList.add('invisible-line'));
+                currentLineIndex++;
+                setTimeout(() => {
+                    spawnLine(currentLineIndex);
+                }, 1000);
             }, 800);
         }
     </script>
