@@ -10,161 +10,163 @@
     <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --bg-color: #fafafa;
+            --border-color: #e0e0e0;
+            --accent-gray: #888;
+            --text-main: #1a1a1a;
+        }
+
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            height: 100dvh; 
-            background-color: #fcfcfc;
-            color: #111;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             font-family: 'Shippori Mincho', serif;
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            /* ▼ 縦並びにするためスクロール方向を縦に変更 */
+            writing-mode: horizontal-tb;
+            
             overflow-x: hidden; 
             overflow-y: auto;
+            
             scroll-behavior: smooth;
-            scroll-snap-type: y mandatory; /* Y軸（垂直）のスナップに変更 */
+            scroll-snap-type: y mandatory;
+            
             -webkit-overflow-scrolling: touch;
             user-select: none;
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent; 
         }
 
+        /* 背景のテクスチャ */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://www.transparenttextures.com/patterns/p6.png');
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 0;
+        }
+
         #wrapper {
-            height: auto; /* 高さを自動にして縦に伸びるようにする */
-            min-height: 100%;
+            position: relative;
+            z-index: 1;
+            width: 100%;
             display: flex;
-            /* ▼ 縦書きモードで「上から下」に並べるには row を指定 */
-            flex-direction: row; 
+            flex-direction: column; 
             align-items: center;
-            padding: 0 0 100px 0; /* 下に余白 */
-            box-sizing: border-box;
         }
 
         header {
-            /* ▼ ヘッダーを上部に固定 */
-            position: relative;
-            z-index: 20;
-            background-color: #fcfcfc;
-            padding: 60px 40px 60px 60px;
-            scroll-snap-align: start; 
+            width: 100%;
+            height: 100dvh;
             display: flex;
+            justify-content: center;
             align-items: center;
-            height: 100dvh; /* タイトル画面として1枚分確保 */
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
         }
 
         h1 {
             font-size: 32px;
-            letter-spacing: 0.4em;
-            border-left: 1px solid #ddd;
+            letter-spacing: 0.8em;
+            border-left: 1px solid var(--border-color);
             padding-left: 40px;
+            margin-left: 0.8em;
             font-weight: 600;
-            height: 80%;
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-        }
-
-        .subtitle {
-            font-size: 14px;
-            color: #888;
-            margin-top: 20px;
-            letter-spacing: 0.2em;
+            line-height: 1;
+            text-align: center;
         }
 
         #menu-list {
+            width: 100%;
             display: flex;
-            /* ▼ 項目を上から下に並べる */
-            flex-direction: row;
-            gap: 120px; /* 縦の間隔 */
-            padding-right: 60px;
-            padding-left: 100px;
+            flex-direction: column;
             align-items: center;
         }
 
         .project-link {
-            position: relative;
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center;     
-            
+            width: 100%;
+            height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             text-decoration: none;
-            color: #333;
-            transition: all 0.4s ease-out;
-            scroll-snap-align: center; /* 画面中央にスナップ */
-            opacity: 0.4;
-            filter: blur(4px);
-            transform: scale(0.95);
-            cursor: pointer;
-            flex-shrink: 0; 
-            min-height: 100dvh; /* 各項目を1画面分にする */
-            padding: 10px; 
-            z-index: 1;
+            color: inherit;
+            scroll-snap-align: center;
+            scroll-snap-stop: always;
+            position: relative;
         }
 
-        .project-link.is-active {
+        .project-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 800px;
+            padding: 0 20px;
+            text-align: center;
+            
+            transition: 
+                opacity 1.2s cubic-bezier(0.19, 1, 0.22, 1),
+                filter 1.2s cubic-bezier(0.19, 1, 0.22, 1),
+                transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+            
+            /* 初期状態：モザイク（ぼかし） */
+            opacity: 0.35;
+            filter: blur(3px);
+            transform: translateY(15px) scale(0.99);
+        }
+
+        /* 1タップ目：アクティブ化（モザイク解除） */
+        .project-link.is-active .project-content {
             opacity: 1;
             filter: blur(0);
-            transform: scale(1.05);
-            z-index: 10;
-        }
-
-        @media (hover: hover) {
-            .project-link:hover {
-                opacity: 1;
-                filter: blur(0);
-                transform: scale(1);
-                z-index: 5;
-            }
+            transform: translateY(0) scale(1);
         }
 
         .number {
-            font-size: 12px;
-            color: #ccc;
-            margin-bottom: 15px;
-            font-family: monospace;
-            text-orientation: sideways;
-            pointer-events: none;
+            font-size: 14px;
+            color: var(--accent-gray);
+            font-family: "Times New Roman", serif;
+            letter-spacing: 0.2em;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .number::after {
+            content: "";
+            position: absolute;
+            bottom: -1.5rem;
+            left: 50%;
+            width: 1px;
+            height: 1rem;
+            background-color: var(--border-color);
         }
 
         .project-title {
             font-size: 28px;
             font-weight: 400;
-            letter-spacing: 0.2em;
-            margin-bottom: 20px;
-            line-height: 1.4;
-            pointer-events: none;
+            letter-spacing: 0.3em;
+            margin: 1rem 0 1.5rem 0;
+            line-height: 1.5;
         }
 
         .project-desc {
-            font-size: 13px;
-            color: #666;
+            font-size: 14px;
+            color: #555;
             line-height: 2.2;
-            height: 180px; 
-            display: flex;
-            align-items: center; 
-            pointer-events: none;
+            letter-spacing: 0.05em;
+            font-weight: 400;
+            max-width: 34em;
+            word-break: keep-all;
         }
 
         @media (max-width: 768px) {
-            header { padding: 40px 20px 40px 30px; }
-            h1 { font-size: 22px; padding-left: 15px; }
-            .subtitle { font-size: 10px; }
-            
-            #menu-list {
-                gap: 60px; 
-                padding-left: 60px;
-            }
-            .project-link {
-                opacity: 0.5;
-                filter: blur(3px);
-                min-height: 80dvh;
-            }
-            .project-title { font-size: 20px; }
-            .project-desc { font-size: 11px; line-height: 1.8; height: auto; }
+            h1 { font-size: 24px; letter-spacing: 0.6em; padding-left: 20px; }
+            .project-title { font-size: 22px; }
+            .project-desc { font-size: 13px; max-width: 24em; }
         }
     </style>
 </head>
@@ -172,50 +174,47 @@
 
     <div id="wrapper">
         <header>
-            <h1>
-                触れる読書
-                <span class="subtitle">　古田素代佳　</span>
-            </h1>
+            <h1>触れる読書</h1>
         </header>
 
         <nav id="menu-list">
             <a href="page01.html" class="project-link">
-                <div class="number">01</div>
-                <div class="project-title">彷徨う文脈</div>
-                <div class="project-desc">
-                    散在する文字を<br>物理的に集め<br>意味を構築する読み
+                <div class="project-content">
+                    <div class="number">01</div>
+                    <h2 class="project-title">彷徨う文脈</h2>
+                    <p class="project-desc">散在する文字を物理的に集め<br>意味を構築する読み</p>
                 </div>
             </a>
 
             <a href="page02.html" class="project-link">
-                <div class="number">02</div>
-                <div class="project-title">呼吸する余白</div>
-                <div class="project-desc">
-                    凝縮された黒塊から<br>可読性のある間隙を<br>探り当て保持する読み
+                <div class="project-content">
+                    <div class="number">02</div>
+                    <h2 class="project-title">呼吸する余白</h2>
+                    <p class="project-desc">凝縮された黒塊から可読性のある間隙を<br>探り当て保持する読み</p>
                 </div>
             </a>
 
             <a href="page03.html" class="project-link">
-                <div class="number">03</div>
-                <div class="project-title">揮発する記憶</div>
-                <div class="project-desc">
-                    無の表層を<br>擦過し続け<br>忘却に抗う読み
+                <div class="project-content">
+                    <div class="number">03</div>
+                    <h2 class="project-title">揮発する記憶</h2>
+                    <p class="project-desc">無の表層を擦過し続け<br>忘却に抗う読み</p>
                 </div>
             </a>
 
             <a href="page04.html" class="project-link">
-                <div class="number">04</div>
-                <div class="project-title">　抗うスクロール　</div>
-                <div class="project-desc">
-                    過剰な摩擦を<br>指先で推し進め<br>一文ずつ踏みしめる読み
+                <div class="project-content">
+                    <div class="number">04</div>
+                    <h2 class="project-title">抗うスクロール</h2>
+                    <p class="project-desc">過剰な摩擦を指先で推し進め<br>一文ずつ踏みしめる読み</p>
                 </div>
             </a>
 
             <a href="page05.html" class="project-link">
-                <div class="number">05</div>
-                <div class="project-title">降り注ぐ言葉</div>
-                <div class="project-desc">
-                    零れ落ちる言葉を<br>自らの器で受け<br>意味を救い出す読み
+                <div class="project-content">
+                    <div class="number">05</div>
+                    <h2 class="project-title">降り注ぐ言葉</h2>
+                    <p class="project-desc">零れ落ちる言葉を自らの器で受け止め<br>意味を救い出す読み</p>
                 </div>
             </a>
         </nav>
@@ -226,32 +225,28 @@
 
         links.forEach(link => {
             link.addEventListener('click', function(e) {
-                if (window.matchMedia('(hover: hover)').matches || this.classList.contains('is-active')) {
-                    return; 
+                if (!this.classList.contains('is-active')) {
+                    e.preventDefault();
+                    
+                    links.forEach(l => l.classList.remove('is-active'));
+                    this.classList.add('is-active');
+                    this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
                 }
-                e.preventDefault(); 
-                e.stopPropagation(); 
-
-                links.forEach(l => {
-                    if (l !== this) {
-                        l.classList.remove('is-active');
-                        l.style.zIndex = 1; 
-                    }
-                });
-                
-                this.classList.add('is-active');
-                this.style.zIndex = 10; 
             });
         });
 
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.project-link')) {
-                links.forEach(l => {
-                    l.classList.remove('is-active');
-                    l.style.zIndex = 1;
-                });
-            }
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) {
+                    entry.target.classList.remove('is-active');
+                }
+            });
+        }, { 
+            threshold: 0.5
         });
+
+        links.forEach(link => observer.observe(link));
     </script>
 
 </body>
