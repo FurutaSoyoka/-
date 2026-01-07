@@ -21,10 +21,11 @@
             font-family: 'Shippori Mincho', serif;
             writing-mode: vertical-rl;
             text-orientation: upright;
-            overflow-x: auto; 
-            overflow-y: hidden;
+            /* ▼ 縦並びにするためスクロール方向を縦に変更 */
+            overflow-x: hidden; 
+            overflow-y: auto;
             scroll-behavior: smooth;
-            scroll-snap-type: x mandatory;
+            scroll-snap-type: y mandatory; /* Y軸（垂直）のスナップに変更 */
             -webkit-overflow-scrolling: touch;
             user-select: none;
             -webkit-touch-callout: none;
@@ -32,25 +33,26 @@
         }
 
         #wrapper {
-            height: 100%;
+            height: auto; /* 高さを自動にして縦に伸びるようにする */
+            min-height: 100%;
             display: flex;
-            flex-direction: column; 
+            /* ▼ 縦書きモードで「上から下」に並べるには row を指定 */
+            flex-direction: row; 
             align-items: center;
-            padding: 60px 0;
+            padding: 0 0 100px 0; /* 下に余白 */
             box-sizing: border-box;
         }
 
         header {
-            position: sticky; 
-            right: 0; 
-            top: 0;
+            /* ▼ ヘッダーを上部に固定 */
+            position: relative;
             z-index: 20;
             background-color: #fcfcfc;
-            padding: 0 40px 0 60px;
+            padding: 60px 40px 60px 60px;
             scroll-snap-align: start; 
             display: flex;
             align-items: center;
-            height: 100%;
+            height: 100dvh; /* タイトル画面として1枚分確保 */
         }
 
         h1 {
@@ -62,7 +64,7 @@
             height: 80%;
             display: flex;
             align-items: flex-start;
-            justify-content: center; /* タイトルも上下中央 */
+            justify-content: center;
         }
 
         .subtitle {
@@ -74,33 +76,31 @@
 
         #menu-list {
             display: flex;
-            flex-direction: column;
-            gap: 80px;
+            /* ▼ 項目を上から下に並べる */
+            flex-direction: row;
+            gap: 120px; /* 縦の間隔 */
             padding-right: 60px;
             padding-left: 100px;
-            height: 100%;
-            justify-content: center;
+            align-items: center;
         }
 
-        /* ▼▼▼ リンクのデザイン変更点 ▼▼▼ */
         .project-link {
             position: relative;
-            /* Flexボックスにして中身を中央揃えにする */
             display: flex; 
-            flex-direction: column; /* 縦書きモードでは右から左へ並ぶ */
-            justify-content: center; /* 水平方向（右左）の中央 */
-            align-items: center;     /* 垂直方向（上下）の中央 ★ここが重要 */
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;     
             
             text-decoration: none;
             color: #333;
             transition: all 0.4s ease-out;
-            scroll-snap-align: center;
+            scroll-snap-align: center; /* 画面中央にスナップ */
             opacity: 0.4;
             filter: blur(4px);
             transform: scale(0.95);
             cursor: pointer;
             flex-shrink: 0; 
-            min-height: 300px;
+            min-height: 100dvh; /* 各項目を1画面分にする */
             padding: 10px; 
             z-index: 1;
         }
@@ -144,31 +144,27 @@
             color: #666;
             line-height: 2.2;
             height: 180px; 
-            /* Flexアイテムとして中央揃えされるので、テキスト自体の配置も調整 */
             display: flex;
-            align-items: center; /* 説明文自体も上下中央に */
+            align-items: center; 
             pointer-events: none;
         }
 
         @media (max-width: 768px) {
-            #wrapper { padding: 20px 0; }
-            header { padding: 0 20px 0 30px; }
-            h1 { font-size: 22px; padding-left: 15px; height: 70%; }
+            header { padding: 40px 20px 40px 30px; }
+            h1 { font-size: 22px; padding-left: 15px; }
             .subtitle { font-size: 10px; }
             
             #menu-list {
-                gap: 40px; 
-                padding-right: 30px;
+                gap: 60px; 
                 padding-left: 60px;
             }
             .project-link {
                 opacity: 0.5;
                 filter: blur(3px);
-                min-height: 240px;
-                padding: 0 10px; 
+                min-height: 80dvh;
             }
             .project-title { font-size: 20px; }
-            .project-desc { font-size: 11px; line-height: 1.8; height: auto; min-height: 140px; }
+            .project-desc { font-size: 11px; line-height: 1.8; height: auto; }
         }
     </style>
 </head>
