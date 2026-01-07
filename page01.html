@@ -23,24 +23,27 @@
             touch-action: none;
         }
 
+        /* 物語開始後に表示される小さめの円 */
         #drop-zone {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 35vw;
-            height: 35vw;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             z-index: 0;
             pointer-events: none;
-            /* ガイドとして薄く円を表示したい場合は border を追加してください */
-            border: 1px dashed rgba(0,0,0,0.05);
+            border: 1px dashed #ccc;
+            background: rgba(255, 255, 255, 0.3);
+            opacity: 0; 
+            transition: opacity 1.5s;
         }
 
         @media (max-width: 600px) {
             #drop-zone {
-                width: 60vw;
-                height: 60vw;
+                width: 110px;
+                height: 110px;
             }
         }
 
@@ -87,13 +90,13 @@
         #finale-container {
             position: absolute;
             top: 18%; 
-            right: 8%;
+            right: 8%; 
             writing-mode: vertical-rl;
             opacity: 0;
             transition: opacity 3s ease-in-out;
             z-index: 5;
             display: flex;
-            gap: 1.5rem;
+            gap: 1.5rem; 
             pointer-events: none;
         }
         .title-text { font-size: 1.8rem; color: #111; letter-spacing: 0.2em; }
@@ -126,7 +129,7 @@
 
         @media (max-width: 600px) {
             .char { 
-                font-size: 1.2rem; 
+                font-size: 1.1rem; 
                 padding: 15px; 
             }
         }
@@ -163,7 +166,7 @@
             transform: translate(-50%, -50%) scale(1) !important;
             color: #000 !important; 
             text-shadow: 0 0 1px rgba(0,0,0,0.1); 
-            transition: opacity 2s ease-in-out, transform 2s, color 2s; 
+            transition: opacity 2s ease-in-out, transform 2s, color 2s, left 2.5s ease-in-out, top 2.5s ease-in-out; 
         }
     </style>
 </head>
@@ -171,7 +174,7 @@
 
     <div id="drop-zone"></div>
     <div id="start-btn">物語を紡ぐ</div>
-    <div id="guide-message">中央へ集めよ</div>
+    <div id="guide-message">円の中へ集めよ</div>
     
     <div id="finale-container">
         <div class="title-text">私と小鳥と鈴と</div>
@@ -191,12 +194,13 @@
             "あの鳴る鈴は私のように、",
             "たくさんな唄は知らないよ。",
             "鈴と、小鳥と、それから私、",
-            "みんなちがって、みんないい。"
+            "みんなちがって、みんないいい。"
         ];
 
         const container = document.getElementById('container');
         const guideMsg = document.getElementById('guide-message');
         const startBtn = document.getElementById('start-btn');
+        const dropZone = document.getElementById('drop-zone');
         const finaleContainer = document.getElementById('finale-container');
         
         let currentLineIndex = 0;
@@ -214,6 +218,7 @@
             startBtn.classList.add('pressed');
             startBtn.style.pointerEvents = 'none';
             startBtn.style.opacity = 0;
+            dropZone.style.opacity = '1';
             spawnLine(0);
         });
 
@@ -223,7 +228,7 @@
                 return;
             }
 
-            guideMsg.innerText = "文字を中央へ集めよ";
+            guideMsg.innerText = "円の中へ集めよ";
             guideMsg.style.opacity = 0.4;
 
             const text = story[lineIndex];
@@ -234,27 +239,23 @@
             const centerY = window.innerHeight / 2;
             const _isMobile = isMobile();
 
-            // 文字の間隔設定
-            const charHeight = _isMobile ? 35 : 55;
-
-            // ★修正ポイント：表示位置を常に画面中央(centerX)に固定
+            const charHeight = _isMobile ? 32 : 55;
             const targetX = centerX;
-
-            // ★修正ポイント：その行の文字数に合わせて、上下中央になるように開始Y座標を計算
-            // 画面中央から、(文字列の総高さの半分)を引いた位置を開始点にする
             const lineTotalHeight = text.length * charHeight;
-            const startY = centerY - (lineTotalHeight / 2) + (charHeight / 2);
+            // プレイ中の集まる位置（上揃えにする）
+            const startY = (window.innerHeight * 0.18) + (charHeight / 2);
 
             text.split('').forEach((char, i) => {
                 const span = document.createElement('div');
                 span.textContent = char;
                 span.classList.add('char');
-                
-                // 初期位置は中央
                 span.style.top = '50%';
                 span.style.left = '50%';
                 
-                // 集まるべき座標をデータセットに保存
+                // 行と文字のインデックスを保持
+                span.dataset.l = lineIndex;
+                span.dataset.c = i;
+                
                 span.dataset.targetX = targetX;
                 span.dataset.targetY = startY + (i * charHeight);
                 
@@ -270,54 +271,51 @@
 
         function showFinale() {
             guideMsg.style.opacity = 0;
+            dropZone.style.opacity = '0';
 
             setTimeout(() => {
                 finaleContainer.style.opacity = 1;
             }, 500);
 
-            // 最後にすべての文字を本来の「詩のレイアウト（縦書き整列）」に戻す
             const _isMobile = isMobile();
-            const lineHeight = _isMobile ? 35 : 65;
-            const charHeight = _isMobile ? 32 : 55;
+            const lineHeight = _isMobile ? 35 : 60;
+            const charHeight = _isMobile ? 30 : 50;
             const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
             
-            // 最終表示用の座標再計算（全行を並べる）
-            const totalPoemWidth = story.length * lineHeight;
-            const poemBaseX = centerX + (totalPoemWidth / 2) - (lineHeight / 2) - (_isMobile ? 20 : 60);
+            // フィナーレの全表示レイアウト計算
+            const totalWidth = story.length * lineHeight;
+            const shiftLeft = _isMobile ? 30 : 80;
+            const blockStartX = (centerX + (totalWidth / 2) - (lineHeight / 2)) - shiftLeft;
+            const topMargin = window.innerHeight * 0.18; // 上揃えの基準点
 
-            let charCounter = 0;
+            // data-l と data-c を使って各文字を正しい位置へ移動させる
             story.forEach((line, lIdx) => {
-                const lineX = poemBaseX - (lIdx * lineHeight);
-                const lineTotalH = line.length * charHeight;
-                const lineStartY = centerY - (lineTotalH / 2) + (charHeight / 2);
-
-                line.split('').forEach((c, cIdx) => {
-                    const charEl = allLockedChars[charCounter];
+                const lineX = blockStartX - (lIdx * lineHeight);
+                
+                line.split('').forEach((c, i) => {
+                    const charEl = document.querySelector(`.char[data-l="${lIdx}"][data-c="${i}"]`);
                     if (charEl) {
-                        charEl.dataset.finalX = lineX;
-                        charEl.dataset.finalY = lineStartY + (cIdx * charHeight);
+                        charEl.style.left = lineX + 'px';
+                        charEl.style.top = (topMargin + (i * charHeight) + (charHeight / 2)) + 'px';
                     }
-                    charCounter++;
                 });
             });
 
-            let shuffledChars = [...allLockedChars];
+            // 全文字を表示状態にする
+            const allChars = document.querySelectorAll('.char');
+            let shuffledChars = Array.from(allChars);
             shuffledChars.sort(() => Math.random() - 0.5);
 
             shuffledChars.forEach((char, index) => {
                 setTimeout(() => {
-                    char.style.left = char.dataset.finalX + 'px';
-                    char.style.top = char.dataset.finalY + 'px';
                     char.classList.remove('invisible-line');
                     char.classList.add('clarified');
-                }, index * 20);
+                }, index * 10);
             });
         }
 
         function initFloatingChar(el) {
             el.classList.add('scattered');
-            
             const border = isMobile() ? 20 : 50; 
             let randomX, randomY;
             const centerX = window.innerWidth / 2;
@@ -327,27 +325,23 @@
                 randomX = Math.random() * (window.innerWidth - border*2) + border;
                 randomY = Math.random() * (window.innerHeight - border*2) + border;
             } while (
-                Math.hypot(randomX - centerX, randomY - centerY) < (isMobile() ? 80 : 150)
+                Math.hypot(randomX - centerX, randomY - centerY) < (isMobile() ? 80 : 120)
             );
 
             el.style.left = randomX + 'px';
             el.style.top = randomY + 'px';
-
             el.posX = randomX;
             el.posY = randomY;
             
-            const speedBase = isMobile() ? 0.2 : 0.3;
-            const speed = speedBase + Math.random() * 0.4; 
-            
+            const speedBase = isMobile() ? 0.15 : 0.2;
+            const speed = speedBase + Math.random() * 0.3; 
             const angle = Math.random() * Math.PI * 2;
             el.vx = Math.cos(angle) * speed;
             el.vy = Math.sin(angle) * speed;
-            
             el.rot = (Math.random() - 0.5) * 60;
             el.style.transform = `translate(-50%, -50%) rotate(${el.rot}deg)`;
 
             floatingChars.push(el);
-
             if (!isAnimating) {
                 isAnimating = true;
                 requestAnimationFrame(animateFrame);
@@ -357,34 +351,25 @@
         function animateFrame() {
             const winW = window.innerWidth;
             const winH = window.innerHeight;
-            const margin = isMobile() ? 10 : 30; 
+            const margin = isMobile() ? 20 : 40; 
 
             floatingChars.forEach(el => {
                 if (el.classList.contains('dragging') || el.classList.contains('locked')) return;
-
                 el.posX += el.vx;
                 el.posY += el.vy;
-
                 let bounced = false;
                 if (el.posX < margin) { el.posX = margin; el.vx *= -1; bounced = true; }
                 if (el.posX > winW - margin) { el.posX = winW - margin; el.vx *= -1; bounced = true; }
                 if (el.posY < margin) { el.posY = margin; el.vy *= -1; bounced = true; }
                 if (el.posY > winH - margin) { el.posY = winH - margin; el.vy *= -1; bounced = true; }
-
-                if (bounced) {
-                     el.rot += (Math.random() - 0.5) * 20;
-                }
-
+                if (bounced) el.rot += (Math.random() - 0.5) * 20;
                 el.style.left = el.posX + 'px';
                 el.style.top = el.posY + 'px';
                 el.style.transform = `translate(-50%, -50%) rotate(${el.rot}deg)`;
             });
 
-            if (floatingChars.length > 0) {
-                requestAnimationFrame(animateFrame);
-            } else {
-                isAnimating = false;
-            }
+            if (floatingChars.length > 0) requestAnimationFrame(animateFrame);
+            else isAnimating = false;
         }
 
         function addDragEvents(el) {
@@ -394,20 +379,16 @@
             const start = (e) => {
                 if (el.classList.contains('locked')) return;
                 if(e.cancelable) e.preventDefault();
-
                 const rect = el.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
                 el.style.left = centerX + 'px';
                 el.style.top = centerY + 'px';
-                
                 el.classList.remove('scattered');
                 el.classList.add('dragging');
                 isDragging = true;
-                
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-                
                 offsetX = clientX - centerX;
                 offsetY = clientY - centerY;
             };
@@ -415,10 +396,8 @@
             const move = (e) => {
                 if (!isDragging) return;
                 if(e.cancelable) e.preventDefault(); 
-
                 const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
                 el.style.left = (clientX - offsetX) + 'px';
                 el.style.top = (clientY - offsetY) + 'px';
             };
@@ -427,15 +406,12 @@
                 if (!isDragging) return;
                 isDragging = false;
                 el.classList.remove('dragging');
-                
                 const rect = el.getBoundingClientRect();
                 const currentX = rect.left + rect.width/2;
                 const currentY = rect.top + rect.height/2;
                 const centerX = window.innerWidth / 2;
                 const centerY = window.innerHeight / 2;
-                
-                const snapDistance = isMobile() ? 80 : 120; 
-                
+                const snapDistance = isMobile() ? 55 : 70; 
                 if (Math.hypot(currentX - centerX, currentY - centerY) < snapDistance) { 
                     snapToTarget(el);
                 } else {
@@ -448,7 +424,6 @@
             el.addEventListener('mousedown', start);
             window.addEventListener('mousemove', move);
             window.addEventListener('mouseup', end);
-            
             el.addEventListener('touchstart', start, {passive: false});
             window.addEventListener('touchmove', move, {passive: false});
             window.addEventListener('touchend', end);
@@ -456,17 +431,13 @@
 
         function snapToTarget(el) {
             el.classList.remove('scattered');
-            
             const index = floatingChars.indexOf(el);
-            if (index > -1) {
-                floatingChars.splice(index, 1);
-            }
-
+            if (index > -1) floatingChars.splice(index, 1);
             el.style.left = el.dataset.targetX + 'px';
             el.style.top = el.dataset.targetY + 'px';
             el.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+            el.style.writingMode = 'vertical-rl';
             el.classList.add('locked');
-            allLockedChars.push(el);
             lockedCountInLine++;
             if (lockedCountInLine === currentLineChars.length) {
                 completeLine();
@@ -474,13 +445,10 @@
         }
 
         function completeLine() {
-            // 一定時間見せた後に消す
+            currentLineChars.forEach(char => char.classList.add('invisible-line'));
+            currentLineIndex++;
             setTimeout(() => {
-                currentLineChars.forEach(char => char.classList.add('invisible-line'));
-                currentLineIndex++;
-                setTimeout(() => {
-                    spawnLine(currentLineIndex);
-                }, 1000);
+                spawnLine(currentLineIndex);
             }, 800);
         }
     </script>
