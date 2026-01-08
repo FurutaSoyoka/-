@@ -33,6 +33,7 @@
             scroll-behavior: smooth;
             scroll-snap-type: y mandatory;
             
+            /* Disable double-tap zoom delay for faster clicks */
             touch-action: manipulation;
             -webkit-overflow-scrolling: touch;
             user-select: none;
@@ -40,7 +41,7 @@
             -webkit-tap-highlight-color: transparent; 
         }
 
-        /* 背景のテクスチャ */
+        /* Background texture */
         body::before {
             content: "";
             position: fixed;
@@ -118,7 +119,6 @@
             align-items: center;
         }
 
-        /* 画面全体の枠組み（スナップ用） */
         .project-section {
             width: 100%;
             height: 100dvh;
@@ -130,16 +130,15 @@
             position: relative;
         }
 
-        /* 文字の範囲全体（クリック判定エリア） */
+        /* Hit area focused on text block */
         .project-link {
-            display: block;
+            display: inline-block;
             text-decoration: none;
             color: inherit;
-            /* タップしやすくするため、文字の周りに十分な余白を設定 */
-            padding: 60px 40px;
+            padding: 30px 20px; /* Reduced padding for more focused hit area */
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            -webkit-tap-highlight-color: rgba(0,0,0,0.02);
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .project-content {
@@ -148,24 +147,25 @@
             align-items: center;
             max-width: 800px;
             text-align: center;
-            pointer-events: none; /* リンク要素自体でクリックを拾うため、内部はスルー */
+            pointer-events: none;
             
+            /* Snappier transition speed (0.3s) */
             transition: 
-                opacity 0.6s cubic-bezier(0.19, 1, 0.22, 1),
-                filter 0.6s cubic-bezier(0.19, 1, 0.22, 1),
-                transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+                opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                filter 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             
-            /* 初期状態：モザイク（3px） */
+            /* Initial state: 3px blur */
             opacity: 0.7;
             filter: blur(3px);
-            transform: translateY(10px) scale(0.99);
+            transform: translateY(5px) scale(1);
         }
 
-        /* アクティブ（タップされた時）にモザイク解除 */
+        /* Focus state: clear mosaic */
         .project-link.is-active .project-content {
             opacity: 1;
             filter: blur(0);
-            transform: translateY(0) scale(1);
+            transform: translateY(0) scale(1.02);
         }
 
         .number {
@@ -207,7 +207,7 @@
 
         @media (max-width: 768px) {
             h1 { font-size: 24px; letter-spacing: 0.6em; }
-            .project-link { padding: 40px 20px; }
+            .project-link { padding: 25px 15px; }
             .project-title { font-size: 22px; }
             .project-desc { font-size: 13px; max-width: 24em; }
         }
@@ -284,20 +284,19 @@
         links.forEach(link => {
             link.addEventListener('click', function(e) {
                 if (!this.classList.contains('is-active')) {
-                    // 1回目のタップ：モザイク解除
+                    // 1st Tap: Clear mosaic
                     e.preventDefault();
                     
                     links.forEach(l => l.classList.remove('is-active'));
                     this.classList.add('is-active');
                     
-                    // 中央へスムーズにスクロール
+                    // Center the item
                     this.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-                // 2回目のタップ：そのままページ遷移
+                // 2nd Tap: Navigate
             });
         });
 
-        // 画面外にスクロールしたらモザイク状態に戻すリセット機能
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (!entry.isIntersecting) {
