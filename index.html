@@ -33,7 +33,6 @@
             scroll-behavior: smooth;
             scroll-snap-type: y mandatory;
             
-            /* モバイルでの反応を速める */
             touch-action: manipulation;
             -webkit-overflow-scrolling: touch;
             user-select: none;
@@ -69,17 +68,47 @@
             align-items: center;
             scroll-snap-align: start;
             scroll-snap-stop: always;
+            position: relative;
         }
 
         h1 {
             font-size: 32px;
             letter-spacing: 0.8em;
-            border-left: none;
-            padding-left: 0;
             font-weight: 600;
             line-height: 1;
             text-align: center;
             margin: 0;
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            color: var(--accent-gray);
+            font-size: 10px;
+            letter-spacing: 0.3em;
+            pointer-events: none;
+        }
+
+        .scroll-hint span {
+            text-transform: uppercase;
+            font-family: "Times New Roman", serif;
+        }
+
+        .scroll-hint .arrow {
+            font-size: 14px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+            40% { transform: translateY(10px); opacity: 1; }
+            60% { transform: translateY(5px); opacity: 0.8; }
         }
 
         #menu-list {
@@ -89,17 +118,28 @@
             align-items: center;
         }
 
-        .project-link {
+        /* 画面全体の枠組み（スナップ用） */
+        .project-section {
             width: 100%;
             height: 100dvh;
             display: flex;
             justify-content: center;
             align-items: center;
-            text-decoration: none;
-            color: inherit;
             scroll-snap-align: center;
             scroll-snap-stop: always;
             position: relative;
+        }
+
+        /* 文字の範囲全体（クリック判定エリア） */
+        .project-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            /* タップしやすくするため、文字の周りに十分な余白を設定 */
+            padding: 60px 40px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.02);
         }
 
         .project-content {
@@ -107,21 +147,21 @@
             flex-direction: column;
             align-items: center;
             max-width: 800px;
-            padding: 0 20px;
             text-align: center;
+            pointer-events: none; /* リンク要素自体でクリックを拾うため、内部はスルー */
             
             transition: 
-                opacity 1s cubic-bezier(0.19, 1, 0.22, 1),
-                filter 1s cubic-bezier(0.19, 1, 0.22, 1),
-                transform 1s cubic-bezier(0.19, 1, 0.22, 1);
+                opacity 0.6s cubic-bezier(0.19, 1, 0.22, 1),
+                filter 0.6s cubic-bezier(0.19, 1, 0.22, 1),
+                transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
             
-            /* 初期状態：モザイク（ぼかし3px） */
-            opacity: 0.6;
+            /* 初期状態：モザイク（3px） */
+            opacity: 0.7;
             filter: blur(3px);
             transform: translateY(10px) scale(0.99);
         }
 
-        /* アクティブ（1タップ目）にモザイク解除 */
+        /* アクティブ（タップされた時）にモザイク解除 */
         .project-link.is-active .project-content {
             opacity: 1;
             filter: blur(0);
@@ -167,6 +207,7 @@
 
         @media (max-width: 768px) {
             h1 { font-size: 24px; letter-spacing: 0.6em; }
+            .project-link { padding: 40px 20px; }
             .project-title { font-size: 22px; }
             .project-desc { font-size: 13px; max-width: 24em; }
         }
@@ -177,86 +218,98 @@
     <div id="wrapper">
         <header>
             <h1>触れる読書</h1>
+            <div class="scroll-hint">
+                <span>scroll</span>
+                <div class="arrow">↓</div>
+            </div>
         </header>
 
         <nav id="menu-list">
-            <a href="page01.html" class="project-link">
-                <div class="project-content">
-                    <div class="number">01</div>
-                    <h2 class="project-title">彷徨う文脈</h2>
-                    <p class="project-desc">散在する文字を物理的に集め<br>意味を構築する読み</p>
-                </div>
-            </a>
+            <section class="project-section">
+                <a href="page01.html" class="project-link">
+                    <div class="project-content">
+                        <div class="number">01</div>
+                        <h2 class="project-title">彷徨う文脈</h2>
+                        <p class="project-desc">散在する文字を物理的に集め<br>意味を構築する読み</p>
+                    </div>
+                </a>
+            </section>
 
-            <a href="page02.html" class="project-link">
-                <div class="project-content">
-                    <div class="number">02</div>
-                    <h2 class="project-title">呼吸する余白</h2>
-                    <p class="project-desc">凝縮された黒塊から可読性のある間隙を<br>探り当て保持する読み</p>
-                </div>
-            </a>
+            <section class="project-section">
+                <a href="page02.html" class="project-link">
+                    <div class="project-content">
+                        <div class="number">02</div>
+                        <h2 class="project-title">呼吸する余白</h2>
+                        <p class="project-desc">凝縮された黒塊から可読性のある間隙を<br>探り当て保持する読み</p>
+                    </div>
+                </a>
+            </section>
 
-            <a href="page03.html" class="project-link">
-                <div class="project-content">
-                    <div class="number">03</div>
-                    <h2 class="project-title">揮発する記憶</h2>
-                    <p class="project-desc">無の表層を擦過し続け<br>忘却に抗う読み</p>
-                </div>
-            </a>
+            <section class="project-section">
+                <a href="page03.html" class="project-link">
+                    <div class="project-content">
+                        <div class="number">03</div>
+                        <h2 class="project-title">揮発する記憶</h2>
+                        <p class="project-desc">無の表層を擦過し続け<br>忘却に抗う読み</p>
+                    </div>
+                </a>
+            </section>
 
-            <a href="page04.html" class="project-link">
-                <div class="project-content">
-                    <div class="number">04</div>
-                    <h2 class="project-title">抗うスクロール</h2>
-                    <p class="project-desc">過剰な摩擦を指先で推し進め<br>一文ずつ踏みしめる読み</p>
-                </div>
-            </a>
+            <section class="project-section">
+                <a href="page04.html" class="project-link">
+                    <div class="project-content">
+                        <div class="number">04</div>
+                        <h2 class="project-title">抗うスクロール</h2>
+                        <p class="project-desc">過剰な摩擦を指先で推し進め<br>一文ずつ踏みしめる読み</p>
+                    </div>
+                </a>
+            </section>
 
-            <a href="page05.html" class="project-link">
-                <div class="project-content">
-                    <div class="number">05</div>
-                    <h2 class="project-title">降り注ぐ言葉</h2>
-                    <p class="project-desc">零れ落ちる言葉を自らの器で受け止め<br>意味を救い出す読み</p>
-                </div>
-            </a>
+            <section class="project-section">
+                <a href="page05.html" class="project-link">
+                    <div class="project-content">
+                        <div class="number">05</div>
+                        <h2 class="project-title">降り注ぐ言葉</h2>
+                        <p class="project-desc">零れ落ちる言葉を自らの器で受け止め<br>意味を救い出す読み</p>
+                    </div>
+                </a>
+            </section>
         </nav>
     </div>
 
     <script>
         const links = document.querySelectorAll('.project-link');
+        const sections = document.querySelectorAll('.project-section');
 
         links.forEach(link => {
             link.addEventListener('click', function(e) {
-                // すでにアクティブ（モザイク解除済み）でない場合
                 if (!this.classList.contains('is-active')) {
-                    // 1回目のタップ：遷移を止めて、モザイクを消す
+                    // 1回目のタップ：モザイク解除
                     e.preventDefault();
                     
-                    // 他の項目のアクティブ状態を解除
                     links.forEach(l => l.classList.remove('is-active'));
-                    
-                    // 自分をアクティブ化
                     this.classList.add('is-active');
                     
-                    // 中央へスムーズにスクロールさせる（スナップを補助）
-                    this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // 中央へスムーズにスクロール
+                    this.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-                // すでにアクティブな場合は、2回目のタップとしてそのまま遷移する
+                // 2回目のタップ：そのままページ遷移
             });
         });
 
-        // スクロールで画面外に出たらモザイク状態に戻すリセット機能
+        // 画面外にスクロールしたらモザイク状態に戻すリセット機能
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (!entry.isIntersecting) {
-                    entry.target.classList.remove('is-active');
+                    const link = entry.target.querySelector('.project-link');
+                    if (link) link.classList.remove('is-active');
                 }
             });
         }, { 
             threshold: 0.1 
         });
 
-        links.forEach(link => observer.observe(link));
+        sections.forEach(section => observer.observe(section));
     </script>
 
 </body>
