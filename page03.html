@@ -10,14 +10,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
+        /* --- 基本レイアウト --- */
         body, html {
             margin: 0; padding: 0;
             width: 100%; height: 100%;
             overflow: hidden; background-color: #fff;
             font-family: 'Shippori Mincho', serif;
             user-select: none; position: fixed;
+            touch-action: none;
         }
 
+        /* --- イントロ画面（目次） --- */
         #intro-overlay {
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -28,23 +31,36 @@
         }
 
         #intro-overlay h1 {
-            font-size: 20px; letter-spacing: 0.3em;
+            font-size: 18px; letter-spacing: 0.4em;
             margin-bottom: 30px; color: #333; font-weight: normal;
         }
 
         .instruction-text {
-            font-size: 12px; line-height: 2.4;
-            text-align: center; color: #999;
-            margin-bottom: 50px; letter-spacing: 0.1em;
+            font-size: 11px; line-height: 2.6;
+            text-align: center; color: #aaa;
+            margin-bottom: 50px; letter-spacing: 0.15em;
         }
 
         #start-btn {
-            padding: 10px 30px; background: transparent;
-            border: 1px solid #eee; color: #999;
-            font-size: 12px; letter-spacing: 0.2em;
+            font-family: 'Shippori Mincho', serif; /* フォントを統一 */
+            padding: 10px 25px; 
+            background: #fff; 
+            border: 1px solid #f8f8f8; 
+            color: #999;
+            font-size: 11px; letter-spacing: 0.2em;
             cursor: pointer; border-radius: 2px;
+            outline: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02); 
+            transition: all 0.4s;
+            -webkit-tap-highlight-color: transparent;
         }
 
+        #start-btn:hover {
+            border-color: #f0f0f0;
+            background: #fafafa;
+        }
+
+        /* --- 物語表示層 --- */
         #content-layer {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -53,42 +69,103 @@
         }
 
         #text-container {
-            writing-mode: vertical-rl; text-orientation: upright;
-            max-height: 80vh; max-width: 85vw;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            max-height: 75vh;
+            max-width: 85vw;
         }
 
         #text-inner {
-            color: #777; /* 少し薄くして白に馴染ませる */
-            font-size: 15px; /* PCサイズを縮小 */
-            line-height: 2.6; letter-spacing: 0.15em;
+            color: #777; 
+            font-size: 14px; 
+            line-height: 2.8;
+            letter-spacing: 0.2em;
         }
         
-        #text-inner p { margin: 0 0 0 1.5em; }
+        #text-inner p { margin: 0 0 0 1.8em; }
 
         @media (max-width: 768px) {
-            #text-inner { font-size: 13.5px; line-height: 2.2; } /* スマホサイズを縮小 */
+            #text-inner { 
+                font-size: 12.5px; 
+                line-height: 2.4; 
+            }
         }
 
+        /* --- 霧のキャンバス --- */
         #fog-canvas {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 10; touch-action: none;
-            opacity: 0; transition: opacity 1s;
+            opacity: 0; transition: opacity 1.2s;
         }
 
+        /* --- 操作ボタン（真ん中下：次へ進む） --- */
         #next-btn-container {
-            position: absolute; bottom: 40px; left: 40px;
-            z-index: 20; opacity: 0;
-            transition: opacity 1.5s ease; pointer-events: none;
+            position: absolute; 
+            bottom: 25px; 
+            left: 50%;
+            transform: translate(-50%, 15px); 
+            z-index: 20; 
+            opacity: 0;
+            transition: opacity 1.5s ease, transform 1.5s ease; 
+            pointer-events: none;
         }
 
-        #next-btn-container.visible { opacity: 1; pointer-events: auto; }
+        #next-btn-container.visible { 
+            opacity: 1; 
+            transform: translate(-50%, 0); 
+            pointer-events: auto; 
+        }
 
         #next-btn {
-            background: transparent; border: none;
-            border-bottom: 1px solid #eee; color: #ddd;
-            padding: 5px 10px; font-size: 11px;
-            letter-spacing: 0.2em; cursor: pointer;
+            background: #fff; 
+            border: 1px solid #eee; 
+            color: #ccc;
+            padding: 10px 24px; 
+            font-size: 10px;
+            letter-spacing: 0.3em; 
+            cursor: pointer;
+            font-family: 'Shippori Mincho', serif;
+            outline: none;
+            transition: all 0.4s;
+            -webkit-tap-highlight-color: transparent;
+            border-radius: 2px;
+        }
+
+        /* --- 目次へ戻るボタン（左下：最終ページのみ） --- */
+        #back-btn-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            z-index: 25;
+            opacity: 0;
+            transition: opacity 2s ease;
+            pointer-events: none;
+        }
+
+        #back-btn-container.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #back-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #eee; /* 下線のみ */
+            color: #ddd;
+            padding: 5px 0;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            font-family: 'Shippori Mincho', serif;
+            outline: none;
+            transition: color 0.4s, border-color 0.4s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #back-btn:hover {
+            color: #bbb;
+            border-color: #ddd;
         }
     </style>
 </head>
@@ -97,7 +174,7 @@
     <div id="intro-overlay">
         <h1>揮発する記憶</h1>
         <div class="instruction-text">
-            夏目漱石『夢十夜』より<br><br>
+            夏目漱石『夢十夜』より抜粋<br><br>
             白い霧を指で拭うことで、<br>
             物語を一時的に留めることができます。<br><br>
             手を止めれば、即座に白へと還ります。
@@ -106,14 +183,20 @@
     </div>
 
     <div id="content-layer"><div id="text-container"><div id="text-inner"></div></div></div>
-    <div id="next-btn-container"><button id="next-btn">次の刻へ</button></div>
+    
+    <!-- 中央下の次へ進むボタン -->
+    <div id="next-btn-container"><button id="next-btn">次へ進む</button></div>
+    
+    <!-- 左下の目次へ戻るボタン -->
+    <div id="back-btn-container"><button id="back-btn">目次へ戻る</button></div>
+
     <canvas id="fog-canvas"></canvas>
 
     <script>
         const storySegments = [
-            `<p>こんな夢を見た。</p><p>腕組をして枕元に坐っていると、仰向に寝た女が、静かな声でもう死にますと云う。</p><p>女は長い髪を枕に敷いて、輪郭の柔らかな瓜実顔をその中に横たえている。</p><p>真白な頬の底に温かい血の色がほどよく差して、唇の色は無論赤い。とうてい死にそうには見えない。</p><p>しかし女は静かな声で、もう死にますと判然（はっきり）云った。自分も確にこれは死ぬなと思った。</p>`,
+            `<p>こんな夢を見た。</p><p>腕組をして枕元に坐っていると、仰向に寝た女が、静かな声でもう死にますと云う。</p><p>女は長い髪を枕に敷いて、輪郭の柔らかな瓜実顔をその中に横たえている。</p><p>真白な頬の底に温かい血の色がほどよく差して、唇の色は無論赤い。とうてい死にそうには見えない。</p><p>しかし女は判然（はっきり）云った。自分も確にこれは死ぬなと思った。</p>`,
             `<p>そこで、そうかね、もう死ぬのかねと上から覗き込むようにして聞いて見た。</p><p>死にますとも、と云いながら、女はぱっちりと眼を開けた。</p><p>大きな潤のある眼で、長い睫に包まれた中は、只一面に真黒であった。その真黒な眸の奥に、自分の姿が鮮に浮かんでいる。</p>`,
-            `<p>自分は透き徹るほど深く見える此黒眼の色沢を眺めて、これでも死ぬのかと思った。</p><p>それで、ねんごろに枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうねとまた聞き返した。</p><p>すると女は黒い眼を眠そうに擡げて、やっぱり静かな声で、でも、死ぬんですもの、仕方がないわと云った。</p>`,
+            `<p>自分は透き徹るほど深く見える此黒眼の色沢を眺めて、これでも死ぬのかと思った。</p><p>ねんごろに枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうねとまた聞き返した。</p><p>すると女は黒い眼を眠そうに擡げて、やっぱり静かな声で、でも, 死ぬんですもの、仕方がないわと云った。</p>`,
             `<p>じゃ、私の顔が見えるかいと一心に聞くと、見えるかいって、空に其様な星が出ているじゃありませんかと云った。</p><p>なるほど仰向いて見ると、空には星が出ている。</p><p>「百年待っていて下さい」と思い切った声で云った。「百年、私の墓の傍に坐って待っていて下さい。きっと逢いに来ますから」</p>`,
             `<p>自分はただ待っていると答えた。</p><p>すると、黒い眸の中に鮮に見えた自分の姿が、ぼうっと崩れて来た。静かな水が動いて写る影を乱すように、又流れ出す涙が菱に砕けるように。</p><p>女の眼がぱちりと閉じた。長い睫の間から涙が頬へ垂れた。――もう死んでいた。</p><p>（第一夜 完）</p>`
         ];
@@ -125,16 +208,18 @@
         const textInner = document.getElementById('text-inner');
         const nextBtnContainer = document.getElementById('next-btn-container');
         const nextBtn = document.getElementById('next-btn');
+        const backBtnContainer = document.getElementById('back-btn-container');
+        const backBtn = document.getElementById('back-btn');
 
-        const RECOVERY_SPEED = 0.04; // 戻るスピード（すーーっ）
-        const SCRATCH_RADIUS = 60;
+        const RECOVERY_SPEED = 0.035; 
+        const SCRATCH_RADIUS = 55;
 
         let isDrawing = false;
         let lastPoint = null;
         let isGameStarted = false;
         let hasInteracted = false;
         let currentSegmentIndex = 0;
-        let whiteoutTimer = 0; // 完全隠蔽までのカウンタ
+        let whiteoutCounter = 0; 
 
         function init() {
             resize();
@@ -143,11 +228,10 @@
             textInner.innerHTML = storySegments[0];
         }
 
-        // パッと見せてから、白く還る演出
-        function transitionToSegment(index) {
+        function revealAndEvaporate(index) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             textInner.innerHTML = storySegments[index];
-            whiteoutTimer = 0; // タイマーリセット
+            whiteoutCounter = 0;
         }
 
         startBtn.addEventListener('click', () => {
@@ -155,18 +239,28 @@
             setTimeout(() => { introOverlay.style.display = 'none'; }, 1500);
             canvas.style.opacity = 1;
             isGameStarted = true;
-            transitionToSegment(0);
+            
+            revealAndEvaporate(0); 
             loop();
         });
 
         nextBtn.addEventListener('click', () => {
             if (currentSegmentIndex >= storySegments.length - 1) return;
             currentSegmentIndex++;
-            transitionToSegment(currentSegmentIndex);
+            
+            revealAndEvaporate(currentSegmentIndex); 
+
             if (currentSegmentIndex === storySegments.length - 1) {
-                nextBtn.textContent = "（終）";
-                nextBtn.disabled = true;
+                nextBtnContainer.classList.remove('visible');
+                setTimeout(() => {
+                    nextBtnContainer.style.display = 'none';
+                    backBtnContainer.classList.add('visible');
+                }, 500);
             }
+        });
+
+        backBtn.addEventListener('click', () => {
+            window.location.href = 'index.html';
         });
 
         function resize() {
@@ -180,23 +274,19 @@
             if (!isGameStarted) return;
             requestAnimationFrame(loop);
             
-            // 通常の霧再生（半透明の重ね塗り）
             ctx.globalCompositeOperation = 'source-over';
             ctx.fillStyle = `rgba(255, 255, 255, ${RECOVERY_SPEED})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // ★ 修正：完全に白くするための強制処理
-            // 指を離してから一定時間(約4秒)経つと、完全に100%の白で塗りつぶす
             if (!isDrawing) {
-                whiteoutTimer++;
-                if (whiteoutTimer > 200) {
+                whiteoutCounter++;
+                if (whiteoutCounter > 180) {
                     ctx.fillStyle = '#ffffff';
-                    ctx.globalAlpha = 0.05; // 最後にじわじわと100%の白へ
+                    ctx.globalAlpha = 0.08; 
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     ctx.globalAlpha = 1.0;
                 }
-                // さらに時間が経ったら完全に固定（計算誤差を排除）
-                if (whiteoutTimer > 350) {
+                if (whiteoutCounter > 300) {
                     ctx.fillStyle = '#ffffff';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
@@ -206,7 +296,7 @@
         function scratch(x, y) {
             ctx.globalCompositeOperation = 'destination-out'; 
             ctx.beginPath();
-            ctx.shadowBlur = 25;
+            ctx.shadowBlur = 20;
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
             ctx.lineWidth = SCRATCH_RADIUS;
@@ -218,7 +308,7 @@
             }
             ctx.stroke();
             lastPoint = { x, y };
-            whiteoutTimer = 0; // 擦っている間は白化タイマーをリセット
+            whiteoutCounter = 0; 
         }
 
         function getPos(e) {
@@ -226,20 +316,28 @@
             return { x: t.clientX, y: t.clientY };
         }
 
-        window.addEventListener('mousedown', (e) => { 
-            if (!isGameStarted) return; isDrawing = true; 
+        const startAction = (e) => {
+            if (!isGameStarted) return;
+            isDrawing = true;
             const p = getPos(e); lastPoint = p; scratch(p.x, p.y);
-            if (!hasInteracted) { hasInteracted = true; setTimeout(() => nextBtnContainer.classList.add('visible'), 2000); }
-        });
-        window.addEventListener('mousemove', (e) => { if (isDrawing) scratch(getPos(e).x, getPos(e).y); });
-        window.addEventListener('mouseup', () => { isDrawing = false; lastPoint = null; });
-        canvas.addEventListener('touchstart', (e) => {
-            if (!isGameStarted) return; isDrawing = true;
-            const p = getPos(e); lastPoint = p; scratch(p.x, p.y);
-            if (!hasInteracted) { hasInteracted = true; setTimeout(() => nextBtnContainer.classList.add('visible'), 2000); }
-        }, { passive: false });
-        canvas.addEventListener('touchmove', (e) => { if (isDrawing) { e.preventDefault(); scratch(getPos(e).x, getPos(e).y); } }, { passive: false });
-        window.addEventListener('touchend', () => { isDrawing = false; lastPoint = null; });
+            if (!hasInteracted && currentSegmentIndex < storySegments.length - 1) {
+                hasInteracted = true;
+                setTimeout(() => {
+                    if (currentSegmentIndex < storySegments.length - 1) {
+                        nextBtnContainer.classList.add('visible');
+                    }
+                }, 2500);
+            }
+        };
+        const moveAction = (e) => { if (isDrawing) scratch(getPos(e).x, getPos(e).y); };
+        const endAction = () => { isDrawing = false; lastPoint = null; };
+
+        window.addEventListener('mousedown', startAction);
+        window.addEventListener('mousemove', moveAction);
+        window.addEventListener('mouseup', endAction);
+        canvas.addEventListener('touchstart', (e) => { startAction(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { if (isDrawing) { e.preventDefault(); moveAction(e); } }, { passive: false });
+        window.addEventListener('touchend', endAction);
         window.addEventListener('resize', resize);
 
         init();
