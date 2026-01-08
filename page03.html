@@ -42,17 +42,17 @@
         }
 
         #start-btn {
-            font-family: 'Shippori Mincho', serif; /* フォント統一 */
+            font-family: 'Shippori Mincho', serif;
             padding: 10px 25px; 
             background: #fff; 
-            border: 1px solid #f2f2f2; /* 影がないため少し境界を調整 */
+            border: 1px solid #f2f2f2; 
             color: #999;
             font-size: 11px; letter-spacing: 0.2em;
             cursor: pointer; border-radius: 2px;
             outline: none;
             transition: all 0.4s;
             -webkit-tap-highlight-color: transparent;
-            box-shadow: none; /* 影を削除 */
+            box-shadow: none;
         }
 
         #start-btn:hover {
@@ -123,8 +123,8 @@
         }
 
         #next-btn {
-            background-color: #ffffff; /* 背景を白に */
-            border: 1px solid #eeeeee; /* 四角い枠線 */
+            background-color: #ffffff; 
+            border: 1px solid #eeeeee; 
             color: #cccccc;
             padding: 10px 24px; 
             font-size: 10px;
@@ -134,8 +134,8 @@
             outline: none;
             transition: all 0.2s ease-out; 
             -webkit-tap-highlight-color: transparent;
-            border-radius: 2px;
-            box-shadow: none; /* 影を削除 */
+            border-radius: 0; 
+            box-shadow: none;
         }
 
         #next-btn:hover {
@@ -169,7 +169,7 @@
         #back-btn {
             background: transparent;
             border: none;
-            border-bottom: 1px solid #eee; /* 下線のみ */
+            border-bottom: 1px solid #eee; 
             color: #ddd;
             padding: 5px 0;
             font-size: 10px;
@@ -177,7 +177,7 @@
             cursor: pointer;
             font-family: 'Shippori Mincho', serif;
             outline: none;
-            transition: all 0.4s;
+            transition: all 0.4s cubic-bezier(0.2, 0, 0.2, 1);
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -187,7 +187,10 @@
         }
 
         #back-btn:active {
-            opacity: 0.6;
+            transform: scale(0.95);
+            color: #888;
+            border-bottom-color: #888;
+            transition: all 0.1s; 
         }
     </style>
 </head>
@@ -206,10 +209,8 @@
 
     <div id="content-layer"><div id="text-container"><div id="text-inner"></div></div></div>
     
-    <!-- 中央下の次へ進むボタン -->
     <div id="next-btn-container"><button id="next-btn">次へ進む</button></div>
     
-    <!-- 左下の目次へ戻るボタン -->
     <div id="back-btn-container"><button id="back-btn">目次へ戻る</button></div>
 
     <canvas id="fog-canvas"></canvas>
@@ -233,7 +234,11 @@
         const backBtnContainer = document.getElementById('back-btn-container');
         const backBtn = document.getElementById('back-btn');
 
-        const RECOVERY_SPEED = 0.035; 
+        // --- 速度設定 ---
+        const BASE_RECOVERY_SPEED = 0.035;   // 読書中・擦り中のゆったりした消滅速度
+        const TRANSITION_SPEED = 0.085;     // 切り替え時の少し早めの消滅速度
+        let recoverySpeed = BASE_RECOVERY_SPEED;
+
         const SCRATCH_RADIUS = 55;
 
         let isDrawing = false;
@@ -250,10 +255,20 @@
             textInner.innerHTML = storySegments[0];
         }
 
-        function revealAndEvaporate(index) {
+        // --- 演出：パッと全景を見せ、指定の速度で消え始める ---
+        function revealAndEvaporate(index, isTransition = true) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             textInner.innerHTML = storySegments[index];
             whiteoutCounter = 0;
+
+            if (isTransition) {
+                // 切り替え時は一時的に速度を上げる
+                recoverySpeed = TRANSITION_SPEED;
+                // 一定時間（2秒程度）後に元のゆったりした速度に戻す
+                setTimeout(() => {
+                    recoverySpeed = BASE_RECOVERY_SPEED;
+                }, 2000);
+            }
         }
 
         startBtn.addEventListener('click', () => {
@@ -262,7 +277,7 @@
             canvas.style.opacity = 1;
             isGameStarted = true;
             
-            revealAndEvaporate(0); 
+            revealAndEvaporate(0, true); 
             loop();
         });
 
@@ -270,7 +285,7 @@
             if (currentSegmentIndex >= storySegments.length - 1) return;
             currentSegmentIndex++;
             
-            revealAndEvaporate(currentSegmentIndex); 
+            revealAndEvaporate(currentSegmentIndex, true); 
 
             if (currentSegmentIndex === storySegments.length - 1) {
                 nextBtnContainer.classList.remove('visible');
@@ -281,7 +296,6 @@
             }
         });
 
-        // 目次へ戻るボタン：ページ自体をリロードして初期状態に戻す
         backBtn.addEventListener('click', () => {
             window.location.reload();
         });
@@ -298,7 +312,7 @@
             requestAnimationFrame(loop);
             
             ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = `rgba(255, 255, 255, ${RECOVERY_SPEED})`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${recoverySpeed})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (!isDrawing) {
