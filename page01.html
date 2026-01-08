@@ -56,7 +56,7 @@
             font-size: 1rem;
             letter-spacing: 0.3em;
             color: #333;
-            border: 1px solid #333;
+            border: 1px solid #eee;
             background: rgba(255,255,255,0.9);
             cursor: pointer;
             z-index: 999;
@@ -65,10 +65,11 @@
             white-space: nowrap;
         }
         
+        /* ボタン押下時の色をさらに薄く調整 (#aaa -> #ddd) */
         #start-btn.pressed {
-            background: #111 !important;
+            background: #ddd !important;
             color: #fff !important;
-            border-color: #111 !important;
+            border-color: #ddd !important;
             transform: translate(-50%, -50%) scale(0.95) !important; 
         }
 
@@ -80,9 +81,9 @@
             padding: 5px 0;
             font-size: 0.8rem;
             letter-spacing: 0.1em;
-            color: #888;
+            color: #999;
             border: none;
-            border-bottom: 1px solid #bbb;
+            border-bottom: 1px solid #ddd;
             background: transparent;
             cursor: pointer;
             z-index: 1000;
@@ -256,7 +257,6 @@
             spawnLine(0);
         });
 
-        // ボタンを押したときに index.html へ遷移するように設定
         backToTocBtn.addEventListener('click', () => {
             window.location.href = 'index.html'; 
         });
