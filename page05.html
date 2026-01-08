@@ -112,7 +112,7 @@
             display: inline-block; 
             opacity: 0; 
             visibility: hidden; 
-            transition: opacity 2.5s ease-in-out; 
+            transition: opacity 4s ease; 
             will-change: opacity;
         }
 
@@ -154,7 +154,7 @@
             border: none;
             text-decoration: underline;
             font-size: 10px;
-            color: #bbb; /* 薄く */
+            color: #bbb; 
             cursor: pointer;
             font-family: 'Shippori Mincho', serif;
             letter-spacing: 0.1em;
@@ -162,7 +162,7 @@
             transition: color 0.3s, transform 0.2s;
             outline: none;
             -webkit-tap-highlight-color: transparent;
-            display: none; /* JSで最終ステージのみ表示 */
+            display: none; 
         }
 
         #btn-home:active {
@@ -195,7 +195,6 @@
                 <button id="btn-next" class="btn-action" onclick="nextStage()">次へ進む</button>
             </div>
         </div>
-        <!-- 目次へ戻るボタンを独立させて配置 -->
         <button id="btn-home" onclick="window.location.href='./index.html'">目次へ戻る</button>
     </div>
 
@@ -265,7 +264,8 @@
                 el, char, 
                 index: charIndex, 
                 x, y: -40, 
-                speed: 1.5 + Math.random() * 2 
+                // 変更: 速度の基本値を上げ、ランダム幅も増やしました
+                speed: 3.0 + Math.random() * 3.5 
             });
             charIndex++;
         }
@@ -321,7 +321,7 @@
             resultLayer.style.opacity = '1';
             
             const currentText = textStages[currentStage];
-            const interval = 280; 
+            const interval = 150; 
 
             for (let i = 0; i < currentText.length; i++) {
                 const span = document.createElement('span');
@@ -338,13 +338,10 @@
                 }, i * interval);
             }
 
-            // ステージ判定
             if (currentStage === textStages.length - 1) {
-                // 最終ステージ：次へボタンを消し、左下のホームボタンを表示
                 document.getElementById('btn-next').style.display = 'none';
                 document.getElementById('btn-home').style.display = 'block';
             } else {
-                // 途中ステージ：次へボタンを表示、ホームボタンを隠す
                 document.getElementById('btn-next').style.display = 'block';
                 document.getElementById('btn-home').style.display = 'none';
             }
