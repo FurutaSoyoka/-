@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>呼吸する余白 - 羅生門</title>
     
+    <!-- フォント読み込み -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
@@ -32,13 +33,15 @@
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            writing-mode: vertical-rl;
+            writing-mode: vertical-rl; /* 縦書き */
             text-orientation: upright;
             font-size: clamp(16px, 4.2vw, 19px);
             
-            /* 【修正箇所】中央揃え(center)から均等/上揃え(justify)に変更 */
-            text-align: justify; 
-            
+            /* --- 行揃えの設定 --- */
+            text-align: justify;           /* 両端揃え */
+            text-justify: inter-ideograph; /* 均等割り付け */
+            /* ------------------ */
+
             white-space: nowrap;
             line-height: 0.1; 
             letter-spacing: -0.9em; 
@@ -107,6 +110,36 @@
             transform: scale(0.95);
         }
 
+        /* --- 目次へ戻るボタン（新規追加） --- */
+        #back-to-top-btn {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background: none;
+            border: none;
+            border-bottom: 1px solid #bbb; /* 下線のみ */
+            color: #aaa; /* 薄めの文字色 */
+            padding: 0 0 3px 0;
+            font-family: 'Shippori Mincho', serif;
+            font-size: 11px; /* 小さめ */
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1.2s ease, color 0.3s ease;
+            z-index: 30;
+        }
+
+        #back-to-top-btn.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #back-to-top-btn:active {
+            color: #666;
+            border-bottom-color: #888;
+        }
+
         .fade-out { opacity: 0 !important; }
         body.readable { background-color: #fff; }
     </style>
@@ -114,18 +147,23 @@
 <body>
 
     <div id="container">
+        <!-- テキスト表示エリア -->
         <div id="text-block"></div>
 
+        <!-- UIレイヤー -->
         <div id="ui-layer">
             <div id="intro-card">
                 <p id="guide-text">言葉は凝縮されています。<br>二本の指で、余白をほどく。</p>
             </div>
             <button id="next-btn">次へ進む</button>
         </div>
+
+        <!-- 目次へ戻るボタン -->
+        <button id="back-to-top-btn">目次へ戻る</button>
     </div>
 
     <script>
-        // --- 物語のデータ（10分割） ---
+        // --- 物語のデータ（羅生門・抜粋） ---
         const STORY_PAGES = [
             "或る日の暮方の事である。<br>一人の下人が羅生門の下で<br>雨やみを待っていたのだ。<br>広い門の下にはこの男の他<br>誰もいない。ただ所々丹塗<br>の剥げた大きな円柱に一匹<br>蟋蟀がとまっているだけだ。",
             "羅生門が朱雀大路にある様<br>この男の他にも雨やみする<br>市女笠や揉烏帽子がもう、<br>二三人はありそうなものだ。<br>それがこの男の他には誰も<br>いない。何故かと云うと、<br>ここ数年京都には災がつづいた。",
@@ -143,49 +181,65 @@
         const textBlock = document.getElementById('text-block');
         const nextBtn = document.getElementById('next-btn');
         const introCard = document.getElementById('intro-card');
+        const backToTopBtn = document.getElementById('back-to-top-btn');
         const body = document.body;
 
+        // 設定値
         const CONFIG = {
             lh: { min: 0.1, max: 4.0 }, 
             ls: { min: -0.9, max: 1.2 },
             baseDist: 30
         };
 
-        // --- 初期表示 ---
+        // --- ページ読み込み ---
         function loadPage(index) {
             textBlock.style.opacity = 0;
             setTimeout(() => {
                 textBlock.innerHTML = STORY_PAGES[index];
                 textBlock.style.opacity = 1;
                 updateSpace(CONFIG.baseDist); // 凝縮状態にリセット
+                
+                // 次へボタンのリセット
                 nextBtn.classList.remove('show');
+
+                // 最後のページなら「目次へ戻る」を表示
+                if (index === STORY_PAGES.length - 1) {
+                    backToTopBtn.classList.add('show');
+                } else {
+                    backToTopBtn.classList.remove('show');
+                }
             }, 800);
         }
 
         window.onload = () => loadPage(0);
 
-        // --- インタラクション ---
+        // --- 距離計算とスタイル更新 ---
         function getDistance(t1, t2) {
             return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         }
 
         function updateSpace(dist) {
+            // 説明カードのフェードアウト
             if (dist > CONFIG.baseDist + 20) {
                 introCard.classList.add('fade-out');
             }
 
+            // 距離に応じた係数計算
             let scale = Math.max(0, (dist - CONFIG.baseDist) / 200);
             const intensity = Math.pow(Math.min(scale, 1.2), 1.2);
 
+            // 行間と文字間隔の計算
             const lh = CONFIG.lh.min + (CONFIG.lh.max - CONFIG.lh.min) * intensity;
             const ls = CONFIG.ls.min + (CONFIG.ls.max - CONFIG.ls.min) * intensity;
 
+            // スタイル適用
             textBlock.style.lineHeight = lh;
             textBlock.style.letterSpacing = `${ls}em`;
 
+            // 背景色とボタン表示の制御
             if (intensity > 0.45) {
                 body.classList.add('readable');
-                // 十分に広がったら「次へ」ボタンを表示
+                // 最後のページ以外なら「次へ」を表示
                 if (currentPage < STORY_PAGES.length - 1) {
                     nextBtn.classList.add('show');
                 }
@@ -194,7 +248,7 @@
             }
         }
 
-        // --- イベント登録 ---
+        // --- タッチイベント (スマホ用) ---
         window.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
                 const dist = getDistance(e.touches[0], e.touches[1]);
@@ -211,16 +265,43 @@
         }, { passive: false });
 
         window.addEventListener('touchend', () => {
-            updateSpace(CONFIG.baseDist);
+            updateSpace(CONFIG.baseDist); 
+        });
+        
+        // --- マウスシミュレーション ---
+        let isAltDown = false;
+        window.addEventListener('keydown', (e) => { if(e.key === 'Alt') isAltDown = true; });
+        window.addEventListener('keyup', (e) => { if(e.key === 'Alt') isAltDown = false; });
+        
+        window.addEventListener('mousemove', (e) => {
+            if (isAltDown) {
+                 const centerX = window.innerWidth / 2;
+                 const centerY = window.innerHeight / 2;
+                 const dist = Math.hypot(e.clientX - centerX, e.clientY - centerY) * 2; 
+                 updateSpace(Math.max(CONFIG.baseDist, dist));
+            }
         });
 
-        // ボタンクリックで次へ
+        // --- ボタンイベント ---
+        
+        // 次へ
         nextBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (currentPage < STORY_PAGES.length - 1) {
                 currentPage++;
                 loadPage(currentPage);
             }
+        });
+
+        // 目次へ戻る
+        backToTopBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentPage = 0;
+            loadPage(0);
+            // 最初のページに戻ったら説明カードも復活させる
+            setTimeout(() => {
+                introCard.classList.remove('fade-out');
+            }, 800);
         });
     </script>
 </body>
