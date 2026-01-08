@@ -17,6 +17,7 @@
             font-family: 'Shippori Mincho', serif;
             touch-action: none;
             -webkit-user-select: none;
+            user-select: none;
             transition: background-color 1.2s ease;
         }
 
@@ -110,7 +111,7 @@
             transform: scale(0.95);
         }
 
-        /* --- 目次へ戻るボタン（新規追加） --- */
+        /* --- 目次へ戻るボタン --- */
         #back-to-top-btn {
             position: absolute;
             bottom: 30px;
@@ -159,7 +160,7 @@
         </div>
 
         <!-- 目次へ戻るボタン -->
-        <button id="onclick="location.href='index.html'">目次へ戻る</button>
+        <button id="back-to-top-btn">目次へ戻る</button>
     </div>
 
     <script>
@@ -296,12 +297,7 @@
         // 目次へ戻る
         backToTopBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            currentPage = 0;
-            loadPage(0);
-            // 最初のページに戻ったら説明カードも復活させる
-            setTimeout(() => {
-                introCard.classList.remove('fade-out');
-            }, 800);
+            window.location.href = 'index.html';
         });
     </script>
 </body>
