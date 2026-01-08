@@ -71,6 +71,33 @@
             border-color: #111 !important;
             transform: translate(-50%, -50%) scale(0.95) !important; 
         }
+
+        /* 目次へ戻るボタン：控えめな下線スタイル */
+        #back-to-toc {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            padding: 5px 0;
+            font-size: 0.8rem; /* 小さめ */
+            letter-spacing: 0.1em;
+            color: #888; /* 薄めの文字 */
+            border: none;
+            border-bottom: 1px solid #bbb; /* 下線のみ */
+            background: transparent; /* 背景なし */
+            cursor: pointer;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease-in-out, color 0.3s, border-color 0.3s;
+            font-family: 'Shippori Mincho', serif;
+            white-space: nowrap;
+            outline: none;
+        }
+
+        #back-to-toc:hover {
+            color: #333;
+            border-bottom-color: #333;
+        }
         
         #guide-message {
             position: absolute;
@@ -110,6 +137,11 @@
             }
             .title-text { font-size: 1.4rem; }
             .author-text { font-size: 0.9rem; margin-top: 2rem; }
+            #back-to-toc {
+                bottom: 30px;
+                left: 30px;
+                font-size: 0.75rem;
+            }
         }
 
         .char {
@@ -174,7 +206,8 @@
 
     <div id="drop-zone"></div>
     <div id="start-btn">物語を紡ぐ</div>
-    <div id="guide-message">中央へ集めよ</div>
+    <button id="back-to-toc">目次へ戻る</button>
+    <div id="guide-message">円の中へ集めよ</div>
     
     <div id="finale-container">
         <div class="title-text">私と小鳥と鈴と</div>
@@ -194,12 +227,13 @@
             "あの鳴る鈴は私のように、",
             "たくさんな唄は知らないよ。",
             "鈴と、小鳥と、それから私、",
-            "みんなちがって、みんないいい。"
+            "みんなちがって、みんないい。"
         ];
 
         const container = document.getElementById('container');
         const guideMsg = document.getElementById('guide-message');
         const startBtn = document.getElementById('start-btn');
+        const backToTocBtn = document.getElementById('back-to-toc');
         const dropZone = document.getElementById('drop-zone');
         const finaleContainer = document.getElementById('finale-container');
         
@@ -222,13 +256,17 @@
             spawnLine(0);
         });
 
+        backToTocBtn.addEventListener('click', () => {
+            location.reload(); 
+        });
+
         function spawnLine(lineIndex) {
             if (lineIndex >= story.length) {
                 showFinale();
                 return;
             }
 
-            guideMsg.innerText = "中央へ集めよ";
+            guideMsg.innerText = "円の中へ集めよ";
             guideMsg.style.opacity = 0.4;
 
             const text = story[lineIndex];
@@ -242,7 +280,6 @@
             const charHeight = _isMobile ? 32 : 55;
             const targetX = centerX;
             const lineTotalHeight = text.length * charHeight;
-            // プレイ中の集まる位置（上揃えにする）
             const startY = (window.innerHeight * 0.18) + (charHeight / 2);
 
             text.split('').forEach((char, i) => {
@@ -252,7 +289,6 @@
                 span.style.top = '50%';
                 span.style.left = '50%';
                 
-                // 行と文字のインデックスを保持
                 span.dataset.l = lineIndex;
                 span.dataset.c = i;
                 
@@ -275,20 +311,20 @@
 
             setTimeout(() => {
                 finaleContainer.style.opacity = 1;
-            }, 500);
+                backToTocBtn.style.opacity = 1;
+                backToTocBtn.style.pointerEvents = 'auto';
+            }, 1000);
 
             const _isMobile = isMobile();
             const lineHeight = _isMobile ? 35 : 60;
             const charHeight = _isMobile ? 30 : 50;
             const centerX = window.innerWidth / 2;
             
-            // フィナーレの全表示レイアウト計算
             const totalWidth = story.length * lineHeight;
             const shiftLeft = _isMobile ? 30 : 80;
             const blockStartX = (centerX + (totalWidth / 2) - (lineHeight / 2)) - shiftLeft;
-            const topMargin = window.innerHeight * 0.18; // 上揃えの基準点
+            const topMargin = window.innerHeight * 0.18;
 
-            // data-l と data-c を使って各文字を正しい位置へ移動させる
             story.forEach((line, lIdx) => {
                 const lineX = blockStartX - (lIdx * lineHeight);
                 
@@ -301,7 +337,6 @@
                 });
             });
 
-            // 全文字を表示状態にする
             const allChars = document.querySelectorAll('.char');
             let shuffledChars = Array.from(allChars);
             shuffledChars.sort(() => Math.random() - 0.5);
