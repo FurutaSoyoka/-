@@ -111,8 +111,8 @@
         .res-char { 
             display: inline-block; 
             opacity: 0; 
-            visibility: hidden; 
-            transition: opacity 4s ease; 
+            /* 修正: フェード時間を2.5秒に調整（モバイルでの体感向上） */
+            transition: opacity 2.5s ease-out; 
             will-change: opacity;
         }
 
@@ -264,8 +264,8 @@
                 el, char, 
                 index: charIndex, 
                 x, y: -40, 
-                // 変更: 速度の基本値を上げ、ランダム幅も増やしました
-                speed: 3.0 + Math.random() * 3.5 
+                // 修正: 速度をほんの少しだけ遅く (3.0 -> 2.6)
+                speed: 2.6 + Math.random() * 3.2 
             });
             charIndex++;
         }
@@ -321,21 +321,25 @@
             resultLayer.style.opacity = '1';
             
             const currentText = textStages[currentStage];
-            const interval = 150; 
+            /* 修正: インターバルを180msに調整し、スマホでの描画安定性を向上 */
+            const interval = 180; 
 
             for (let i = 0; i < currentText.length; i++) {
                 const span = document.createElement('span');
                 span.textContent = caughtIndices.has(i) ? currentText[i] : "　";
                 span.classList.add('res-char');
-                span.style.opacity = '0';
-                span.style.visibility = 'hidden';
+                span.style.opacity = '0'; // 確実に透明から開始
                 
                 resultContainer.appendChild(span);
                 
+                /* 修正: モバイルでのフェードインを確実にするため、
+                   ブラウザの再描画を待ってから opacity を変更する
+                */
                 setTimeout(() => {
-                    span.style.visibility = 'visible';
-                    span.style.opacity = '1';
-                }, i * interval);
+                    requestAnimationFrame(() => {
+                        span.style.opacity = '1';
+                    });
+                }, i * interval + 50);
             }
 
             if (currentStage === textStages.length - 1) {
