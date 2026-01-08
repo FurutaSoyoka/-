@@ -42,22 +42,27 @@
         }
 
         #start-btn {
-            font-family: 'Shippori Mincho', serif; /* フォントを統一 */
+            font-family: 'Shippori Mincho', serif; /* フォント統一 */
             padding: 10px 25px; 
             background: #fff; 
-            border: 1px solid #f8f8f8; 
+            border: 1px solid #f2f2f2; /* 影がないため少し境界を調整 */
             color: #999;
             font-size: 11px; letter-spacing: 0.2em;
             cursor: pointer; border-radius: 2px;
             outline: none;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02); 
             transition: all 0.4s;
             -webkit-tap-highlight-color: transparent;
+            box-shadow: none; /* 影を削除 */
         }
 
         #start-btn:hover {
-            border-color: #f0f0f0;
+            border-color: #e0e0e0;
             background: #fafafa;
+        }
+
+        #start-btn:active {
+            transform: scale(0.96);
+            background: #fdfdfd;
         }
 
         /* --- 物語表示層 --- */
@@ -118,18 +123,31 @@
         }
 
         #next-btn {
-            background: #fff; 
-            border: 1px solid #eee; 
-            color: #ccc;
+            background-color: #ffffff; /* 背景を白に */
+            border: 1px solid #eeeeee; /* 四角い枠線 */
+            color: #cccccc;
             padding: 10px 24px; 
             font-size: 10px;
             letter-spacing: 0.3em; 
             cursor: pointer;
             font-family: 'Shippori Mincho', serif;
             outline: none;
-            transition: all 0.4s;
+            transition: all 0.2s ease-out; 
             -webkit-tap-highlight-color: transparent;
             border-radius: 2px;
+            box-shadow: none; /* 影を削除 */
+        }
+
+        #next-btn:hover {
+            color: #999999;
+            border-color: #dddddd;
+            background-color: #fafafa;
+        }
+
+        #next-btn:active {
+            transform: scale(0.92);
+            background-color: #f0f0f0;
+            border-color: #cccccc;
         }
 
         /* --- 目次へ戻るボタン（左下：最終ページのみ） --- */
@@ -159,13 +177,17 @@
             cursor: pointer;
             font-family: 'Shippori Mincho', serif;
             outline: none;
-            transition: color 0.4s, border-color 0.4s;
+            transition: all 0.4s;
             -webkit-tap-highlight-color: transparent;
         }
 
         #back-btn:hover {
             color: #bbb;
             border-color: #ddd;
+        }
+
+        #back-btn:active {
+            opacity: 0.6;
         }
     </style>
 </head>
@@ -259,8 +281,9 @@
             }
         });
 
+        // 目次へ戻るボタン：ページ自体をリロードして初期状態に戻す
         backBtn.addEventListener('click', () => {
-            window.location.href = 'index.html';
+            window.location.reload();
         });
 
         function resize() {
