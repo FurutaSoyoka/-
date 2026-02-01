@@ -52,7 +52,6 @@
             outline: none;
             transition: all 0.4s;
             -webkit-tap-highlight-color: transparent;
-            box-shadow: none;
         }
 
         #start-btn:hover {
@@ -150,7 +149,7 @@
             border-color: #cccccc;
         }
 
-        /* --- 目次へ戻るボタン（左下：最終ページのみ） --- */
+        /* --- ホームへ戻るボタン（左下：最終ページのみ） --- */
         #back-btn-container {
             position: absolute;
             bottom: 30px;
@@ -199,7 +198,7 @@
     <div id="intro-overlay">
         <h1>揮発する記憶</h1>
         <div class="instruction-text">
-            夏目漱石『夢十夜』より<br><br>
+            夏目漱石『夢十夜』より抜粋<br><br>
             白い霧を指で拭うことで、<br>
             物語を一時的に留めることができます。<br><br>
             手を止めれば、即座に白へと還ります。
@@ -211,7 +210,7 @@
     
     <div id="next-btn-container"><button id="next-btn">次へ進む</button></div>
     
-    <div id="back-btn-container"><button id="back-to-top-btn">目次へ戻る</button></div>
+    <div id="back-btn-container"><button id="back-btn">ホームへ戻る</button></div>
 
     <canvas id="fog-canvas"></canvas>
 
@@ -221,7 +220,7 @@
             `<p>そこで、そうかね、もう死ぬのかねと上から覗き込むようにして聞いて見た。</p><p>死にますとも、と云いながら、女はぱっちりと眼を開けた。</p><p>大きな潤のある眼で、長い睫に包まれた中は、只一面に真黒であった。その真黒な眸の奥に、自分の姿が鮮に浮かんでいる。</p>`,
             `<p>自分は透き徹るほど深く見える此黒眼の色沢を眺めて、これでも死ぬのかと思った。</p><p>ねんごろに枕の傍へ口を付けて、死ぬんじゃなかろうね、大丈夫だろうねとまた聞き返した。</p><p>すると女は黒い眼を眠そうに擡げて、やっぱり静かな声で、でも, 死ぬんですもの、仕方がないわと云った。</p>`,
             `<p>じゃ、私の顔が見えるかいと一心に聞くと、見えるかいって、空に其様な星が出ているじゃありませんかと云った。</p><p>なるほど仰向いて見ると、空には星が出ている。</p><p>「百年待っていて下さい」と思い切った声で云った。「百年、私の墓の傍に坐って待っていて下さい。きっと逢いに来ますから」</p>`,
-            `<p>自分はただ待っていると答えた。</p><p>すると、黒い眸の中に鮮に見えた自分の姿が、ぼうっと崩れて来た。静かな水が動いて写る影を乱すように、又流れ出す涙が菱に砕けるように。</p><p>女の眼がぱちりと閉じた。長い睫の間から涙が頬へ垂れた。――もう死んでいた。</p><p>（第一夜 完）</p>`
+            `<p>最終ページ：自分はただ待っていると答えた。</p><p>すると、黒い眸の中に鮮に見えた自分の姿が、ぼうっと崩れて来た。静かな水が動いて写る影を乱すように、又流れ出す涙が菱に砕けるように。</p><p>女の眼がぱちりと閉じた。長い睫の間から涙が頬へ垂れた。――もう死んでいた。</p><p>（第一夜 完）</p>`
         ];
 
         const canvas = document.getElementById('fog-canvas');
@@ -234,9 +233,8 @@
         const backBtnContainer = document.getElementById('back-btn-container');
         const backBtn = document.getElementById('back-btn');
 
-        // --- 速度設定 ---
-        const BASE_RECOVERY_SPEED = 0.035;   // 読書中・擦り中のゆったりした消滅速度
-        const TRANSITION_SPEED = 0.085;     // 切り替え時の少し早めの消滅速度
+        const BASE_RECOVERY_SPEED = 0.035;   
+        const TRANSITION_SPEED = 0.085;     
         let recoverySpeed = BASE_RECOVERY_SPEED;
 
         const SCRATCH_RADIUS = 55;
@@ -255,16 +253,13 @@
             textInner.innerHTML = storySegments[0];
         }
 
-        // --- 演出：パッと全景を見せ、指定の速度で消え始める ---
         function revealAndEvaporate(index, isTransition = true) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             textInner.innerHTML = storySegments[index];
             whiteoutCounter = 0;
 
             if (isTransition) {
-                // 切り替え時は一時的に速度を上げる
                 recoverySpeed = TRANSITION_SPEED;
-                // 一定時間（2秒程度）後に元のゆったりした速度に戻す
                 setTimeout(() => {
                     recoverySpeed = BASE_RECOVERY_SPEED;
                 }, 2000);
@@ -296,8 +291,15 @@
             }
         });
 
+        // 別のファイルとしてのindex.htmlへ遷移する設定
         backBtn.addEventListener('click', () => {
-            window.location.reload();
+            try {
+                // 相対パスでindex.htmlへ遷移
+                window.location.assign('./index.html');
+            } catch (e) {
+                // エラー時のフォールバックとしてhrefを使用
+                window.location.href = 'index.html';
+            }
         });
 
         function resize() {
